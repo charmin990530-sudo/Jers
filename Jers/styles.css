@@ -1,0 +1,105 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.header {
+    padding: 40px;
+}
+
+.menu {
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+    font-family: Arial, Helvetica, sans-serif;
+    cursor: pointer;
+}
+
+.menulist {
+    display: flex;
+    gap: 1px;
+    font-weight: bold;
+}
+
+.menuitem {
+    list-style: none;
+}
+
+
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    border-top: 1px solid rgb(255, 254, 254);
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.card {
+    width: 200px;
+    overflow: hidden;
+    border-radius: 50px;
+    border: 2px solid rgb(255, 254, 254);
+    justify-content: center;
+    transition: transform 0.3s ease;
+
+
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.cardimage {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+
+}
+
+
+.cardbtn {
+    width: 100%;
+    padding: 10px;
+    background-color: #d78221;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.menulogo {
+    width: 50px;
+    height: auto;
+
+}
+
+.cardname {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 10px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.herobtn {
+    padding: 10px 20px;
+    background-color: #d78221;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #000000;
+    color: rgb(255, 255, 255);
+}
