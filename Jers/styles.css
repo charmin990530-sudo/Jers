@@ -1,105 +1,825 @@
+/* ============================================
+   VARIABLES Y RESET
+   ============================================ */
+
+:root {
+    --color-fondo: #FBF3EE;
+    --color-rosa: #E8A9A0;
+    --color-mauve: #C97B82;
+    --color-texto: #4A3535;
+    --color-dorado: #D4AF87;
+    --color-blanco: #FFFFFF;
+    --fuente-titulos: 'Playfair Display', serif;
+    --fuente-texto: 'Poppins', sans-serif;
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--fuente-texto);
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    line-height: 1.6;
+}
+
+h1, h2, h3 {
+    font-family: var(--fuente-titulos);
+}
+
+
+/* ============================================
+   HEADER Y MENÚ (se repite igual en las 5 páginas)
+   ============================================ */
+
 .header {
-    padding: 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--color-blanco);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .menu {
     justify-content: space-between;
     align-items: center;
     display: flex;
-    font-family: Arial, Helvetica, sans-serif;
-    cursor: pointer;
+    padding: 15px 40px;
+}
+
+.menulogo {
+    width: 50px;
+    height: auto;
+    border-radius: 50%;
 }
 
 .menulist {
     display: flex;
-    gap: 1px;
-    font-weight: bold;
+    gap: 30px;
 }
 
 .menuitem {
     list-style: none;
 }
 
+.menuitem a {
+    text-decoration: none;
+    color: var(--color-texto);
+    font-weight: 600;
+    transition: color 0.3s ease;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.menuitem a:hover {
+    color: var(--color-mauve);
+}
+
+/* Resalta el link de la página en la que estás (lo activa script.js) */
+.menuitem a.pagina-actual {
+    color: var(--color-mauve);
+    border-bottom-color: var(--color-mauve);
+}
+
+/* Botón hamburguesa: oculto en escritorio, visible en móvil */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.menu-toggle span {
+    width: 25px;
+    height: 3px;
+    background-color: var(--color-texto);
+    border-radius: 2px;
+}
+
+/* Icono del carrito */
+.carrito-icono {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.carrito-contador {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background-color: var(--color-mauve);
+    color: white;
+    font-size: 0.7rem;
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* ============================================
+   HERO (grande, solo en Inicio)
+   ============================================ */
 
 .hero {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    margin: 10px 0;
-    border-top: 1px solid rgb(255, 254, 254);
+    justify-content: center;
+    text-align: center;
+    gap: 15px;
+    padding: 100px 20px;
+    background: linear-gradient(180deg, var(--color-rosa) 0%, var(--color-fondo) 100%);
+    animation: aparecer 1s ease;
 }
 
-.container {
+.hero h1 {
+    font-size: 3rem;
+    color: var(--color-texto);
+}
+
+.heroslogan {
+    font-size: 1.3rem;
+    color: var(--color-texto);
+    max-width: 500px;
+}
+
+.herobtn, .cardbtn, .contact-btn, .finalizar-pedido, .promo-btn {
+    padding: 12px 28px;
+    background-color: var(--color-mauve);
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-size: 1rem;
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.herobtn:hover, .cardbtn:hover, .contact-btn:hover, .finalizar-pedido:hover, .promo-btn:hover {
+    background-color: var(--color-texto);
+    transform: translateY(-2px);
+}
+
+.finalizar-pedido {
+    width: 100%;
+    margin-top: 5px;
+}
+
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ============================================
+   BANNER DE PÁGINA (versión chica del hero, para
+   Maquillaje / Cuidado capilar / Reseñas / Contacto)
+   ============================================ */
+
+.pagina-header {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(180deg, var(--color-rosa) 0%, var(--color-fondo) 100%);
+}
+
+.pagina-header h1 {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+}
+
+.pagina-header p {
+    color: #6b5257;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+
+/* ============================================
+   TÍTULOS DE SECCIÓN (reutilizable)
+   ============================================ */
+
+.titulo-seccion {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 40px;
+    color: var(--color-texto);
+}
+
+
+/* ============================================
+   PROMOCIONES (solo en Inicio)
+   ============================================ */
+
+.promo-banner {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    padding: 0 20px;
+}
+
+.promo-banner-inner {
+    background: linear-gradient(120deg, var(--color-mauve), var(--color-dorado));
+    border-radius: 24px;
+    padding: 40px;
+    color: var(--color-blanco);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.promo-banner-inner h2 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.promo-banner-inner p {
+    max-width: 420px;
+    opacity: 0.95;
+}
+
+.promo-btn {
+    background-color: var(--color-blanco);
+    color: var(--color-mauve);
+    flex-shrink: 0;
+}
+
+.promo-btn:hover {
+    background-color: var(--color-texto);
+    color: var(--color-blanco);
+}
+
+.descuento-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: var(--color-texto);
+    color: var(--color-blanco);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    z-index: 2;
+}
+
+.precio-anterior {
+    text-decoration: line-through;
+    color: #a89a9a;
+    font-size: 0.85rem;
+    margin-right: 6px;
+}
+
+
+/* ============================================
+   BENEFICIOS (franja tipo Atenea)
+   ============================================ */
+
+.beneficios {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 20px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+.beneficio {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.beneficio-icono {
+    font-size: 1.3rem;
+    color: var(--color-mauve);
+    flex-shrink: 0;
+}
+
+.beneficio h3 {
+    font-size: 1rem;
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.beneficio p {
+    font-size: 0.85rem;
+    color: #7a6666;
+}
+
+
+/* ============================================
+   CATEGORÍAS (tiles rápidos, ahora son links normales
+   que abren cada página en pestaña nueva)
+   ============================================ */
+
+.categorias-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.cat-tile {
+    background-color: var(--color-blanco);
+    border: none;
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    font-family: var(--fuente-texto);
+    color: var(--color-texto);
+    text-decoration: none;
+    display: block;
+}
+
+.cat-tile:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.cat-tile-icono {
+    display: inline-block;
+    color: var(--color-mauve);
+    font-size: 1.3rem;
+    margin-bottom: 14px;
+}
+
+.cat-tile h3 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+}
+
+.cat-tile p {
+    font-size: 0.85rem;
+    color: #7a6666;
+}
+
+
+/* ============================================
+   TABS (para Maquillaje y Cuidado capilar)
+   ============================================ */
+
+.tabs {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+.tab-btn {
+    background-color: var(--color-blanco);
+    border: 2px solid var(--color-rosa);
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-texto);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.tab-btn:hover {
+    background-color: var(--color-rosa);
+}
+
+.tab-btn.tab-activo {
+    background-color: var(--color-mauve);
+    border-color: var(--color-mauve);
+    color: var(--color-blanco);
+}
+
+
+/* ============================================
+   BLOQUES POR MARCA (dentro de cada tab)
+   ============================================ */
+
+.marca-bloque {
+    margin-bottom: 50px;
+}
+
+.marca-bloque:last-child {
+    margin-bottom: 0;
+}
+
+.marca-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--color-rosa);
+}
+
+.marca-nombre {
+    font-size: 1.3rem;
+    color: var(--color-mauve);
+}
+
+.marca-cantidad {
+    font-size: 0.8rem;
+    color: #9c8686;
+}
+
+.catalogo-vacio {
+    text-align: center;
+    color: #9c8686;
+    padding: 30px 0;
+}
+
+
+/* ============================================
+   PRODUCTOS (tarjetas)
+   ============================================ */
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 20px;
+}
+
+.tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 30px;
 }
 
 .card {
-    width: 200px;
+    background-color: var(--color-blanco);
+    border-radius: 20px;
     overflow: hidden;
-    border-radius: 50px;
-    border: 2px solid rgb(255, 254, 254);
-    justify-content: center;
-    transition: transform 0.3s ease;
-
-
+    text-align: center;
+    padding-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
 }
 
 .card:hover {
-    transform: scale(1.05);
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .cardimage {
-    width: 200px;
-    height: 200px;
-    object-fit: cover;
-
-}
-
-
-.cardbtn {
     width: 100%;
-    padding: 10px;
-    background-color: #d78221;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.menulogo {
-    width: 50px;
-    height: auto;
-
+    height: 220px;
+    object-fit: cover;
+    margin-bottom: 15px;
+    background-color: var(--color-rosa);
 }
 
 .cardname {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    padding: 0 15px;
+}
+
+.cardprecio {
+    color: var(--color-mauve);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+
+/* ============================================
+   CUIDADO CAPILAR (sección propia)
+   ============================================ */
+
+.cabello-subtitulo {
     text-align: center;
-    font-size: 18px;
-    font-weight: bold;
+    color: #7a6666;
+    margin-top: -25px;
+    margin-bottom: 40px;
+}
+
+
+/* ============================================
+   RESEÑAS
+   ============================================ */
+
+.reviews {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 20px;
+}
+
+.reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.review-card {
+    background-color: var(--color-blanco);
+    border-radius: 20px;
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.review-estrellas {
+    color: var(--color-dorado);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.review-texto {
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.review-nombre {
+    font-weight: 600;
+    color: var(--color-mauve);
+}
+
+.reviews-nota {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 25px;
+}
+
+
+/* ============================================
+   CONTACTO
+   ============================================ */
+
+.contact {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.contact-subtitulo {
+    margin-bottom: 35px;
+}
+
+.formulario-contacto {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    text-align: left;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.campo label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.campo input {
+    padding: 12px 15px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-family: var(--fuente-texto);
+    font-size: 1rem;
+    background-color: var(--color-blanco);
+    transition: border-color 0.3s ease;
+}
+
+.campo input:focus {
+    outline: none;
+    border-color: var(--color-rosa);
+}
+
+.contact-btn {
+    align-self: center;
     margin-top: 10px;
-    font-family: Arial, Helvetica, sans-serif;
 }
 
-.herobtn {
-    padding: 10px 20px;
-    background-color: #d78221;
+.formulario-mensaje {
+    text-align: center;
+    font-weight: 600;
+    min-height: 20px;
+}
+
+.formulario-mensaje.error {
+    color: #c0392b;
+}
+
+.formulario-mensaje.exito {
+    color: #27ae60;
+}
+
+
+/* ============================================
+   PANEL DEL CARRITO
+   ============================================ */
+
+.carrito-panel {
+    position: fixed;
+    top: 0;
+    right: -380px;
+    width: 350px;
+    max-width: 85vw;
+    height: 100%;
+    background-color: var(--color-blanco);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    padding: 30px 25px;
+    z-index: 200;
+    transition: right 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.carrito-panel.abierto {
+    right: 0;
+}
+
+.carrito-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.carrito-cerrar {
+    background: none;
     border: none;
-    color: white;
-    font-size: 16px;
+    font-size: 1.3rem;
     cursor: pointer;
-    font-family: Arial, Helvetica, sans-serif;
+    color: var(--color-texto);
 }
 
-body {
-    background-color: #000000;
-    color: rgb(255, 255, 255);
+.carrito-lista {
+    list-style: none;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.carrito-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+    gap: 8px;
+}
+
+.quitar-item {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.carrito-resumen {
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+    text-align: center;
+}
+
+.carrito-resumen p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Fondo oscuro detrás del panel cuando está abierto */
+.carrito-fondo {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 150;
+}
+
+.carrito-fondo.visible {
+    display: block;
+}
+
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+footer {
+    background-color: var(--color-texto);
+    color: var(--color-blanco);
+    text-align: center;
+    padding: 25px;
+    font-size: 0.9rem;
+}
+
+
+/* ============================================
+   ANIMACIÓN AL APARECER (scroll reveal)
+   ============================================ */
+
+.revelar {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.revelar.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* ============================================
+   RESPONSIVE: MÓVIL
+   ============================================ */
+
+@media (max-width: 768px) {
+    .menu {
+        flex-wrap: wrap;
+    }
+
+    .menulogo {
+        order: 1;
+    }
+
+    .carrito-icono {
+        order: 2;
+    }
+
+    .menu-toggle {
+        display: flex;
+        order: 3;
+    }
+
+    .menulist {
+        order: 4;
+        width: 100%;
+        position: static;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease;
+    }
+
+    .menulist.activo {
+        max-height: 400px;
+    }
+
+    .menuitem {
+        padding: 15px 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .beneficios {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .categorias-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .promo-banner-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .beneficios {
+        grid-template-columns: 1fr;
+    }
+
+    .categorias-grid {
+        grid-template-columns: 1fr;
+    }
 }

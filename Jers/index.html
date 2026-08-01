@@ -1,90 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="description" content="By Jers - Cosmética y belleza. Promociones y descuentos del mes.">
+    <title>By Jers | Inicio</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
     <header class="header">
-
         <nav class="menu">
+            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
 
-            <!-- <span class="menulogo">By Jers</span> -->
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
 
-            <img src="logo.jpg" alt="Logo" class="menulogo">
             <ul class="menulist">
-
-                <li class="menuitem">Pagina Principal</li>
-                <li class="menuitem">Productos</li>
-                <li class="menuitem">Servicios</li>
-                <li class="menuitem">Sobre nosotros</li>
-
+                <li class="menuitem"><a href="index.html" target="_blank" rel="noopener">Inicio</a></li>
+                <li class="menuitem"><a href="maquillaje.html" target="_blank" rel="noopener">Maquillaje</a></li>
+                <li class="menuitem"><a href="cabello.html" target="_blank" rel="noopener">Cuidado capilar</a></li>
+                <li class="menuitem"><a href="resenas.html" target="_blank" rel="noopener">Reseñas</a></li>
+                <li class="menuitem"><a href="contacto.html" target="_blank" rel="noopener">Contacto</a></li>
             </ul>
 
+            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+                🛍️ <span class="carrito-contador">0</span>
+            </button>
         </nav>
-
     </header>
 
     <main>
 
-        <section class="hero">
-
-            <h1> By Jers </h1>
-            <p class="heroslogan"> Reencuentrate con tu verdadera tu </p>
-            <button class="herobtn"> Contactame aqui </button>
-
-
+        <section id="inicio" class="hero">
+            <h1>By Jers</h1>
+            <p class="heroslogan">Reencuéntrate con tu verdadera tú</p>
+            <button class="herobtn" type="button">Ver categorías</button>
         </section>
 
-
-        <section class="container">
-
-            <div class="card">
-                <img src="https://ateneaprofesional.com/cdn/shop/files/Atenea-Ecommerce-Enero9958-1080.jpg?v=1743916012&width=2048"
-                    alt="Sombras atenea" class="cardimage">
-
-                <h2 class="cardname">Sombras Atenea</h2>
-                <button class="cardbtn"> Compra aqui</button>
-
+        <!-- ============================================
+             PROMOCIÓN DEL MES
+             ============================================ -->
+        <section class="promo-banner revelar">
+            <div class="promo-banner-inner">
+                <div>
+                    <h2>Promoción de agosto 🌸</h2>
+                    <p>Hasta 25% de descuento en una selección de maquillaje y cuidado capilar, solo por este mes.</p>
+                </div>
+                <a href="maquillaje.html" target="_blank" rel="noopener" class="promo-btn">Ver maquillaje</a>
             </div>
-
-            <div class="card">
-                <img src="https://cdn.shopify.com/s/files/1/0741/6132/4314/files/Atenea_Ecommerce_Oct_236240.jpg?v=1743916045"
-                    alt="lip gloss" class="cardimage">
-
-                <h2 class="cardname">Lip Gloss</h2>
-                <button class="cardbtn"> Compra aqui</button>
-
-            </div>
-
-            <div class="card">
-                <img src="https://ateneaprofesional.com/cdn/shop/files/BASE-04.webp?v=1743916082&width=2250" alt="base"
-                    class="cardimage">
-
-                <h2 class="cardname">Base Atenea</h2>
-                <button class="cardbtn"> Compra aqui</button>
-
-            </div>
-
-
-
         </section>
 
+        <!-- ============================================
+             DESCUENTOS DEL MES
+             Los productos se generan desde script.js (productosPromo)
+             ============================================ -->
+        <section class="container revelar">
+            <h2 class="titulo-seccion">Descuentos del mes</h2>
+            <div class="tarjetas" id="promoGrid">
+                <!-- Se llena dinámicamente desde script.js -->
+            </div>
+        </section>
 
+        <!-- ============================================
+             BENEFICIOS
+             ============================================ -->
+        <section class="beneficios revelar">
+            <div class="beneficio">
+                <span class="beneficio-icono">✓</span>
+                <div>
+                    <h3>Calidad seleccionada</h3>
+                    <p>Solo revendemos lo que nosotras usaríamos.</p>
+                </div>
+            </div>
+            <div class="beneficio">
+                <span class="beneficio-icono">🚚</span>
+                <div>
+                    <h3>Envíos a todo el país</h3>
+                    <p>Coordinamos contigo por WhatsApp.</p>
+                </div>
+            </div>
+            <div class="beneficio">
+                <span class="beneficio-icono">🏷️</span>
+                <div>
+                    <h3>Varias marcas, un solo lugar</h3>
+                    <p>Comparas y eliges sin salir de la página.</p>
+                </div>
+            </div>
+            <div class="beneficio">
+                <span class="beneficio-icono">💬</span>
+                <div>
+                    <h3>Asesoría real</h3>
+                    <p>Te ayudamos a elegir tu tono ideal.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             CATEGORÍAS: cada tile abre su página en pestaña nueva.
+             El #hash (ej: #ojos) hace que esa página abra directo
+             en la tab de esa categoría.
+             ============================================ -->
+        <section id="categorias" class="container revelar">
+            <h2 class="titulo-seccion">Explora por categoría</h2>
+
+            <div class="categorias-grid">
+                <a class="cat-tile" href="maquillaje.html#rostro" target="_blank" rel="noopener">
+                    <span class="cat-tile-icono">✦</span>
+                    <h3>Rostro</h3>
+                    <p>Bases, correctores, polvos</p>
+                </a>
+
+                <a class="cat-tile" href="maquillaje.html#ojos" target="_blank" rel="noopener">
+                    <span class="cat-tile-icono">✦</span>
+                    <h3>Ojos</h3>
+                    <p>Sombras, delineadores</p>
+                </a>
+
+                <a class="cat-tile" href="maquillaje.html#labios" target="_blank" rel="noopener">
+                    <span class="cat-tile-icono">✦</span>
+                    <h3>Labios</h3>
+                    <p>Labiales, gloss</p>
+                </a>
+
+                <a class="cat-tile" href="cabello.html" target="_blank" rel="noopener">
+                    <span class="cat-tile-icono">✦</span>
+                    <h3>Cuidado capilar</h3>
+                    <p>Shampoo, acondicionador, tratamientos</p>
+                </a>
+            </div>
+        </section>
 
     </main>
 
-    <footer>
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
 
+        <ul class="carrito-lista"></ul>
+
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido por WhatsApp</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer>
+        <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
     </footer>
 
-
-
+    <script src="script.js"></script>
 </body>
 
 </html>
