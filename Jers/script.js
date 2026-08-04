@@ -29,7 +29,6 @@ if (botonMenu && listaMenu) {
 
 // ============================================
 // RESALTAR EL LINK DE LA PÁGINA ACTUAL EN EL MENÚ
-// Compara el nombre del archivo actual con el href de cada link
 // ============================================
 
 const paginaActual = window.location.pathname.split('/').pop() || 'index.html';
@@ -107,28 +106,54 @@ const catalogoMaquillaje = {
     ],
 };
 
+// Cuidado capilar: igual que maquillaje, cada categoría agrupa
+// varias marcas y cada marca trae su lista de productos.
 const catalogoCabello = {
     shampoo: [
         {
-            marca: 'Marca por definir',
+            marca: 'Atenea Profesional',
             productos: [
                 { nombre: 'Shampoo Hidratación Profunda', precio: 46000, imagen: 'Imagenes/shampoo-hidratacion.jpg' },
+            ],
+        },
+        {
+            marca: "L'Bel",
+            productos: [
+                { nombre: "Shampoo Anticaída L'Bel", precio: 52000, imagen: 'Imagenes/shampoo-anticaida.jpg' },
+            ],
+        },
+        {
+            marca: 'Jorge de la Garza',
+            productos: [
+                { nombre: 'Shampoo Nutritivo JDG', precio: 41000, imagen: 'Imagenes/shampoo-nutritivo.jpg' },
             ],
         },
     ],
     acondicionador: [
         {
-            marca: 'Marca por definir',
+            marca: 'Atenea Profesional',
             productos: [
                 { nombre: 'Acondicionador Reparador', precio: 46000, imagen: 'Imagenes/acondicionador-reparador.jpg' },
+            ],
+        },
+        {
+            marca: "L'Bel",
+            productos: [
+                { nombre: "Acondicionador Nutrición Intensa L'Bel", precio: 50000, imagen: 'Imagenes/acondicionador-nutricion.jpg' },
             ],
         },
     ],
     tratamientos: [
         {
-            marca: 'Marca por definir',
+            marca: 'Atenea Profesional',
             productos: [
                 { nombre: 'Tratamiento Control de Frizz', precio: 58000, imagen: 'Imagenes/tratamiento-frizz.jpg' },
+            ],
+        },
+        {
+            marca: 'Jorge de la Garza',
+            productos: [
+                { nombre: 'Ampolletas de Keratina JDG', precio: 39000, imagen: 'Imagenes/ampolletas-keratina.jpg' },
             ],
         },
     ],
@@ -182,7 +207,6 @@ function renderizarCatalogo(grupoMarcas, contenedor) {
 
 // ============================================
 // TABS: cada grupo de tabs controla su propio contenedor de catálogo
-// Solo se activa si existe ese grupo de tabs en la página actual
 // ============================================
 
 function inicializarTabs(grupoSelector, catalogo, contenedorId) {
@@ -200,9 +224,6 @@ function inicializarTabs(grupoSelector, catalogo, contenedorId) {
         });
     });
 
-    // Si llegamos con un hash en la URL (ej: maquillaje.html#ojos porque
-    // vinimos de un tile de Categorías en Inicio), abrimos esa categoría.
-    // Si no hay hash, usamos la primera tab por defecto.
     const categoriaDesdeHash = window.location.hash.replace('#', '');
     const botonInicial = [...botones].find(b => b.dataset.categoria === categoriaDesdeHash) || botones[0];
 
@@ -238,11 +259,6 @@ if (contenedorPromo) {
 
 // ============================================
 // CARRITO DE COMPRAS
-// Como cada sección ahora es una pestaña nueva del navegador, el
-// carrito no puede vivir solo en una variable de JavaScript (esa
-// variable se perdería al cambiar de pestaña). Por eso lo guardamos
-// en localStorage: un almacenamiento que el navegador comparte entre
-// todas las pestañas del mismo sitio.
 // ============================================
 
 const CARRITO_KEY = 'jers_carrito';
@@ -261,9 +277,6 @@ function guardarCarrito() {
 
 let carrito = cargarCarrito();
 
-// Delegación de eventos: como el catálogo se genera dinámicamente,
-// escuchamos los clics en todo el documento y revisamos si vinieron
-// de un botón ".cardbtn".
 document.addEventListener('click', (evento) => {
     const boton = evento.target.closest('.cardbtn');
     if (!boton) return;
@@ -317,13 +330,8 @@ function actualizarCarritoUI() {
     totalTexto.textContent = `$${total.toLocaleString('es-CO')}`;
 }
 
-// Muestra el contador correcto apenas carga la página, aunque el
-// carrito se haya llenado desde otra pestaña.
 actualizarCarritoUI();
 
-// Si el carrito cambia en OTRA pestaña (por ejemplo, agregas algo en
-// maquillaje.html y tienes cabello.html abierto al mismo tiempo),
-// el navegador dispara el evento "storage" para que nos actualicemos.
 window.addEventListener('storage', (evento) => {
     if (evento.key === CARRITO_KEY) {
         carrito = cargarCarrito();
@@ -343,7 +351,6 @@ if (listaCarritoEl) {
     });
 }
 
-// Abrir / cerrar el panel del carrito
 const panelCarrito = document.querySelector('.carrito-panel');
 const fondoCarrito = document.querySelector('.carrito-fondo');
 const iconoCarrito = document.querySelector('.carrito-icono');
@@ -363,8 +370,6 @@ if (iconoCarrito) iconoCarrito.addEventListener('click', abrirCarrito);
 if (cerrarCarritoBtn) cerrarCarritoBtn.addEventListener('click', cerrarCarrito);
 if (fondoCarrito) fondoCarrito.addEventListener('click', cerrarCarrito);
 
-// Finalizar pedido: arma un mensaje con el resumen de la compra
-// y abre WhatsApp con el mensaje ya escrito
 const botonFinalizar = document.querySelector('.finalizar-pedido');
 if (botonFinalizar) {
     botonFinalizar.addEventListener('click', () => {
@@ -417,10 +422,6 @@ if (formulario) {
             return;
         }
 
-        // Nota: esto valida y confirma en pantalla, pero todavía no ENVÍA
-        // el formulario a ningún lado (no hay backend conectado).
-        // Cuando quieras que te llegue de verdad, podemos conectarlo a
-        // un servicio como EmailJS o Formspree.
         mostrarMensajeFormulario('¡Gracias! Te contactaremos pronto 💕', 'exito');
         formulario.reset();
     });
@@ -433,6 +434,258 @@ function mostrarMensajeFormulario(texto, tipo) {
     mensajeEstado.classList.remove('error', 'exito');
     mensajeEstado.classList.add(tipo);
 }
+
+
+// ============================================
+// BOTÓN FLOTANTE DE WHATSAPP
+// A los pocos segundos de cargar la página aparece una burbuja
+// con un mensaje que invita a preguntar/comprar. Al hacer clic en
+// el botón se abre WhatsApp con un mensaje ya escrito.
+// ============================================
+
+const NUMERO_WHATSAPP = '573000000000'; // TODO: mismo número que en el carrito
+
+const mensajesAtraccion = [
+    '¡Hola! 👋 ¿Buscas tu <strong>tono ideal</strong>? Escríbenos y te asesoramos gratis.',
+    '✨ Tenemos <strong>25% de descuento</strong> este mes. ¿Te contamos cuáles productos aplican?',
+    '💬 ¿Tienes dudas sobre algún producto? Pregúntanos por WhatsApp, respondemos rápido.',
+];
+
+function crearBotonWhatsapp() {
+    const contenedor = document.createElement('div');
+    contenedor.className = 'whatsapp-flotante';
+
+    const mensajeAleatorio = mensajesAtraccion[Math.floor(Math.random() * mensajesAtraccion.length)];
+
+    contenedor.innerHTML = `
+        <div class="whatsapp-burbuja" id="whatsappBurbuja">
+            <button class="whatsapp-burbuja-cerrar" type="button" aria-label="Cerrar mensaje">✕</button>
+            <p>${mensajeAleatorio}</p>
+        </div>
+        <button class="whatsapp-boton pulso" type="button" aria-label="Escribir por WhatsApp">📲</button>
+    `;
+
+    document.body.appendChild(contenedor);
+
+    const burbuja = contenedor.querySelector('#whatsappBurbuja');
+    const cerrarBurbuja = contenedor.querySelector('.whatsapp-burbuja-cerrar');
+    const boton = contenedor.querySelector('.whatsapp-boton');
+
+    // La burbuja aparece sola después de 3 segundos, como un vendedor
+    // que se acerca a saludar, sin ser invasivo desde el inicio.
+    setTimeout(() => {
+        burbuja.classList.add('visible');
+    }, 3000);
+
+    cerrarBurbuja.addEventListener('click', (e) => {
+        e.stopPropagation();
+        burbuja.classList.remove('visible');
+    });
+
+    boton.addEventListener('click', () => {
+        const mensaje = '¡Hola! Vi la página de By Jers y quiero saber más sobre sus productos ✨';
+        const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+    });
+}
+
+crearBotonWhatsapp();
+
+
+// ============================================
+// CHATBOT DE PREGUNTAS SOBRE PRODUCTOS
+// Es un chatbot sencillo por palabras clave: NO usa IA ni una API,
+// solo compara el texto que escribe la persona contra un pequeño
+// "banco" de productos y responde según coincidencias, con if/else
+// y recorriendo arreglos, tal como se ve en el curso.
+// ============================================
+
+const bancoProductos = [
+    {
+        palabrasClave: ['base', 'rostro'],
+        nombre: 'la Base Atenea',
+        uso: 'Se usa para unificar el tono de la piel y cubrir imperfecciones, dejando un acabado natural.',
+        componentes: 'Contiene pigmentos minerales, ácido hialurónico y protector solar FPS 15.',
+    },
+    {
+        palabrasClave: ['corrector'],
+        nombre: 'el Corrector Atenea',
+        uso: 'Se usa para cubrir ojeras, manchas o granitos antes de aplicar la base.',
+        componentes: 'Contiene pigmentos de alta cobertura y vitamina E.',
+    },
+    {
+        palabrasClave: ['sombra', 'sombras', 'ojos'],
+        nombre: 'las Sombras Atenea',
+        uso: 'Se usan para dar color y profundidad a los párpados, en looks de día o de noche.',
+        componentes: 'Contienen mica, talco cosmético y pigmentos libres de crueldad animal.',
+    },
+    {
+        palabrasClave: ['delineador', 'delineado'],
+        nombre: 'el Delineador en Gel JDG',
+        uso: 'Se usa para marcar la línea de las pestañas y definir la mirada.',
+        componentes: 'Fórmula en gel a base de ceras naturales y pigmentos negros de larga duración.',
+    },
+    {
+        palabrasClave: ['labial', 'labios', 'gloss'],
+        nombre: 'el Labial Mate',
+        uso: 'Se usa para dar color a los labios con un acabado mate de larga duración.',
+        componentes: 'Contiene manteca de karité, vitamina E y pigmentos mate.',
+    },
+    {
+        palabrasClave: ['shampoo', 'champú'],
+        nombre: 'el Shampoo de Hidratación Profunda',
+        uso: 'Se usa para limpiar el cabello mientras lo hidrata, ideal para cabello seco o maltratado.',
+        componentes: 'Contiene keratina, aceite de argán y extracto de aloe vera.',
+    },
+    {
+        palabrasClave: ['acondicionador'],
+        nombre: 'el Acondicionador Reparador',
+        uso: 'Se usa después del shampoo para desenredar y sellar la fibra capilar.',
+        componentes: 'Contiene proteínas de seda, manteca de karité y pantenol.',
+    },
+    {
+        palabrasClave: ['frizz', 'tratamiento', 'ampolleta', 'keratina'],
+        nombre: 'el Tratamiento Control de Frizz',
+        uso: 'Se usa para controlar el encrespamiento y dar brillo al cabello.',
+        componentes: 'Contiene siliconas suaves, keratina hidrolizada y aceite de coco.',
+    },
+];
+
+const palabrasUso = ['sirve', 'uso', 'usa', 'para que', 'para qué', 'beneficio'];
+const palabrasComponentes = ['componente', 'ingrediente', 'contiene', 'lleva', 'hecho'];
+const palabrasPrecio = ['precio', 'cuesta', 'vale', 'costo'];
+const palabrasSaludo = ['hola', 'buenas', 'buenos dias', 'buenas tardes'];
+
+function buscarProducto(texto) {
+    return bancoProductos.find(producto =>
+        producto.palabrasClave.some(palabra => texto.includes(palabra))
+    );
+}
+
+function contienePalabraDeLista(texto, lista) {
+    return lista.some(palabra => texto.includes(palabra));
+}
+
+function generarRespuestaBot(mensajeUsuario) {
+    const texto = mensajeUsuario.toLowerCase();
+
+    if (contienePalabraDeLista(texto, palabrasSaludo)) {
+        return '¡Hola! 💕 Pregúntame por un producto, por ejemplo: "¿para qué sirve el shampoo?" o "¿qué componentes tiene el labial?".';
+    }
+
+    const producto = buscarProducto(texto);
+
+    if (producto && contienePalabraDeLista(texto, palabrasComponentes)) {
+        return `${producto.componentes}`;
+    }
+
+    if (producto && contienePalabraDeLista(texto, palabrasPrecio)) {
+        return `Los precios de ${producto.nombre} los puedes ver en su sección del catálogo, ¡varían según la presentación! 🛍️`;
+    }
+
+    if (producto) {
+        // Si preguntó por el producto pero no especificó qué quiere
+        // saber, asumimos que quiere conocer para qué sirve.
+        return `${producto.uso}`;
+    }
+
+    if (contienePalabraDeLista(texto, palabrasUso) || contienePalabraDeLista(texto, palabrasComponentes)) {
+        return 'Cuéntame sobre qué producto es tu pregunta (base, corrector, sombras, delineador, labial, shampoo, acondicionador o tratamiento) y te cuento para qué sirve y qué contiene.';
+    }
+
+    return 'No tengo información sobre eso todavía 🙈 Puedes preguntarme por: base, corrector, sombras, delineador, labial, shampoo, acondicionador o tratamiento. Si prefieres, escríbenos por WhatsApp y te ayudamos personalmente.';
+}
+
+function crearChatbot() {
+    const boton = document.createElement('button');
+    boton.className = 'chatbot-boton';
+    boton.type = 'button';
+    boton.setAttribute('aria-label', 'Abrir asistente de productos');
+    boton.textContent = '💄';
+
+    const panel = document.createElement('div');
+    panel.className = 'chatbot-panel';
+    panel.innerHTML = `
+        <div class="chatbot-cabecera">
+            <div>
+                <h3>Asesora By Jers</h3>
+                <p>Pregúntame sobre nuestros productos</p>
+            </div>
+            <button class="chatbot-cerrar" type="button" aria-label="Cerrar chat">✕</button>
+        </div>
+        <div class="chatbot-mensajes" id="chatbotMensajes"></div>
+        <div class="chatbot-sugerencias">
+            <button class="chatbot-chip" type="button" data-pregunta="¿Para qué sirve el shampoo?">¿Para qué sirve el shampoo?</button>
+            <button class="chatbot-chip" type="button" data-pregunta="¿Qué componentes tiene el labial?">Componentes del labial</button>
+        </div>
+        <form class="chatbot-form">
+            <input type="text" class="chatbot-input" placeholder="Escribe tu pregunta..." aria-label="Escribe tu pregunta">
+            <button class="chatbot-enviar" type="submit" aria-label="Enviar pregunta">➤</button>
+        </form>
+    `;
+
+    document.body.appendChild(boton);
+    document.body.appendChild(panel);
+
+    const mensajesEl = panel.querySelector('#chatbotMensajes');
+    const formEl = panel.querySelector('.chatbot-form');
+    const inputEl = panel.querySelector('.chatbot-input');
+    const cerrarEl = panel.querySelector('.chatbot-cerrar');
+
+    function agregarMensaje(texto, tipo) {
+        const burbuja = document.createElement('div');
+        burbuja.className = `chatbot-msg ${tipo}`;
+        burbuja.textContent = texto;
+        mensajesEl.appendChild(burbuja);
+        mensajesEl.scrollTop = mensajesEl.scrollHeight;
+    }
+
+    function enviarPregunta(pregunta) {
+        if (pregunta.trim() === '') return;
+
+        agregarMensaje(pregunta, 'usuario');
+
+        const respuesta = generarRespuestaBot(pregunta);
+
+        // Practicando lo visto en el curso: dejamos también el
+        // registro de la pregunta y la respuesta en la consola.
+        console.log('Pregunta del usuario:', pregunta);
+        console.log('Respuesta del chatbot:', respuesta);
+
+        setTimeout(() => {
+            agregarMensaje(respuesta, 'bot');
+        }, 400);
+    }
+
+    // Mensaje de bienvenida al abrir el chat por primera vez
+    let chatIniciado = false;
+
+    boton.addEventListener('click', () => {
+        panel.classList.toggle('abierto');
+        if (!chatIniciado) {
+            agregarMensaje('¡Hola! Soy la asesora virtual de By Jers 💄 Pregúntame para qué sirve un producto o qué componentes tiene.', 'bot');
+            chatIniciado = true;
+        }
+    });
+
+    cerrarEl.addEventListener('click', () => {
+        panel.classList.remove('abierto');
+    });
+
+    formEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        enviarPregunta(inputEl.value);
+        inputEl.value = '';
+    });
+
+    panel.querySelectorAll('.chatbot-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            enviarPregunta(chip.dataset.pregunta);
+        });
+    });
+}
+
+crearChatbot();
 
 
 // ============================================

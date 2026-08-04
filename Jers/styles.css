@@ -9,6 +9,7 @@
     --color-texto: #4A3535;
     --color-dorado: #D4AF87;
     --color-blanco: #FFFFFF;
+    --color-whatsapp: #25D366;
     --fuente-titulos: 'Playfair Display', serif;
     --fuente-texto: 'Poppins', sans-serif;
 }
@@ -82,13 +83,11 @@ h1, h2, h3 {
     color: var(--color-mauve);
 }
 
-/* Resalta el link de la página en la que estás (lo activa script.js) */
 .menuitem a.pagina-actual {
     color: var(--color-mauve);
     border-bottom-color: var(--color-mauve);
 }
 
-/* Botón hamburguesa: oculto en escritorio, visible en móvil */
 .menu-toggle {
     display: none;
     flex-direction: column;
@@ -106,7 +105,6 @@ h1, h2, h3 {
     border-radius: 2px;
 }
 
-/* Icono del carrito */
 .carrito-icono {
     background: none;
     border: none;
@@ -133,54 +131,231 @@ h1, h2, h3 {
 }
 
 
-/* ============================================
-   HERO (grande, solo en Inicio)
-   ============================================ */
+/* ===================================================
+   HERO PREMIUM
+   Nueva versión del hero principal.
 
-.hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 15px;
-    padding: 100px 20px;
-    background: linear-gradient(180deg, var(--color-rosa) 0%, var(--color-fondo) 100%);
-    animation: aparecer 1s ease;
+   Está dividido en dos columnas:
+
+   Texto
+   Imagen
+
+   En móvil automáticamente pasa a una sola columna.
+=================================================== */
+
+.hero{
+
+    padding:80px 20px;
+
+    background:linear-gradient(
+    180deg,
+    #FDF8F6 0%,
+    #FBF3EE 100%);
+
 }
 
-.hero h1 {
-    font-size: 3rem;
-    color: var(--color-texto);
+/* Contenedor */
+
+.hero-contenido{
+
+    max-width:1200px;
+
+    margin:auto;
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:60px;
+
+    align-items:center;
+
 }
 
-.heroslogan {
-    font-size: 1.3rem;
-    color: var(--color-texto);
-    max-width: 500px;
+/* -------------------
+   Texto
+------------------- */
+
+.hero-etiqueta{
+
+    display:inline-block;
+
+    background:#fff;
+
+    padding:8px 18px;
+
+    border-radius:30px;
+
+    color:var(--color-mauve);
+
+    font-size:.85rem;
+
+    font-weight:600;
+
+    margin-bottom:25px;
+
 }
 
-.herobtn, .cardbtn, .contact-btn, .finalizar-pedido, .promo-btn {
-    padding: 12px 28px;
-    background-color: var(--color-mauve);
-    border: none;
-    border-radius: 30px;
-    color: white;
-    font-size: 1rem;
-    font-family: var(--fuente-texto);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+.hero h1{
+
+    font-size:4rem;
+
+    margin-bottom:15px;
+
 }
 
-.herobtn:hover, .cardbtn:hover, .contact-btn:hover, .finalizar-pedido:hover, .promo-btn:hover {
-    background-color: var(--color-texto);
-    transform: translateY(-2px);
+.heroslogan{
+
+    font-size:1.7rem;
+
+    margin-bottom:20px;
+
+    color:var(--color-mauve);
+
 }
 
-.finalizar-pedido {
-    width: 100%;
-    margin-top: 5px;
+.hero-descripcion{
+
+    font-size:1rem;
+
+    line-height:1.8;
+
+    max-width:520px;
+
+    margin-bottom:35px;
+
+}
+
+/* -------------------
+   Botones
+------------------- */
+
+.hero-botones{
+
+    display:flex;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+
+    margin-bottom:40px;
+
+}
+
+.hero-secundario{
+
+    padding:12px 28px;
+
+    border-radius:30px;
+
+    border:2px solid var(--color-mauve);
+
+    text-decoration:none;
+
+    color:var(--color-mauve);
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.hero-secundario:hover{
+
+    background:var(--color-mauve);
+
+    color:white;
+
+}
+
+/* -------------------
+Beneficios
+------------------- */
+
+.hero-beneficios{
+
+    display:flex;
+
+    gap:25px;
+
+    flex-wrap:wrap;
+
+}
+
+.hero-beneficios div{
+
+    display:flex;
+
+    gap:8px;
+
+    align-items:center;
+
+    font-weight:600;
+
+}
+
+/* -------------------
+Imagen
+------------------- */
+
+.hero-imagen{
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.hero-imagen img{
+
+    width:100%;
+
+    max-width:500px;
+
+    border-radius:35px;
+
+    box-shadow:0 20px 50px rgba(0,0,0,.15);
+
+}
+
+/* =====================
+RESPONSIVE
+===================== */
+
+@media(max-width:900px){
+
+.hero-contenido{
+
+grid-template-columns:1fr;
+
+text-align:center;
+
+}
+
+.hero-descripcion{
+
+margin:auto auto 35px;
+
+}
+
+.hero-botones{
+
+justify-content:center;
+
+}
+
+.hero-beneficios{
+
+justify-content:center;
+
+}
+
+.hero h1{
+
+font-size:3rem;
+
+}
+
 }
 
 @keyframes aparecer {
@@ -190,8 +365,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   BANNER DE PÁGINA (versión chica del hero, para
-   Maquillaje / Cuidado capilar / Reseñas / Contacto)
+   BANNER DE PÁGINA
    ============================================ */
 
 .pagina-header {
@@ -213,7 +387,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   TÍTULOS DE SECCIÓN (reutilizable)
+   TÍTULOS DE SECCIÓN
    ============================================ */
 
 .titulo-seccion {
@@ -289,7 +463,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   BENEFICIOS (franja tipo Atenea)
+   BENEFICIOS
    ============================================ */
 
 .beneficios {
@@ -327,8 +501,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   CATEGORÍAS (tiles rápidos, ahora son links normales
-   que abren cada página en pestaña nueva)
+   CATEGORÍAS
    ============================================ */
 
 .categorias-grid {
@@ -376,7 +549,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   TABS (para Maquillaje y Cuidado capilar)
+   TABS
    ============================================ */
 
 .tabs {
@@ -412,7 +585,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   BLOQUES POR MARCA (dentro de cada tab)
+   BLOQUES POR MARCA
    ============================================ */
 
 .marca-bloque {
@@ -505,7 +678,7 @@ h1, h2, h3 {
 
 
 /* ============================================
-   CUIDADO CAPILAR (sección propia)
+   CUIDADO CAPILAR
    ============================================ */
 
 .cabello-subtitulo {
@@ -709,7 +882,6 @@ h1, h2, h3 {
     margin-bottom: 15px;
 }
 
-/* Fondo oscuro detrás del panel cuando está abierto */
 .carrito-fondo {
     display: none;
     position: fixed;
@@ -749,6 +921,268 @@ footer {
 .revelar.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+
+/* ============================================
+   BOTÓN FLOTANTE DE WHATSAPP
+   Va fijo en la esquina inferior derecha, en las 5 páginas.
+   Después de unos segundos aparece una burbuja con un mensaje
+   de invitación a comprar/preguntar.
+   ============================================ */
+
+.whatsapp-flotante {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.whatsapp-burbuja {
+    background-color: var(--color-blanco);
+    padding: 14px 18px;
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    max-width: 230px;
+    font-size: 0.85rem;
+    color: var(--color-texto);
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.whatsapp-burbuja.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.whatsapp-burbuja strong {
+    color: var(--color-mauve);
+}
+
+.whatsapp-burbuja-cerrar {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--color-mauve);
+    color: var(--color-blanco);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.whatsapp-boton {
+    background-color: var(--color-whatsapp);
+    color: var(--color-blanco);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+
+.whatsapp-boton:hover {
+    transform: scale(1.08);
+}
+
+@keyframes pulso-whatsapp {
+    0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55); }
+    70% { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+.whatsapp-boton.pulso {
+    animation: pulso-whatsapp 1.8s ease-out infinite;
+}
+
+
+/* ============================================
+   CHATBOT (asistente de preguntas sobre productos)
+   Botón flotante independiente + panel de chat.
+   Es un chatbot de palabras clave (sin IA real).
+   ============================================ */
+
+.chatbot-boton {
+    position: fixed;
+    bottom: 25px;
+    right: 100px;
+    z-index: 300;
+    background-color: var(--color-mauve);
+    color: var(--color-blanco);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(201, 123, 130, 0.45);
+    transition: transform 0.25s ease;
+}
+
+.chatbot-boton:hover {
+    transform: scale(1.08);
+}
+
+.chatbot-panel {
+    position: fixed;
+    bottom: 95px;
+    right: 25px;
+    z-index: 350;
+    width: 320px;
+    max-width: 88vw;
+    height: 420px;
+    max-height: 70vh;
+    background-color: var(--color-blanco);
+    border-radius: 20px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.chatbot-panel.abierto {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.chatbot-cabecera {
+    background-color: var(--color-mauve);
+    color: var(--color-blanco);
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chatbot-cabecera h3 {
+    font-size: 1rem;
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+}
+
+.chatbot-cabecera p {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.chatbot-cerrar {
+    background: none;
+    border: none;
+    color: var(--color-blanco);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.chatbot-mensajes {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--color-fondo);
+}
+
+.chatbot-msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.chatbot-msg.bot {
+    background-color: var(--color-blanco);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.chatbot-msg.usuario {
+    background-color: var(--color-mauve);
+    color: var(--color-blanco);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.chatbot-sugerencias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 12px;
+    background-color: var(--color-fondo);
+}
+
+.chatbot-chip {
+    background-color: var(--color-blanco);
+    border: 1px solid var(--color-rosa);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: var(--color-texto);
+    cursor: pointer;
+    font-family: var(--fuente-texto);
+}
+
+.chatbot-chip:hover {
+    background-color: var(--color-rosa);
+}
+
+.chatbot-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.chatbot-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid #eee;
+    border-radius: 20px;
+    font-family: var(--fuente-texto);
+    font-size: 0.85rem;
+}
+
+.chatbot-input:focus {
+    outline: none;
+    border-color: var(--color-rosa);
+}
+
+.chatbot-enviar {
+    background-color: var(--color-mauve);
+    color: var(--color-blanco);
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 
@@ -811,6 +1245,28 @@ footer {
     .promo-banner-inner {
         flex-direction: column;
         text-align: center;
+    }
+
+    .whatsapp-burbuja {
+        max-width: 170px;
+        font-size: 0.8rem;
+    }
+
+    .chatbot-boton {
+        right: 90px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .whatsapp-boton {
+        width: 50px;
+        height: 50px;
+    }
+
+    .chatbot-panel {
+        right: 12px;
+        left: 12px;
+        width: auto;
     }
 }
 

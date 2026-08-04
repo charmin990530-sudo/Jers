@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Contáctanos para asesoría personalizada.">
+    <title>By Jers | Contacto</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <nav class="menu">
+            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
+
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="menulist">
+                <li class="menuitem"><a href="index.html" target="_blank" rel="noopener">Inicio</a></li>
+                <li class="menuitem"><a href="maquillaje.html" target="_blank" rel="noopener">Maquillaje</a></li>
+                <li class="menuitem"><a href="cabello.html" target="_blank" rel="noopener">Cuidado capilar</a></li>
+                <li class="menuitem"><a href="resenas.html" target="_blank" rel="noopener">Reseñas</a></li>
+                <li class="menuitem"><a href="contacto.html" target="_blank" rel="noopener">Contacto</a></li>
+            </ul>
+
+            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+                🛍️ <span class="carrito-contador">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+
+        <section class="pagina-header">
+            <h1>Contáctanos</h1>
+            <p>¿Tienes dudas sobre un producto o tu tono ideal? Escríbenos.</p>
+        </section>
+
+        <section class="contact">
+            <p class="contact-subtitulo">Déjanos tus datos y te contactaremos pronto.</p>
+
+            <form class="formulario-contacto" novalidate>
+                <div class="campo">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+                </div>
+
+                <div class="campo">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" placeholder="Tu número de contacto">
+                </div>
+
+                <div class="campo">
+                    <label for="correo">Correo</label>
+                    <input type="email" id="correo" name="correo" placeholder="tucorreo@ejemplo.com">
+                </div>
+
+                <button class="contact-btn" type="submit">Enviar</button>
+
+                <p class="formulario-mensaje"></p>
+            </form>
+        </section>
+
+    </main>
+
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
+
+        <ul class="carrito-lista"></ul>
+
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido por WhatsApp</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer>
+        <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

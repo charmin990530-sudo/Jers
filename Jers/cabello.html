@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Cuidado capilar: shampoo, acondicionador y tratamientos de varias marcas.">
+    <title>By Jers | Cuidado capilar</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <nav class="menu">
+            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
+
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="menulist">
+                <li class="menuitem"><a href="index.html" target="_blank" rel="noopener">Inicio</a></li>
+                <li class="menuitem"><a href="maquillaje.html" target="_blank" rel="noopener">Maquillaje</a></li>
+                <li class="menuitem"><a href="cabello.html" target="_blank" rel="noopener">Cuidado capilar</a></li>
+                <li class="menuitem"><a href="resenas.html" target="_blank" rel="noopener">Reseñas</a></li>
+                <li class="menuitem"><a href="contacto.html" target="_blank" rel="noopener">Contacto</a></li>
+            </ul>
+
+            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+                🛍️ <span class="carrito-contador">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+
+        <section class="pagina-header">
+            <h1>Cuidado capilar</h1>
+            <p>Shampoo, acondicionador y tratamientos de varias marcas, para cada tipo de cabello.</p>
+        </section>
+
+        <section class="container">
+            <div class="tabs" data-grupo="cabello">
+                <button class="tab-btn tab-activo" data-categoria="shampoo" type="button">Shampoo</button>
+                <button class="tab-btn" data-categoria="acondicionador" type="button">Acondicionador</button>
+                <button class="tab-btn" data-categoria="tratamientos" type="button">Tratamientos</button>
+            </div>
+
+            <div class="catalogo-contenido" id="catalogoCabello">
+                <!-- Se llena dinámicamente desde script.js -->
+            </div>
+        </section>
+
+    </main>
+
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
+
+        <ul class="carrito-lista"></ul>
+
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido por WhatsApp</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer>
+        <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
