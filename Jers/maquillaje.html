@@ -9,16 +9,20 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <!-- Estilos compartidos y estilos exclusivos de Maquillaje. -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/maquillaje.css">
 </head>
 
-<body>
+<body class="maquillaje-page">
 
     <header class="header">
         <nav class="menu">
-            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
+            <img src="img/logo/logo.png" alt="Logo By Jers" class="menulogo">
 
             <button class="menu-toggle" aria-label="Abrir menú" type="button">
                 <span></span>
@@ -55,7 +59,7 @@
             </div>
 
             <div class="catalogo-contenido" id="catalogoMaquillaje">
-                <!-- Se llena dinámicamente desde script.js -->
+                <!-- Se llena dinámicamente desde js/maquillaje.js -->
             </div>
         </section>
 
@@ -80,7 +84,8 @@
         <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- maquillaje.js importa el catálogo desde app.js. -->
+    <script type="module" src="js/maquillaje.js"></script>
 </body>
 
 </html>

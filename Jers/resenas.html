@@ -9,16 +9,20 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <!-- Estilos compartidos y estilos exclusivos de Reseñas. -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/resenas.css">
 </head>
 
-<body>
+<body class="resenas-page">
 
     <header class="header">
         <nav class="menu">
-            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
+            <img src="img/logo/logo.png" alt="Logo By Jers" class="menulogo">
 
             <button class="menu-toggle" aria-label="Abrir menú" type="button">
                 <span></span>
@@ -52,19 +56,22 @@
 
                 <div class="review-card">
                     <p class="review-estrellas">★★★★★</p>
-                    <p class="review-texto">"La base Atenea me quedó perfecta, no la sentí pesada y duró todo el día."</p>
+                    <p class="review-texto">"La base Atenea me quedó perfecta, no la sentí pesada y duró todo el día."
+                    </p>
                     <p class="review-nombre">Camila R.</p>
                 </div>
 
                 <div class="review-card">
                     <p class="review-estrellas">★★★★★</p>
-                    <p class="review-texto">"El shampoo de hidratación profunda dejó mi cabello suave desde el primer lavado."</p>
+                    <p class="review-texto">"El shampoo de hidratación profunda dejó mi cabello suave desde el primer
+                        lavado."</p>
                     <p class="review-nombre">Valentina G.</p>
                 </div>
 
                 <div class="review-card">
                     <p class="review-estrellas">★★★★☆</p>
-                    <p class="review-texto">"Me asesoraron por WhatsApp para elegir mi tono de labial y acertaron a la primera."</p>
+                    <p class="review-texto">"Me asesoraron por WhatsApp para elegir mi tono de labial y acertaron a la
+                        primera."</p>
                     <p class="review-nombre">Laura M.</p>
                 </div>
 
@@ -76,7 +83,8 @@
 
                 <div class="review-card">
                     <p class="review-estrellas">★★★★★</p>
-                    <p class="review-texto">"El tratamiento control de frizz cambió por completo mi rutina de peinado."</p>
+                    <p class="review-texto">"El tratamiento control de frizz cambió por completo mi rutina de peinado."
+                    </p>
                     <p class="review-nombre">Sofía T.</p>
                 </div>
 
@@ -112,7 +120,8 @@
         <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- resenas.js solo inicia los componentes compartidos. -->
+    <script type="module" src="js/resenas.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,56 @@
+/* contacto.css: formulario y mensajes de validación de contacto.html. */
+.contact {
+    margin: 0 auto;
+    max-width: 650px;
+    padding: 80px 20px;
+}
+
+.contact-subtitulo {
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.formulario-contacto {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgb(0 0 0 / 6%);
+    padding: 32px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+
+.campo label {
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.campo input {
+    border: 1px solid #ead6d3;
+    border-radius: 10px;
+    font: 1rem var(--fuente-texto);
+    padding: 11px;
+}
+
+.campo input:focus {
+    border-color: var(--color-mauve);
+    outline: none;
+}
+
+.formulario-mensaje {
+    font-size: .9rem;
+    margin-top: 14px;
+    text-align: center;
+}
+
+.formulario-mensaje.error {
+    color: #b83939;
+}
+
+.formulario-mensaje.exito {
+    color: #3d8a4d;
+}

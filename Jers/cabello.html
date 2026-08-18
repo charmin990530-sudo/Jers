@@ -4,21 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="By Jers - Cuidado capilar: shampoo, acondicionador y tratamientos de varias marcas.">
+    <meta name="description"
+        content="By Jers - Cuidado capilar: shampoo, acondicionador y tratamientos de varias marcas.">
     <title>By Jers | Cuidado capilar</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <!-- Estilos compartidos y estilos exclusivos de Cuidado capilar. -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/cabello.css">
 </head>
 
-<body>
+<body class="cabello-page">
 
     <header class="header">
         <nav class="menu">
-            <img src="logo.jpg" alt="Logo By Jers" class="menulogo">
+            <img src="img/logo/logo.png" alt="Logo By Jers" class="menulogo">
 
             <button class="menu-toggle" aria-label="Abrir menú" type="button">
                 <span></span>
@@ -55,7 +60,7 @@
             </div>
 
             <div class="catalogo-contenido" id="catalogoCabello">
-                <!-- Se llena dinámicamente desde script.js -->
+                <!-- Se llena dinámicamente desde js/cabello.js -->
             </div>
         </section>
 
@@ -80,7 +85,8 @@
         <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- cabello.js importa el catálogo desde app.js. -->
+    <script type="module" src="js/cabello.js"></script>
 </body>
 
 </html>

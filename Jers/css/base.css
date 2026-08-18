@@ -1,0 +1,666 @@
+/*
+ * base.css
+ * --------
+ * Estilos reutilizados en todas las páginas: colores, menú, tarjetas,
+ * carrito, botones flotantes y reglas de móvil.
+ */
+
+/* Variables: permiten cambiar la identidad visual desde un solo lugar. */
+:root {
+    --color-fondo: #fbf3ee;
+    --color-rosa: #e8a9a0;
+    --color-mauve: #c97b82;
+    --color-texto: #4a3535;
+    --color-dorado: #d4af87;
+    --color-blanco: #ffffff;
+    --color-whatsapp: #25d366;
+    --fuente-titulos: 'Playfair Display', serif;
+    --fuente-texto: 'Poppins', sans-serif;
+}
+
+/* Reinicio básico para que todos los navegadores partan de la misma base. */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: var(--fuente-texto);
+    line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--fuente-titulos);
+}
+
+/* Menú principal compartido. */
+.header {
+    background: var(--color-blanco);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.menu {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 40px;
+}
+
+.menulogo {
+    border-radius: 50%;
+    height: auto;
+    width: 50px;
+}
+
+.menulist {
+    display: flex;
+    gap: 30px;
+}
+
+.menuitem {
+    list-style: none;
+}
+
+.menuitem a {
+    border-bottom: 2px solid transparent;
+    color: var(--color-texto);
+    font-weight: 600;
+    padding-bottom: 4px;
+    text-decoration: none;
+    transition: color .3s ease;
+}
+
+.menuitem a:hover,
+.menuitem a.pagina-actual {
+    color: var(--color-mauve);
+}
+
+.menuitem a.pagina-actual {
+    border-bottom-color: var(--color-mauve);
+}
+
+.menu-toggle {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+}
+
+.menu-toggle span {
+    background: var(--color-texto);
+    border-radius: 2px;
+    height: 3px;
+    width: 25px;
+}
+
+.carrito-icono {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 1.4rem;
+    position: relative;
+}
+
+.carrito-contador {
+    align-items: center;
+    background: var(--color-mauve);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    font-size: .7rem;
+    font-weight: 600;
+    height: 18px;
+    justify-content: center;
+    position: absolute;
+    right: -10px;
+    top: -8px;
+    width: 18px;
+}
+
+/* Encabezado simple de las páginas interiores. */
+.pagina-header {
+    background: linear-gradient(180deg, var(--color-rosa), var(--color-fondo));
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.pagina-header h1 {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+}
+
+.pagina-header p {
+    color: #6b5257;
+    margin: auto;
+    max-width: 520px;
+}
+
+.container {
+    margin: 0 auto;
+    max-width: 1100px;
+    padding: 80px 20px;
+}
+
+.titulo-seccion {
+    font-size: 2.2rem;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+/* Pestañas y catálogos: los usan Maquillaje y Cuidado capilar. */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.tab-btn {
+    background: var(--color-blanco);
+    border: 1px solid #ead6d3;
+    border-radius: 30px;
+    color: var(--color-texto);
+    cursor: pointer;
+    font: 600 .95rem var(--fuente-texto);
+    padding: 10px 22px;
+    transition: .25s;
+}
+
+.tab-btn:hover,
+.tab-btn.tab-activo {
+    background: var(--color-mauve);
+    border-color: var(--color-mauve);
+    color: white;
+}
+
+.marca-bloque {
+    margin-bottom: 55px;
+}
+
+.marca-bloque:last-child {
+    margin-bottom: 0;
+}
+
+.marca-header {
+    align-items: baseline;
+    border-bottom: 1px solid #ead6d3;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 10px;
+}
+
+.marca-nombre {
+    font-size: 1.35rem;
+}
+
+.marca-cantidad,
+.catalogo-vacio {
+    color: #7a6666;
+    font-size: .9rem;
+}
+
+/* Tarjetas reutilizadas por ofertas y catálogos. */
+.tarjetas {
+    display: grid;
+    gap: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card {
+    background: var(--color-blanco);
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgb(0 0 0 / 6%);
+    overflow: hidden;
+    padding-bottom: 25px;
+    position: relative;
+    text-align: center;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 25px rgb(0 0 0 / 10%);
+    transform: translateY(-6px);
+}
+
+.cardimage {
+    background: var(--color-rosa);
+    height: 220px;
+    margin-bottom: 15px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.producto-placeholder {
+    background: radial-gradient(circle at 30% 25%, rgb(255 255 255 / 85%) 0 10%, transparent 11%), linear-gradient(135deg, #f8d8d4, #e8a9a0 52%, #d4af87);
+    color: var(--color-texto);
+    display: grid;
+    gap: 8px;
+    place-content: center;
+}
+
+.producto-placeholder span {
+    filter: drop-shadow(0 8px 8px rgb(74 53 53 / 18%));
+    font-size: 4.5rem;
+}
+
+.producto-placeholder small {
+    font-family: var(--fuente-titulos);
+    font-size: 1.1rem;
+    letter-spacing: .08em;
+}
+
+.cardname {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    padding: 0 15px;
+}
+
+.cardprecio {
+    color: var(--color-mauve);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.cardbtn,
+.contact-btn {
+    background: var(--color-mauve);
+    border: 0;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font: 600 .9rem var(--fuente-texto);
+    padding: 11px 20px;
+    transition: background .25s, transform .25s;
+}
+
+.cardbtn:hover,
+.contact-btn:hover {
+    background: var(--color-texto);
+    transform: translateY(-2px);
+}
+
+/* Panel lateral del carrito. JavaScript añade o quita las clases .abierto y .visible. */
+.carrito-panel {
+    background: white;
+    box-shadow: -10px 0 30px rgb(0 0 0 / 15%);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 390px;
+    padding: 24px;
+    position: fixed;
+    right: -420px;
+    top: 0;
+    transition: right .3s ease;
+    width: 90%;
+    z-index: 300;
+}
+
+.carrito-panel.abierto {
+    right: 0;
+}
+
+.carrito-cabecera {
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 16px;
+}
+
+.carrito-cerrar,
+.quitar-item {
+    background: none;
+    border: 0;
+    color: var(--color-mauve);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.carrito-lista {
+    flex: 1;
+    list-style: none;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.carrito-item {
+    align-items: center;
+    border-bottom: 1px solid #f0e4e2;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr auto auto;
+    padding: 12px 0;
+}
+
+.carrito-resumen {
+    border-top: 1px solid #eee;
+    padding-top: 16px;
+    text-align: center;
+}
+
+.carrito-resumen p {
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.finalizar-pedido {
+    background: var(--color-whatsapp);
+    border: 0;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font: 600 .9rem var(--fuente-texto);
+    padding: 12px 18px;
+}
+
+.carrito-fondo {
+    background: rgb(0 0 0 / 38%);
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    transition: opacity .3s;
+    z-index: 250;
+}
+
+.carrito-fondo.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Animación de entrada para las secciones con clase .revelar. */
+.revelar {
+    opacity: 0;
+    transform: translateY(25px);
+    transition: opacity .6s ease, transform .6s ease;
+}
+
+.revelar.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Botón flotante de WhatsApp. */
+.whatsapp-flotante {
+    bottom: 24px;
+    position: fixed;
+    right: 24px;
+    z-index: 200;
+}
+
+.whatsapp-burbuja {
+    background: white;
+    border-radius: 16px;
+    bottom: 70px;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 14%);
+    max-width: 250px;
+    opacity: 0;
+    padding: 14px 36px 14px 16px;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    transform: translateY(8px);
+    transition: .3s;
+    width: max-content;
+}
+
+.whatsapp-burbuja.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.whatsapp-burbuja-cerrar {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    top: 8px;
+}
+
+.whatsapp-boton {
+    align-items: center;
+    background: var(--color-whatsapp);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 6px 16px rgb(37 211 102 / 38%);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    font-size: 1.45rem;
+    height: 58px;
+    justify-content: center;
+    width: 58px;
+}
+
+.pulso {
+    animation: pulso-whatsapp 1.8s ease-out infinite;
+}
+
+@keyframes pulso-whatsapp {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(37 211 102 / 40%);
+    }
+
+    70% {
+        box-shadow: 0 0 0 13px transparent;
+    }
+}
+
+/* Chatbot académico que se crea desde app.js. */
+.chatbot-boton {
+    background: var(--color-mauve);
+    border: 0;
+    border-radius: 50%;
+    bottom: 27px;
+    box-shadow: 0 6px 16px rgb(201 123 130 / 38%);
+    color: white;
+    cursor: pointer;
+    font-size: 1.4rem;
+    height: 55px;
+    position: fixed;
+    right: 102px;
+    width: 55px;
+    z-index: 200;
+}
+
+.chatbot-panel {
+    background: white;
+    border-radius: 18px;
+    bottom: 95px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 16%);
+    display: none;
+    overflow: hidden;
+    position: fixed;
+    right: 24px;
+    width: 330px;
+    z-index: 220;
+}
+
+.chatbot-panel.abierto {
+    display: block;
+}
+
+.chatbot-cabecera {
+    align-items: center;
+    background: var(--color-mauve);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+}
+
+.chatbot-cabecera h3 {
+    font-size: 1.1rem;
+}
+
+.chatbot-cabecera p {
+    font-size: .75rem;
+}
+
+.chatbot-cerrar {
+    background: none;
+    border: 0;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.chatbot-mensajes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 210px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.chatbot-msg {
+    border-radius: 12px;
+    font-size: .85rem;
+    max-width: 85%;
+    padding: 9px 11px;
+}
+
+.chatbot-msg.bot {
+    align-self: flex-start;
+    background: #f7e8e5;
+}
+
+.chatbot-msg.usuario {
+    align-self: flex-end;
+    background: var(--color-mauve);
+    color: white;
+}
+
+.chatbot-sugerencias {
+    display: flex;
+    gap: 7px;
+    padding: 0 12px 10px;
+}
+
+.chatbot-chip {
+    background: #fff;
+    border: 1px solid #ead6d3;
+    border-radius: 15px;
+    color: var(--color-texto);
+    cursor: pointer;
+    font: .7rem var(--fuente-texto);
+    padding: 6px 8px;
+}
+
+.chatbot-form {
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+}
+
+.chatbot-input {
+    border: 2px solid #eee;
+    border-radius: 20px;
+    flex: 1;
+    font: .85rem var(--fuente-texto);
+    padding: 10px 14px;
+}
+
+.chatbot-input:focus {
+    border-color: var(--color-rosa);
+    outline: none;
+}
+
+.chatbot-enviar {
+    background: var(--color-mauve);
+    border: 0;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    height: 38px;
+    width: 38px;
+}
+
+/* Adaptaciones que se aplican en cualquier página móvil. */
+@media (max-width: 768px) {
+    .menu {
+        flex-wrap: wrap;
+        padding: 15px 24px;
+    }
+
+    .menulogo {
+        order: 1;
+    }
+
+    .carrito-icono {
+        order: 2;
+    }
+
+    .menu-toggle {
+        display: flex;
+        order: 3;
+    }
+
+    .menulist {
+        align-items: center;
+        flex-direction: column;
+        gap: 0;
+        max-height: 0;
+        order: 4;
+        overflow: hidden;
+        transition: max-height .4s ease;
+        width: 100%;
+    }
+
+    .menulist.activo {
+        max-height: 400px;
+    }
+
+    .menuitem {
+        padding: 15px 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    .chatbot-boton {
+        height: 50px;
+        right: 90px;
+        width: 50px;
+    }
+
+    .whatsapp-boton {
+        height: 50px;
+        width: 50px;
+    }
+
+    .whatsapp-burbuja {
+        font-size: .8rem;
+        max-width: 190px;
+    }
+
+    .chatbot-panel {
+        left: 12px;
+        right: 12px;
+        width: auto;
+    }
+}

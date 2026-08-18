@@ -13,14 +13,16 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <!-- base.css contiene los componentes compartidos; index.css solo la portada. -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 
-<body>
+<body class="index-page">
 
     <header class="header">
         <nav class="menu">
-            <img src="/Jers/img/logo.jpg" alt="Logo By Jers" class="menulogo">
+            <img src="img/logo/logo.png" alt="Logo By Jers" class="menulogo">
 
             <button class="menu-toggle" aria-label="Abrir menú" type="button">
                 <span></span>
@@ -51,84 +53,100 @@
      - Izquierda: texto y botones.
      - Derecha: imagen principal.
      ============================================ -->
+        <!-- ==========================================
+     HERO V2 - BY JERS
+     Hero principal de la tienda
+========================================== -->
 
         <section id="inicio" class="hero">
 
-            <!-- Contenedor general -->
+            <div class="hero-overlay"></div>
+
             <div class="hero-contenido">
 
-                <!-- ===============================
-             COLUMNA IZQUIERDA
-             =============================== -->
+                <!-- Información -->
+
                 <div class="hero-texto">
 
                     <span class="hero-etiqueta">
-                        ✨ Cosmética • Maquillaje • Belleza
+                        ✨ Nueva colección 2026
                     </span>
 
-                    <h1>By Jers</h1>
-
-                    <p class="heroslogan">
-                        Belleza que resalta lo mejor de ti.
-                    </p>
+                    <h1>
+                        Descubre tu belleza
+                        <span>con By Jers</span>
+                    </h1>
 
                     <p class="hero-descripcion">
-                        Descubre maquillaje y cuidado capilar de las mejores marcas,
-                        con asesoría personalizada para ayudarte a encontrar el producto ideal.
+
+                        Encuentra maquillaje y productos capilares originales
+                        con asesoría personalizada para cada tipo de piel,
+                        estilo y ocasión.
+
                     </p>
 
-                    <!-- Botones -->
                     <div class="hero-botones">
 
-                        <!-- Este botón conserva la clase herobtn
-                     para no romper el JavaScript -->
-                        <button class="herobtn" type="button">
+                        <button class="herobtn">
                             Comprar ahora
                         </button>
 
-                        <a href="#promoGrid" class="hero-secundario">
-                            Ver promociones
+                        <a href="#categorias" class="hero-secundario">
+                            Explorar categorías
                         </a>
 
                     </div>
 
-                    <!-- Beneficios rápidos -->
-                    <div class="hero-beneficios">
+                    <div class="hero-estadisticas">
 
                         <div>
-                            🚚
-                            <span>Envíos nacionales</span>
+                            <h3>+300</h3>
+                            <span>Productos</span>
                         </div>
 
                         <div>
-                            💄
-                            <span>Marcas originales</span>
+                            <h3>+20</h3>
+                            <span>Marcas</span>
                         </div>
 
                         <div>
-                            💬
-                            <span>Asesoría personalizada</span>
+                            <h3>100%</h3>
+                            <span>Originales</span>
                         </div>
 
                     </div>
 
                 </div>
 
+                <!-- Imagen -->
+
                 <!-- ===============================
-             COLUMNA DERECHA
-             =============================== -->
+     Imagen principal
+================================ -->
 
                 <div class="hero-imagen">
 
-                    <!-- Por ahora usaremos una imagen de prueba.
-                 Después la reemplazaremos por una imagen
-                 exclusiva para By Jers. -->
+                    <img src="img/hero/soficora.webp" alt="Modelo By Jers">
 
-                    <img src="img/hero-modelo.webp" alt="Modelo usando maquillaje By Jers">
+                    <!-- Tarjeta flotante -->
+
+                    <div class="hero-card">
+
+                        <span class="hero-card-icono">
+                            ⭐
+                        </span>
+
+                        <div>
+
+                            <h4>Productos originales</h4>
+
+                            <p>Más de 20 marcas disponibles.</p>
+
+                        </div>
+
+                    </div>
 
                 </div>
-
-            </div>
 
         </section>
 
@@ -136,6 +154,7 @@
              PROMOCIÓN DEL MES
              ============================================ -->
         <section class="promo-banner revelar">
+            <img src="/img/promociones/promocion-agosto.jpg" alt="Modelo By Jers" class="promo-bg">
             <div class="promo-banner-inner">
                 <div>
                     <h2>Promoción de agosto 🌸</h2>
@@ -147,12 +166,12 @@
 
         <!-- ============================================
              DESCUENTOS DEL MES
-             Los productos se generan desde script.js (productosPromo)
+             Los productos se generan desde js/app.js (PRODUCTOS_PROMO)
              ============================================ -->
         <section class="container revelar">
             <h2 class="titulo-seccion">Descuentos del mes</h2>
             <div class="tarjetas" id="promoGrid">
-                <!-- Se llena dinámicamente desde script.js -->
+                <!-- Se llena dinámicamente desde js/index.js -->
             </div>
         </section>
 
@@ -164,7 +183,7 @@
                 <span class="beneficio-icono">✓</span>
                 <div>
                     <h3>Calidad seleccionada</h3>
-                    <p>Solo revendemos lo que nosotras usaríamos.</p>
+                    <p>Solo vendemos lo que nosotras usaríamos.</p>
                 </div>
             </div>
             <div class="beneficio">
@@ -246,7 +265,8 @@
         <p>&copy; 2026 By Jers — Belleza y Cosmética</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- index.js importa desde app.js solo la lógica que usa Inicio. -->
+    <script type="module" src="js/index.js"></script>
 </body>
 
 </html>
