@@ -80,7 +80,7 @@ export const CATALOGO_MAQUILLAJE = {
                     nombre: 'Lip Gloss',
                     precio: 32000,
                     imagen: '/img/productos/lip-gloss.jpg',
-                    posicion: '30% 50%'
+                    posicion: '30% 75%'
                 }
             ]
         },
@@ -90,8 +90,8 @@ export const CATALOGO_MAQUILLAJE = {
                 {
                     nombre: "Labial Mate L'Bel",
                     precio: 36000,
-                    imagen: '/img/productos/labial-mate-lbel.jpg',
-                    posicion: 'center 50%'
+                    imagen: '/img/productos/labial-mate-lbl.jpg',
+                    posicion: 'center 90%'
                 }
             ]
         }
@@ -160,7 +160,7 @@ export const CATALOGO_CABELLO = {
                 {
                     nombre: "Acondicionador Nutrición Intensa L'Bel",
                     precio: 50000,
-                    imagen: '/img/productos/acondicionador-nutricion.jpg'
+                    imagen: '/img/productos/acondicionador-nutricion-intensa.jpg'
                 }
             ]
         }
