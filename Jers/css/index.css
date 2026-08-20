@@ -144,15 +144,6 @@
   margin-top: 5px;
 }
 
-.promo-banner-inner h2 {
-  font-size: 1.8rem;
-  margin-bottom: 8px;
-}
-
-.promo-banner-inner p {
-  max-width: 420px;
-}
-
 .promo-btn {
   background: white;
   color: var(--color-mauve);
@@ -182,13 +173,18 @@
   text-decoration: line-through;
 }
 
-.promo-banner {
+.promo-seccion {
+  animation: aparecer 1s ease;
+  margin: 0 auto;
+  max-width: 1100px;
   position: relative;
-  overflow: hidden;
+}
+
+.promo-banner {
   border-radius: 20px;
   height: 320px;
-  max-width: 1100px;
-  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
 }
 
 .promo-bg {
@@ -200,42 +196,54 @@
   object-fit: cover;
   z-index: 0;
   display: block;
+  filter: saturate(1.35) contrast(1.08) brightness(1.04);
 }
 
-.promo-banner::before {
-  content: "";
+/* Grupo flotante: tarjeta + botón, debajo del texto (mismo patrón que .hero-card) */
+.promo-flotantes {
+  align-items: center;
+  animation: flotar 4s ease-in-out infinite;
+  bottom: -35px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  left: 50px;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.15) 60%, rgba(0, 0, 0, 0) 100%);
-  z-index: 1;
 }
 
-.promo-banner-inner {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    height: 100%;
-    padding: 0 40px;
-    color: white;
-    gap: 30px;
+.promo-card {
+  align-items: center;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgb(0 0 0 / 12%);
+  display: flex;
+  gap: 15px;
+  padding: 18px 22px;
 }
-.promo-banner-inner > div:first-child {
-    max-width: 400px;
-    text-align: left;
+
+.promo-card-icono {
+  align-items: center;
+  background: #f8d8dc;
+  border-radius: 50%;
+  display: flex;
+  font-size: 1.3rem;
+  height: 55px;
+  justify-content: center;
+  width: 55px;
 }
-.promo-banner-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    padding-left: 60px;
+
+.promo-card h4 {
+  font-size: 1rem;
 }
-.promo-btn {
-    margin-top: 5px;
+
+.promo-card p {
+  color: #666;
+  font-size: .9rem;
+  margin-top: 5px;
+}
+
+.promo-flotantes .promo-btn {
+  box-shadow: 0 15px 40px rgb(0 0 0 / 12%);
 }
 
 .beneficios {
@@ -304,39 +312,6 @@
   margin-bottom: 6px;
 }
 
-.promo-banner {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  min-height: 320px;
-}
-
-.promo-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-}
-
-.promo-banner-inner {
-  position: relative;
-  z-index: 1;
-}
-
-.promo-banner::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.15) 60%, rgba(0, 0, 0, 0) 100%);
-  z-index: 0;
-}
-
 @keyframes aparecer {
   from {
     opacity: 0;
@@ -379,6 +354,14 @@
     left: 50%;
     transform: translateX(-50%);
   }
+
+  .promo-flotantes {
+    bottom: -25px;
+    left: 50%;
+    justify-content: center;
+    transform: translateX(-50%);
+    width: max-content;
+  }
 }
 
 @media (max-width: 768px) {
@@ -389,11 +372,6 @@
   .beneficios,
   .categorias-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .promo-banner-inner {
-    flex-direction: column;
-    text-align: center;
   }
 }
 
@@ -409,6 +387,10 @@
   }
 
   .hero-card {
+    display: none;
+  }
+
+  .promo-flotantes {
     display: none;
   }
 }

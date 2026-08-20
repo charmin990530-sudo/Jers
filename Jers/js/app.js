@@ -10,14 +10,14 @@ export const NUMERO_WHATSAPP = '573114333561';
 
 // Productos de maquillaje organizados por la categoría que muestran las pestañas.
 export const CATALOGO_MAQUILLAJE = {
-    rostro: [
-        { marca: 'Atenea Profesional', productos: [{ nombre: 'Base Atenea', precio: 58000 }, { nombre: 'Corrector Atenea', precio: 38000 }] },
-        { marca: "L'Bel", productos: [{ nombre: "Base Matte L'Bel", precio: 62000 }] },
-    ],
-    ojos: [
-        { marca: 'Atenea Profesional', productos: [{ nombre: 'Sombras Atenea', precio: 45000 }] },
-        { marca: 'Jorge de la Garza', productos: [{ nombre: 'Delineador en Gel JDG', precio: 34000 }] },
-    ],
+rostro: [
+    { marca: 'Atenea Profesional', productos: [{ nombre: 'Base Atenea', precio: 58000, imagen: '/img/productos/base-atenea.jpg', posicion: 'center 80%' }, { nombre: 'Corrector Atenea', precio: 38000, imagen: '/img/productos/corrector-atenea.jpg', posicion: 'center 50%' }] },
+    { marca: "L'Bel", productos: [{ nombre: "Base Matte L'Bel", precio: 62000, imagen: '/img/productos/base-matte-lbel.jpg', posicion: 'center 50%' }] },
+],
+ojos: [
+    { marca: 'Atenea Profesional', productos: [{ nombre: 'Sombras Atenea', precio: 45000, imagen: '/img/productos/sombras-atenea.jpg', posicion: 'center 50%' }] },
+    { marca: 'Jorge de la Garza', productos: [{ nombre: 'Delineador en Gel JDG', precio: 34000, imagen: '/img/productos/delineador-en-gel-jdg.jpg', posicion: 'center 90%' }] },
+],
     labios: [
         { marca: 'Atenea Profesional', productos: [{ nombre: 'Lip Gloss', precio: 32000 }] },
         { marca: "L'Bel", productos: [{ nombre: "Labial Mate L'Bel", precio: 36000 }] },
@@ -43,9 +43,9 @@ export const CATALOGO_CABELLO = {
 
 // Esta lista se usa únicamente en la página de inicio.
 export const PRODUCTOS_PROMO = [
-    { nombre: 'Paleta de Sombras Nude', precio: 45000, precioAnterior: 58000 },
-    { nombre: 'Labial Mate Larga Duración', precio: 29000, precioAnterior: 38000 },
-    { nombre: 'Shampoo Hidratación Profunda', precio: 38000, precioAnterior: 46000 },
+    { nombre: 'Paleta de Sombras Nude', precio: 45000, precioAnterior: 58000, imagen: '/img/promociones/paleta-de-sombras.jpg' },
+    { nombre: 'Labial Mate Larga Duración', precio: 29000, precioAnterior: 38000, imagen: '/img/promociones/labial-mate.jpg', posicion: 'center 65%' },
+    { nombre: 'Shampoo Hidratación Profunda', precio: 38000, precioAnterior: 46000, imagen: '/img/promociones/shampoo-hidratacion-profunda.jpg', posicion: 'center 75%' },
 ];
 
 /** Devuelve el nombre del archivo HTML abierto en este momento. */
@@ -74,8 +74,13 @@ export function resaltarPaginaActual() {
     });
 }
 
-/** Elige un ícono de respaldo para que las tarjetas no dependan de imágenes inexistentes. */
+/** Muestra la imagen real del producto si existe; si no, un ícono de respaldo. */
 export function crearImagenProducto(producto) {
+    if (producto.imagen) {
+        const posicion = producto.posicion || 'center';
+        return `<img class="cardimage" src="${producto.imagen}" alt="${producto.nombre}" style="object-position: ${posicion};">`;
+    }
+
     const nombre = producto.nombre.toLowerCase();
     let icono = '✨';
 
