@@ -16,13 +16,15 @@
     <!-- base.css contiene los componentes compartidos; index.css solo la portada. -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/index.css">
+
+    <meta name="whatsapp-number" content="573114333561">
 </head>
 
 <body class="index-page">
 
     <header class="header">
         <nav class="menu">
-            <img src="img/logo/logo.png" alt="Logo By Jers" class="menulogo">
+            <img src="img/logo/logo.webp" alt="Logo By Jers" class="menulogo">
 
             <button class="menu-toggle" aria-label="Abrir menú" type="button">
                 <span></span>
@@ -31,11 +33,11 @@
             </button>
 
             <ul class="menulist">
-                <li class="menuitem"><a href="index.html" target="_blank" rel="noopener">Inicio</a></li>
-                <li class="menuitem"><a href="maquillaje.html" target="_blank" rel="noopener">Maquillaje</a></li>
-                <li class="menuitem"><a href="cabello.html" target="_blank" rel="noopener">Cuidado capilar</a></li>
-                <li class="menuitem"><a href="resenas.html" target="_blank" rel="noopener">Reseñas</a></li>
-                <li class="menuitem"><a href="contacto.html" target="_blank" rel="noopener">Contacto</a></li>
+                <li class="menuitem"><a href="index.html">Inicio</a></li>
+                <li class="menuitem"><a href="maquillaje.html">Maquillaje</a></li>
+                <li class="menuitem"><a href="cabello.html">Cuidado capilar</a></li>
+                <li class="menuitem"><a href="resenas.html">Reseñas</a></li>
+                <li class="menuitem"><a href="contacto.html">Contacto</a></li>
             </ul>
 
             <button class="carrito-icono" aria-label="Abrir carrito" type="button">
@@ -148,6 +150,35 @@
 
                 </div>
 
+            </div>
+
+        </section>
+
+        <!-- ============================================
+             MARCAS
+             Carrusel infinito de marcas que vendemos.
+             ============================================ -->
+        <section class="marcas-seccion revelar">
+            <p class="marcas-titulo">Trabajamos con las marcas que amas</p>
+
+            <div class="marcas-carrusel" id="marcasCarrusel">
+                <div class="marcas-track" id="marcasTrack">
+                    <!-- Grupo 1 -->
+                    <div class="marca-item"><span class="marca-nombre">Maybelline</span></div>
+                    <div class="marca-item"><span class="marca-nombre">L'Oréal Paris</span></div>
+                    <div class="marca-item"><span class="marca-nombre">MAC</span></div>
+                    <div class="marca-item"><span class="marca-nombre">NYX</span></div>
+                    <div class="marca-item"><span class="marca-nombre">Revlon</span></div>
+                    <div class="marca-item"><span class="marca-nombre">Wella</span></div>
+                    <!-- Grupo 2 (duplicado idéntico, para el loop infinito sin cortes) -->
+                    <div class="marca-item"><span class="marca-nombre">Maybelline</span></div>
+                    <div class="marca-item"><span class="marca-nombre">L'Oréal Paris</span></div>
+                    <div class="marca-item"><span class="marca-nombre">MAC</span></div>
+                    <div class="marca-item"><span class="marca-nombre">NYX</span></div>
+                    <div class="marca-item"><span class="marca-nombre">Revlon</span></div>
+                    <div class="marca-item"><span class="marca-nombre">Wella</span></div>
+                </div>
+            </div>
         </section>
 
         <!-- ============================================
@@ -156,7 +187,7 @@
         <section class="promo-seccion revelar">
 
             <div class="promo-banner">
-                <img src="/img/promociones/promocion-agosto.jpg" alt="Modelo By Jers" class="promo-bg">
+                <img src="img/promociones/promocion.webp" alt="Modelo By Jers" class="promo-bg">
             </div>
 
             <!-- Grupo flotante: tarjeta + botón, debajo del texto, mismo estilo que hero-card -->
@@ -170,7 +201,7 @@
 
                     <div>
 
-                        <h4>Solo por agosto</h4>
+                        <h4>Solo por tiempo limitado</h4>
 
                         <p>Hasta 25% de descuento.</p>
 
@@ -178,15 +209,26 @@
 
                 </div>
 
-                <a href="maquillaje.html" target="_blank" rel="noopener" class="promo-btn">Ver maquillaje</a>
+                <a href="maquillaje.html" class="promo-btn">Ver maquillaje</a>
 
             </div>
 
         </section>
 
         <!-- ============================================
+             NOVEDADES / DESTACADOS
+             Productos con destacado=true desde API (/api/products/featured)
+             ============================================ -->
+        <section class="container revelar">
+            <h2 class="titulo-seccion">Novedades</h2>
+            <div class="tarjetas" id="destacadosGrid">
+                <!-- Se llena dinámicamente desde js/index.js -->
+            </div>
+        </section>
+
+        <!-- ============================================
              DESCUENTOS DEL MES
-             Los productos se generan desde js/app.js (PRODUCTOS_PROMO)
+             Productos con enPromocion=true desde API (/api/products/promociones)
              ============================================ -->
         <section class="container revelar">
             <h2 class="titulo-seccion">Descuentos del mes</h2>
@@ -238,25 +280,25 @@
             <h2 class="titulo-seccion">Explora por categoría</h2>
 
             <div class="categorias-grid">
-                <a class="cat-tile" href="maquillaje.html#rostro" target="_blank" rel="noopener">
+                <a class="cat-tile" href="maquillaje.html#rostro">
                     <span class="cat-tile-icono">✦</span>
                     <h3>Rostro</h3>
                     <p>Bases, correctores, polvos</p>
                 </a>
 
-                <a class="cat-tile" href="maquillaje.html#ojos" target="_blank" rel="noopener">
+                <a class="cat-tile" href="maquillaje.html#ojos">
                     <span class="cat-tile-icono">✦</span>
                     <h3>Ojos</h3>
                     <p>Sombras, delineadores</p>
                 </a>
 
-                <a class="cat-tile" href="maquillaje.html#labios" target="_blank" rel="noopener">
+                <a class="cat-tile" href="maquillaje.html#labios">
                     <span class="cat-tile-icono">✦</span>
                     <h3>Labios</h3>
                     <p>Labiales, gloss</p>
                 </a>
 
-                <a class="cat-tile" href="cabello.html" target="_blank" rel="noopener">
+                <a class="cat-tile" href="cabello.html">
                     <span class="cat-tile-icono">✦</span>
                     <h3>Cuidado capilar</h3>
                     <p>Shampoo, acondicionador, tratamientos</p>
@@ -277,27 +319,27 @@
 
         <div class="carrito-resumen">
             <p>Total: <span class="carrito-total">$0</span></p>
-            <button class="finalizar-pedido" type="button">Finalizar pedido por WhatsApp</button>
+            <button class="finalizar-pedido" type="button">Finalizar pedido</button>
         </div>
     </div>
     <div class="carrito-fondo"></div>
 
 
-    <footer style="background:#222; color:#fff; padding:20px; text-align:center;">
-        <div style="margin-bottom:10px;">
-            <a href="https://facebook.com/tu-tienda" style="margin:0 10px;">
+    <footer class="site-footer">
+        <div class="redes-sociales">
+            <a href="https://facebook.com/tu-tienda">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
                     <path
                         d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.988H7.898v-2.89h2.54V9.797c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
                 </svg>
             </a>
-            <a href="https://instagram.com/tu-tienda" style="margin:0 10px;">
+            <a href="https://instagram.com/tu-tienda">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
                     <path
                         d="M7 2C4.243 2 2 4.243 2 7v10c0 2.757 2.243 5 5 5h10c2.757 0 5-2.243 5-5V7c0-2.757-2.243-5-5-5H7zm10 2c1.654 0 3 1.346 3 3v10c0 1.654-1.346 3-3 3H7c-1.654 0-3-1.346-3-3V7c0-1.654 1.346-3 3-3h10zm-5 3a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6zm4.5-2a1.5 1.5 0 11-3.001-.001A1.5 1.5 0 0116.5 7z" />
                 </svg>
             </a>
-            <a href="https://twitter.com/tu-tienda" style="margin:0 10px;">
+            <a href="https://twitter.com/tu-tienda">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
                     <path
                         d="M22.46 6c-.77.35-1.6.58-2.46.69a4.28 4.28 0 001.88-2.37 8.59 8.59 0 01-2.72 1.04 4.27 4.27 0 00-7.27 3.89A12.12 12.12 0 013 4.79a4.27 4.27 0 001.32 5.7 4.24 4.24 0 01-1.94-.54v.05a4.27 4.27 0 003.43 4.18 4.3 4.3 0 01-1.93.07 4.27 4.27 0 003.99 2.97A8.57 8.57 0 012 19.54a12.09 12.09 0 006.56 1.92c7.88 0 12.2-6.53 12.2-12.2 0-.19-.01-.39-.02-.58A8.72 8.72 0 0022.46 6z" />
@@ -306,9 +348,6 @@
         </div>
         <p>© 2026 Jers.</p>
     </footer>
-
-
-
 
     <!-- index.js importa desde app.js solo la lógica que usa Inicio. -->
     <script type="module" src="js/index.js"></script>

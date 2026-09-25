@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Gestión de Usuarios">
+    <title>By Jers Admin | Usuarios</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/admin-usuarios.css">
+</head>
+
+<body class="admin-page">
+    <header class="header">
+        <nav class="menu">
+            <img src="../img/logo/logo.webp" alt="Logo By Jers" class="menulogo">
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="menulist">
+                <li class="menuitem"><a href="../index.html">Ver tienda</a></li>
+                <li class="menuitem"><a href="dashboard.html">Dashboard</a></li>
+                <li class="menuitem"><a href="productos.html">Productos</a></li>
+                <li class="menuitem"><a href="categorias.html">Categorías</a></li>
+                <li class="menuitem"><a href="marcas.html">Marcas</a></li>
+                <li class="menuitem"><a href="pedidos.html">Pedidos</a></li>
+                <li class="menuitem"><a href="usuarios.html" class="activo">Usuarios</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="admin-main">
+        <section class="pagina-header">
+            <div class="header-content">
+                <div>
+                    <h1>Gestión de Usuarios</h1>
+                    <p>Administra los usuarios registrados</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="admin-filtros">
+                <div class="filtro-grupo">
+                    <label for="filtroBuscar">Buscar</label>
+                    <input type="text" id="filtroBuscar" placeholder="Nombre, apellido, email...">
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroRol">Rol</label>
+                    <select id="filtroRol">
+                        <option value="">Todos</option>
+                        <option value="user">Usuario</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroEstado">Estado</label>
+                    <select id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="true">Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    <h2>Listado de Usuarios</h2>
+                    <span class="result-count" id="resultCount">0 usuarios</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table" id="usuariosTable">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Registrado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuariosBody">
+                            <tr class="loading-row">
+                                <td colspan="8"><div class="spinner"></div> Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination" hidden>
+                    <button class="btn-paginacion" id="pagAnterior" disabled>← Anterior</button>
+                    <span class="pag-info" id="pagInfo">Página 1 de 1</span>
+                    <button class="btn-paginacion" id="pagSiguiente" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Cambiar Rol -->
+    <div class="modal" id="modalRol" role="dialog" aria-labelledby="modalRolTitulo" aria-modal="true" hidden>
+        <div class="modal-contenido">
+            <button class="modal-cerrar" aria-label="Cerrar">✕</button>
+            <h2 id="modalRolTitulo">Cambiar Rol</h2>
+            <form id="formRol" class="admin-form" method="post" novalidate>
+                <input type="hidden" id="usuarioIdRol" name="id">
+                <div class="form-grupo">
+                    <label for="nuevoRol">Nuevo Rol *</label>
+                    <select id="nuevoRol" name="role" required>
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <span class="campo-error" aria-live="polite"></span>
+                </div>
+                <div class="form-acciones">
+                    <button type="button" class="btn-secundario" id="btnCancelarRol">Cancelar</button>
+                    <button type="submit" class="btn-primario" id="btnGuardarRol">
+                        <span class="btn-texto">Guardar</span>
+                        <span class="btn-loader" hidden>⏳</span>
+                    </button>
+                </div>
+                <div class="formulario-mensaje" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
+        <ul class="carrito-lista"></ul>
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer class="site-footer">
+        <p>© 2026 By Jers - Panel de Administración</p>
+    </footer>
+
+    <script type="module" src="../js/admin/usuarios.js"></script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Gestión de Productos">
+    <title>By Jers Admin | Productos</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/admin-productos.css">
+</head>
+
+<body class="admin-page">
+    <header class="header">
+        <nav class="menu">
+            <img src="../img/logo/logo.webp" alt="Logo By Jers" class="menulogo">
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="menulist">
+                <li class="menuitem"><a href="../index.html">Ver tienda</a></li>
+                <li class="menuitem"><a href="dashboard.html">Dashboard</a></li>
+                <li class="menuitem"><a href="productos.html" class="activo">Productos</a></li>
+                <li class="menuitem"><a href="categorias.html">Categorías</a></li>
+                <li class="menuitem"><a href="marcas.html">Marcas</a></li>
+                <li class="menuitem"><a href="pedidos.html">Pedidos</a></li>
+                <li class="menuitem"><a href="usuarios.html">Usuarios</a></li>
+            </ul>
+            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+                🛍️ <span class="carrito-contador">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="admin-main">
+        <section class="pagina-header">
+            <div class="header-content">
+                <div>
+                    <h1>Gestión de Productos</h1>
+                    <p>Crea, edita y gestiona el catálogo</p>
+                </div>
+                <button class="btn-primario" id="btnNuevoProducto">
+                    ➕ Nuevo Producto
+                </button>
+            </div>
+        </section>
+
+        <section class="container">
+            <!-- Filtros -->
+            <div class="admin-filtros">
+                <div class="filtro-grupo">
+                    <label for="filtroBuscar">Buscar</label>
+                    <input type="text" id="filtroBuscar" placeholder="Nombre, SKU...">
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroCategoria">Categoría</label>
+                    <select id="filtroCategoria">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroMarca">Marca</label>
+                    <select id="filtroMarca">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroEstado">Estado</label>
+                    <select id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="true">Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroPromocion">Promoción</label>
+                    <select id="filtroPromocion">
+                        <option value="">Todos</option>
+                        <option value="true">En promoción</option>
+                        <option value="false">Sin promoción</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabla de productos -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <h2>Listado de Productos</h2>
+                    <span class="result-count" id="resultCount">0 productos</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table" id="productosTable">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Producto</th>
+                                <th>SKU</th>
+                                <th>Categoría</th>
+                                <th>Marca</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productosBody">
+                            <tr class="loading-row">
+                                <td colspan="9"><div class="spinner"></div> Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination" hidden>
+                    <button class="btn-paginacion" id="pagAnterior" disabled>← Anterior</button>
+                    <span class="pag-info" id="pagInfo">Página 1 de 1</span>
+                    <button class="btn-paginacion" id="pagSiguiente" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Producto -->
+    <div class="modal" id="modalProducto" role="dialog" aria-labelledby="modalProductoTitulo" aria-modal="true" hidden>
+        <div class="modal-contenido modal-grande">
+            <button class="modal-cerrar" aria-label="Cerrar">✕</button>
+            <h2 id="modalProductoTitulo">Nuevo Producto</h2>
+            <form id="formProducto" class="admin-form" method="post" novalidate>
+                <input type="hidden" id="productoId" name="id">
+                <input type="hidden" id="esEdicion" name="esEdicion" value="false">
+
+                <div class="form-grid">
+                    <div class="form-grupo">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" name="nombre" required minlength="2" maxlength="100">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="slug">Slug (URL) *</label>
+                        <input type="text" id="slug" name="slug" required minlength="2" maxlength="100" pattern="^[a-z0-9-]+$">
+                        <small class="form-ayuda">Solo minúsculas, números y guiones. Se auto-genera si se deja vacío.</small>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="precio">Precio (COP) *</label>
+                        <input type="number" id="precio" name="precio" required min="0" step="100">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="precioAnterior">Precio Anterior (COP)</label>
+                        <input type="number" id="precioAnterior" name="precioAnterior" min="0" step="100">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="stock">Stock *</label>
+                        <input type="number" id="stock" name="stock" required min="0" value="0">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="categoria">Categoría *</label>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="marca">Marca *</label>
+                        <select id="marca" name="marca" required>
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+                </div>
+
+                <div class="form-grupo">
+                    <label for="descripcion">Descripción *</label>
+                    <textarea id="descripcion" name="descripcion" required minlength="10" maxlength="1000" rows="4"></textarea>
+                    <span class="campo-error" aria-live="polite"></span>
+                </div>
+
+                <div class="form-grupo">
+                    <label for="descripcionCorta">Descripción Corta (para cards)</label>
+                    <textarea id="descripcionCorta" name="descripcionCorta" maxlength="200" rows="2"></textarea>
+                    <span class="campo-error" aria-live="polite"></span>
+                </div>
+
+                <div class="form-grupo">
+                    <label>Imágenes *</label>
+                    <div id="imagenesContainer">
+                        <div class="imagen-item">
+                            <input type="url" name="imagenes[0][url]" placeholder="URL de la imagen" required>
+                            <input type="text" name="imagenes[0][alt]" placeholder="Texto alternativo (opcional)">
+                            <select name="imagenes[0][posicion]">
+                                <option value="center">Centro</option>
+                                <option value="top">Arriba</option>
+                                <option value="bottom">Abajo</option>
+                                <option value="left">Izquierda</option>
+                                <option value="right">Derecha</option>
+                            </select>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" name="imagenes[0][esPrincipal]" checked> Principal
+                            </label>
+                            <button type="button" class="btn-eliminar-imagen" title="Eliminar imagen">🗑️</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secundario" id="btnAgregarImagen">+ Agregar imagen</button>
+                    <small class="form-ayuda">Mínimo 1 imagen. La primera marcada como principal se usará en listados.</small>
+                </div>
+
+                <fieldset class="form-grupo">
+                    <legend>Ingredientes (opcional)</legend>
+                    <div id="ingredientesContainer">
+                        <div class="ingrediente-item">
+                            <input type="text" name="ingredientes[0][nombre]" placeholder="Nombre del ingrediente" required>
+                            <input type="text" name="ingredientes[0][descripcion]" placeholder="Descripción (opcional)">
+                            <button type="button" class="btn-eliminar-ingrediente" title="Eliminar">🗑️</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secundario" id="btnAgregarIngrediente">+ Agregar ingrediente</button>
+                </fieldset>
+
+                <div class="form-grupo">
+                    <label for="uso">Modo de uso (opcional)</label>
+                    <textarea id="uso" name="uso" rows="3"></textarea>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-grupo checkbox-grupo">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="destacado" name="destacado">
+                            Producto destacado (aparece en Inicio)
+                        </label>
+                    </div>
+                    <div class="form-grupo checkbox-grupo">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="enPromocion" name="enPromocion">
+                            En promoción
+                        </label>
+                    </div>
+                    <div class="form-grupo checkbox-grupo">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="activo" name="activo" checked>
+                            Activo / Visible en tienda
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-acciones">
+                    <button type="button" class="btn-secundario" id="btnCancelarProducto">Cancelar</button>
+                    <button type="submit" class="btn-primario" id="btnGuardarProducto">
+                        <span class="btn-texto">Guardar</span>
+                        <span class="btn-loader" hidden>⏳</span>
+                    </button>
+                </div>
+
+                <div class="formulario-mensaje" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
+        <ul class="carrito-lista"></ul>
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer class="site-footer">
+        <p>© 2026 By Jers - Panel de Administración</p>
+    </footer>
+
+    <script type="module" src="../js/admin/productos.js"></script>
+</body>
+</html>

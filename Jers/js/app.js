@@ -1,228 +1,50 @@
-/*
+/**
  * app.js
  * ------------------------------------------------------------------
  * Este archivo reúne la lógica que se reutiliza en varias páginas
  * de By Jers.
  * Las funciones se exportan para que cada página importe solamente
  * lo que usa.
+ * 
+ * NOTA: Los catálogos de productos (maquillaje, cabello, promociones)
+ * ya NO están aquí. Se cargan dinámicamente desde la API:
+ * - maquillaje.js -> GET /api/products/categoria/rostro|ojos|labios
+ * - cabello.js   -> GET /api/products/categoria/shampoo|acondicionador|tratamientos
+ * - index.js     -> GET /api/products/featured + /api/products/promociones
  */
 
-// Número centralizado: se cambia una sola vez cuando tengas el número real.
-export const NUMERO_WHATSAPP = '573114333561';
+import { CONFIG } from './config.js';
+import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
+import {
+    mostrarErrorCampo,
+    limpiarErrorCampo,
+    limpiarErroresFormulario,
+    mostrarMensajeGlobal,
+    setBtnLoading,
+    validarEmail,
+    validarTelefono,
+    calcularFortalezaPassword,
+    textoFortaleza,
+    passwordsCoinciden,
+    inicializarTogglePassword,
+} from './auth.js';
 
-
-// ==================================================================
-// CATÁLOGO DE MAQUILLAJE
-// ==================================================================
-
-export const CATALOGO_MAQUILLAJE = {
-    rostro: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Base Atenea',
-                    precio: 58000,
-                    imagen: '/img/productos/base-atenea.jpg',
-                    posicion: 'center 80%'
-                },
-                {
-                    nombre: 'Corrector Atenea',
-                    precio: 38000,
-                    imagen: '/img/productos/corrector-atenea.jpg',
-                    posicion: 'center 50%'
-                }
-            ]
-        },
-        {
-            marca: "L'Bel",
-            productos: [
-                {
-                    nombre: "Base Matte L'Bel",
-                    precio: 62000,
-                    imagen: '/img/productos/base-matte-lbel.jpg',
-                    posicion: 'center 50%'
-                }
-            ]
-        }
-    ],
-
-    ojos: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Sombras Atenea',
-                    precio: 45000,
-                    imagen: '/img/productos/sombras-atenea.jpg',
-                    posicion: 'center 50%'
-                }
-            ]
-        },
-        {
-            marca: 'Jorge de la Garza',
-            productos: [
-                {
-                    nombre: 'Delineador en Gel JDG',
-                    precio: 34000,
-                    imagen: '/img/productos/delineador-en-gel-jdg.jpg',
-                    posicion: 'center 90%'
-                }
-            ]
-        }
-    ],
-
-    labios: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Lip Gloss',
-                    precio: 32000,
-                    imagen: '/img/productos/lip-gloss.jpg',
-                    posicion: '30% 75%'
-                }
-            ]
-        },
-        {
-            marca: "L'Bel",
-            productos: [
-                {
-                    nombre: "Labial Mate L'Bel",
-                    precio: 36000,
-                    imagen: '/img/productos/labial-mate-lbl.jpg',
-                    posicion: 'center 90%'
-                }
-            ]
-        }
-    ]
+export {
+    mostrarErrorCampo,
+    limpiarErrorCampo,
+    limpiarErroresFormulario,
+    mostrarMensajeGlobal,
+    setBtnLoading,
+    validarEmail,
+    validarTelefono,
+    calcularFortalezaPassword,
+    textoFortaleza,
+    passwordsCoinciden,
+    inicializarTogglePassword,
 };
 
-
-// ==================================================================
-// CATÁLOGO DE CUIDADO CAPILAR
-// ==================================================================
-
-export const CATALOGO_CABELLO = {
-
-    shampoo: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Shampoo Hidratación Profunda',
-                    precio: 46000,
-                    imagen: '/img/productos/shampoo-hidratacion-profunda.jpg'
-                }
-            ]
-        },
-        {
-            marca: "L'Bel",
-            productos: [
-                {
-                    nombre: "Shampoo Anticaída L'Bel",
-                    precio: 52000,
-                    imagen: '/img/productos/shampoo-anti-caida.jpg'
-                }
-            ]
-        },
-        {
-            marca: 'Jorge de la Garza',
-            productos: [
-                {
-                    nombre: 'Shampoo Nutritivo JDG',
-                    precio: 41000,
-                    imagen: '/img/productos/shampoo-nutritivo.jpg'
-                }
-            ]
-        }
-    ],
-
-
-    // ==============================================================
-    // ACONDICIONADOR
-    // ==============================================================
-
-    acondicionador: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Acondicionador Reparador',
-                    precio: 46000,
-                    imagen: '/img/productos/acondicionador-reparador.jpg'
-                }
-            ]
-        },
-        {
-            marca: "L'Bel",
-            productos: [
-                {
-                    nombre: "Acondicionador Nutrición Intensa L'Bel",
-                    precio: 50000,
-                    imagen: '/img/productos/acondicionador-nutricion-intensa.jpg'
-                }
-            ]
-        }
-    ],
-
-
-    // ==============================================================
-    // TRATAMIENTOS
-    // ==============================================================
-
-    tratamientos: [
-        {
-            marca: 'Atenea Profesional',
-            productos: [
-                {
-                    nombre: 'Tratamiento Control de Frizz',
-                    precio: 58000,
-                    imagen: '/img/productos/tratamiento-control-de-frizz.jpg'
-                }
-            ]
-        },
-        {
-            marca: 'Jorge de la Garza',
-            productos: [
-                {
-                    nombre: 'Ampolletas de Keratina JDG',
-                    precio: 39000,
-                    imagen: '/img/productos/keratina-ampolleta.webp',
-                    posicion: 'center 70%'
-                }
-            ]
-        }
-    ]
-};
-
-
-// ==================================================================
-// PRODUCTOS EN PROMOCIÓN
-// ==================================================================
-
-export const PRODUCTOS_PROMO = [
-    {
-        nombre: 'Paleta de Sombras Nude',
-        precio: 45000,
-        precioAnterior: 58000,
-        imagen: '/img/promociones/paleta-de-sombras.jpg'
-    },
-    {
-        nombre: 'Labial Mate Larga Duración',
-        precio: 29000,
-        precioAnterior: 38000,
-        imagen: '/img/promociones/labial-mate.jpg',
-        posicion: 'center 65%'
-    },
-    {
-        nombre: 'Shampoo Hidratación Profunda',
-        precio: 38000,
-        precioAnterior: 46000,
-        imagen: '/img/promociones/shampoo-hidratacion-profunda.jpg',
-        posicion: 'center 75%'
-    }
-];
+// Número de WhatsApp desde config (se puede sobrescribir via meta tag o variable global)
+export const NUMERO_WHATSAPP = CONFIG.WHATSAPP_NUMBER;
 
 
 // ==================================================================
@@ -283,6 +105,93 @@ export function resaltarPaginaActual() {
 }
 
 
+const archivosImagenLocales = new Set([
+    'acondicionador-nutricion-intensa.webp',
+    'acondicionador-reparador.webp',
+    'base-atenea.webp',
+    'base-matte-lbel.webp',
+    'corrector-atenea.webp',
+    'delineador-en-gel-jdg.webp',
+    'keratina-ampolleta.webp',
+    'labial-mate-lbl.webp',
+    'lip-gloss.webp',
+    'shampoo-anti-caida.webp',
+    'shampoo-hidratacion-profunda.webp',
+    'shampoo-nutritivo.webp',
+    'sombras-atenea.webp',
+    'tratamiento-control-de-frizz.webp',
+    'labial-mate.webp',
+    'paleta-de-sombras.webp',
+]);
+
+const imagenesPorNombre = {
+    'acondicionador-nutricion-intensa': '/img/productos/acondicionador-nutricion-intensa.webp',
+    'acondicionador-reparador': '/img/productos/acondicionador-reparador.webp',
+    'base-atenea': '/img/productos/base-atenea.webp',
+    'base-matte-l-bel': '/img/productos/base-matte-lbel.webp',
+    'corrector-atenea': '/img/productos/corrector-atenea.webp',
+    'delineador-en-gel-jdg': '/img/productos/delineador-en-gel-jdg.webp',
+    'keratina-ampolleta': '/img/productos/keratina-ampolleta.webp',
+    'labial-mate-l-bel': '/img/productos/labial-mate-lbl.webp',
+    'lip-gloss': '/img/productos/lip-gloss.webp',
+    'shampoo-anti-caida-l-bel': '/img/productos/shampoo-anti-caida.webp',
+    'shampoo-hidratacion-profunda': '/img/productos/shampoo-hidratacion-profunda.webp',
+    'shampoo-nutritivo-jdg': '/img/productos/shampoo-nutritivo.webp',
+    'ampolletas-de-keratina-jdg': '/img/productos/keratina-ampolleta.webp',
+    'sombras-atenea': '/img/productos/sombras-atenea.webp',
+    'tratamiento-control-de-frizz': '/img/productos/tratamiento-control-de-frizz.webp',
+    'paleta-de-sombras-nude': '/img/promociones/paleta-de-sombras.webp',
+    'labial-mate-larga-duracion': '/img/promociones/labial-mate.webp',
+};
+
+function normalizarNombre(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+export function obtenerImagenProducto(producto) {
+    const candidatas = [
+        producto.imagen,
+        producto.imagenPrincipal,
+        ...(producto.imagenes || []).map(imagen => imagen.url),
+    ].filter(Boolean);
+
+    for (const candidata of candidatas) {
+        if (typeof candidata !== 'string') continue;
+        const safeUrl = safeAssetUrl(candidata);
+        if (!safeUrl) continue;
+        if (safeUrl.startsWith('/')) {
+            const legacyMatch = safeUrl.match(/^\/img\/(productos|promociones)\/(.+)\.(?:jpe?g|png)$/i);
+            if (legacyMatch) {
+                const migrated = `/img/${legacyMatch[1]}/${legacyMatch[2]}.webp`;
+                if (archivosImagenLocales.has(legacyMatch[2] + '.webp')) return migrated;
+            }
+            return safeUrl;
+        }
+
+        try {
+            const pathname = new URL(safeUrl).pathname;
+            const archivo = decodeURIComponent(pathname.split('/').pop() || '');
+            const archivoWebp = archivo.replace(/\.(?:jpe?g|png)$/i, '.webp');
+            if (archivosImagenLocales.has(archivoWebp)) {
+                const carpeta = /\/promociones?\//i.test(pathname) ? 'promociones' : 'productos';
+                return `/img/${carpeta}/${archivoWebp}`;
+            }
+        } catch {
+            continue;
+        }
+
+        return safeUrl;
+    }
+
+    return imagenesPorNombre[normalizarNombre(producto.slug || producto.nombre)] || null;
+}
+
+
 // ==================================================================
 // CREAR IMAGEN DEL PRODUCTO
 // ==================================================================
@@ -290,39 +199,42 @@ export function resaltarPaginaActual() {
 /**
  * Muestra la imagen real del producto si existe.
  * Si no existe, muestra un ícono de respaldo.
+ * Acepta tanto el formato API (con imagenes[] e imagenPrincipal virtual)
+ * como formato simplificado (con imagen y posicion directa).
  */
 export function crearImagenProducto(producto) {
+    const imagen = safeAssetUrl(obtenerImagenProducto(producto));
+    const posicion = safePosition(producto.posicion || producto.imagenes?.[0]?.posicion);
+    const nombre = escapeHTML(producto.nombre || '');
 
-    if (producto.imagen) {
-        const posicion = producto.posicion || 'center';
-
+    if (imagen) {
         return `
             <img
                 class="cardimage"
-                src="${producto.imagen}"
-                alt="${producto.nombre}"
-                style="object-position: ${posicion};"
+                src="${escapeHTML(imagen)}"
+                alt="${nombre}"
+                style="object-position: ${escapeHTML(posicion)};"
             >
         `;
     }
 
-    const nombre = producto.nombre.toLowerCase();
+    const nombreNormalizado = nombre.toLowerCase();
 
     let icono = '✨';
 
-    if (/shampoo|acondicionador|tratamiento|ampolletas/.test(nombre)) {
+    if (/shampoo|acondicionador|tratamiento|ampolletas/.test(nombreNormalizado)) {
         icono = '🧴';
     }
 
-    if (/labial|gloss/.test(nombre)) {
+    if (/labial|gloss/.test(nombreNormalizado)) {
         icono = '💄';
     }
 
-    if (/sombra|delineador/.test(nombre)) {
+    if (/sombra|delineador/.test(nombreNormalizado)) {
         icono = '👁️';
     }
 
-    if (/base|corrector/.test(nombre)) {
+    if (/base|corrector/.test(nombreNormalizado)) {
         icono = '✦';
     }
 
@@ -330,7 +242,7 @@ export function crearImagenProducto(producto) {
         <div
             class="cardimage producto-placeholder"
             role="img"
-            aria-label="Presentación de ${producto.nombre}"
+             aria-label="Presentación de ${escapeHTML(producto.nombre || 'producto')}"
         >
             <span aria-hidden="true">${icono}</span>
             <small>By Jers</small>
@@ -362,37 +274,45 @@ export function renderizarCatalogo(gruposDeMarca, contenedor) {
 
     contenedor.innerHTML = gruposDeMarca.map(grupo => {
 
-        const tarjetas = grupo.productos.map(producto => `
+        const tarjetas = grupo.productos.map(producto => {
+            const id = producto._id || producto.id || '';
+            const nombre = escapeHTML(producto.nombre || 'Producto');
+            return `
             <article
                 class="card"
-                data-nombre="${producto.nombre}"
-                data-precio="${producto.precio}"
+                ${id ? `data-id="${escapeHTML(id)}"` : ''}
+                data-nombre="${nombre}"
+                data-precio="${Number(producto.precio) || 0}"
             >
                 ${crearImagenProducto(producto)}
 
                 <h3 class="cardname">
-                    ${producto.nombre}
+                    ${nombre}
                 </h3>
 
                 <p class="cardprecio">
-                    $${producto.precio.toLocaleString('es-CO')}
+                    $${(Number(producto.precio) || 0).toLocaleString('es-CO')}
                 </p>
 
-                <button
-                    class="cardbtn"
-                    type="button"
-                >
-                    Añadir al carrito
-                </button>
+                <div class="card-acciones">
+                    ${producto._id || producto.id ? `<a class="cardlink" href="producto.html?id=${encodeURIComponent(producto._id || producto.id)}">Ver detalle</a>` : ''}
+                    <button
+                        class="cardbtn"
+                        type="button"
+                    >
+                        Añadir al carrito
+                    </button>
+                </div>
             </article>
-        `).join('');
+        `;
+        }).join('');
 
         return `
             <section class="marca-bloque">
 
                 <div class="marca-header">
                     <h3 class="marca-nombre">
-                        ${grupo.marca}
+                        ${escapeHTML(grupo.marca || 'Sin marca')}
                     </h3>
 
                     <span class="marca-cantidad">
@@ -483,251 +403,456 @@ export function renderizarPromociones(
 
     if (!contenedor) return;
 
-    contenedor.innerHTML = productos.map(producto => `
+    contenedor.innerHTML = productos.map(producto => {
+        const imagenPrincipal = safeAssetUrl(obtenerImagenProducto(producto));
+        const posicion = safePosition(producto.imagenes?.[0]?.posicion);
+        const tieneDescuento = producto.precioAnterior && producto.precioAnterior > producto.precio;
+        const id = producto._id || producto.id || '';
+        const nombre = escapeHTML(producto.nombre || 'Producto');
+
+        return `
         <article
             class="card"
-            data-nombre="${producto.nombre}"
-            data-precio="${producto.precio}"
+            ${id ? `data-id="${escapeHTML(id)}"` : ''}
+            data-nombre="${nombre}"
+            data-precio="${Number(producto.precio) || 0}"
         >
-            <span class="descuento-badge">
-                Oferta
-            </span>
-
-            ${crearImagenProducto(producto)}
-
-            <h3 class="cardname">
-                ${producto.nombre}
-            </h3>
-
+            <span class="descuento-badge">Oferta</span>
+            ${imagenPrincipal ? `
+              <img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" style="object-position: ${escapeHTML(posicion)};">
+            ` : crearImagenProducto({ nombre: producto.nombre })}
+            <h3 class="cardname">${nombre}</h3>
             <p class="cardprecio">
-                <span class="precio-anterior">
-                    $${producto.precioAnterior.toLocaleString('es-CO')}
-                </span>
-
-                $${producto.precio.toLocaleString('es-CO')}
+                ${tieneDescuento ? `<span class="precio-anterior">$${escapeHTML(producto.precioAnterior.toLocaleString('es-CO'))}</span>` : ''}
+                $${escapeHTML(producto.precio.toLocaleString('es-CO'))}
             </p>
-
-            <button
-                class="cardbtn"
-                type="button"
-            >
-                Añadir al carrito
-            </button>
+            <div class="card-acciones">
+                ${id ? `<a class="cardlink" href="producto.html?id=${encodeURIComponent(id)}">Ver detalle</a>` : ''}
+                <button class="cardbtn" type="button">Añadir al carrito</button>
+            </div>
         </article>
-    `).join('');
+        `;
+    }).join('');
 }
 
 
 // ==================================================================
-// CARRITO
+// CARRITO (Híbrido: API cuando autenticado, localStorage como fallback)
 // ==================================================================
 
 /**
- * Crea y sincroniza el carrito usando localStorage
- * para conservarlo al cambiar de página.
+ * Inicializa el carrito híbrido:
+ * - Usuario autenticado → API (/api/cart) con cookies HttpOnly
+ * - Usuario no autenticado → localStorage (modo invitado)
+ * - Al loguearse → sincroniza localStorage → API automáticamente
  */
-export function iniciarCarrito() {
+export async function iniciarCarrito() {
 
-    const clave = 'jers_carrito';
+    const CART_KEY = 'jers_carrito';
+    const API_CART_ENABLED = true; // Cambiar a false para forzar localStorage solo
 
-    const cargar = () => {
-        try {
-            return JSON.parse(
-                localStorage.getItem(clave)
-            ) || [];
-        } catch {
-            return [];
-        }
-    };
+    // Estado
+    let carrito = [];
+    let modoAPI = false;
+    let carritoCargado = false;
 
-    let carrito = cargar();
-
+    // Elementos DOM
     const lista = document.querySelector('.carrito-lista');
     const contador = document.querySelector('.carrito-contador');
     const totalTexto = document.querySelector('.carrito-total');
     const panel = document.querySelector('.carrito-panel');
     const fondo = document.querySelector('.carrito-fondo');
 
-
-    /**
-     * Actualiza el contador, total y lista visible
-     * después de cada cambio.
-     */
-    const actualizarVista = () => {
-
-        if (!lista || !contador || !totalTexto) return;
-
-        let total = 0;
-        let cantidadTotal = 0;
-
-        lista.innerHTML = carrito.map((item, indice) => {
-
-            const subtotal = item.precio * item.cantidad;
-
-            total += subtotal;
-            cantidadTotal += item.cantidad;
-
-            return `
-                <li class="carrito-item">
-                    <span>
-                        ${item.nombre} x${item.cantidad}
-                    </span>
-
-                    <span>
-                        $${subtotal.toLocaleString('es-CO')}
-                    </span>
-
-                    <button
-                        class="quitar-item"
-                        data-indice="${indice}"
-                        aria-label="Quitar producto"
-                    >
-                        ✕
-                    </button>
-                </li>
-            `;
-
-        }).join('');
-
-        contador.textContent = cantidadTotal;
-
-        totalTexto.textContent =
-            `$${total.toLocaleString('es-CO')}`;
-    };
-
-
-    const guardar = () => {
-        localStorage.setItem(
-            clave,
-            JSON.stringify(carrito)
-        );
-    };
-
-
     const abrir = () => {
         panel?.classList.add('abierto');
         fondo?.classList.add('visible');
     };
-
 
     const cerrar = () => {
         panel?.classList.remove('abierto');
         fondo?.classList.remove('visible');
     };
 
+    // ----------------------------------------------------------
+    // UTILIDADES LOCALSTORAGE (fallback/invitado)
+    // ----------------------------------------------------------
+    const cargarLocal = () => {
+        try {
+            return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+        } catch {
+            return [];
+        }
+    };
 
-    document.addEventListener('click', evento => {
+    const guardarLocal = (items) => {
+        localStorage.setItem(CART_KEY, JSON.stringify(items));
+    };
 
-        const botonAgregar =
-            evento.target.closest('.cardbtn');
+    const limpiarLocal = () => {
+        localStorage.removeItem(CART_KEY);
+    };
 
-        if (!botonAgregar) return;
+    // ----------------------------------------------------------
+    // API CLIENT (import dinámico para evitar circular)
+    // ----------------------------------------------------------
+    let api = null;
+    async function getApi() {
+        if (!api) {
+            const mod = await import('./apiClient.js');
+            api = mod.api;
+        }
+        return api;
+    }
 
-        const tarjeta =
-            botonAgregar.closest('.card');
+    // ----------------------------------------------------------
+    // VERIFICAR AUTENTICACIÓN
+    // ----------------------------------------------------------
+    async function verificarAuthYCambiarModo() {
+        if (!API_CART_ENABLED) {
+            modoAPI = false;
+            return;
+        }
 
-        if (!tarjeta) return;
+        try {
+            const apiClient = await getApi();
+            const response = await apiClient.getMe();
+            modoAPI = response.ok === true;
+            if (modoAPI) {
+                console.log('[Carrito] Usuario autenticado, usando API');
+            } else {
+                console.log('[Carrito] Usuario no autenticado, usando localStorage');
+            }
+        } catch {
+            modoAPI = false;
+            console.log('[Carrito] Usuario no autenticado, usando localStorage');
+        }
+    }
 
-        const existente = carrito.find(
-            item =>
-                item.nombre === tarjeta.dataset.nombre
-        );
+    // ----------------------------------------------------------
+    // CARGAR CARRITO (API o localStorage)
+    // ----------------------------------------------------------
+    async function cargarCarrito() {
+        await verificarAuthYCambiarModo();
+
+        if (modoAPI) {
+            try {
+                const apiClient = await getApi();
+                const response = await apiClient.getCart();
+                if (!response.ok) throw new Error(response.msg || 'No se pudo cargar el carrito');
+                carrito = response.data?.cart?.items || [];
+                console.log('[Carrito] Cargado desde API:', carrito.length, 'items');
+            } catch (error) {
+                console.error('[Carrito] Error cargando API, fallback a localStorage:', error);
+                modoAPI = false;
+                carrito = cargarLocal();
+            }
+        } else {
+            carrito = cargarLocal();
+        }
+
+        carritoCargado = true;
+        actualizarVista();
+    }
+
+    // ----------------------------------------------------------
+    // ACTUALIZAR VISTA (común para ambos modos)
+    // ----------------------------------------------------------
+    const actualizarVista = () => {
+        if (!lista || !contador || !totalTexto) return;
+
+        let total = 0;
+        let cantidadTotal = 0;
+
+        lista.innerHTML = carrito.map((item, indice) => {
+            const precio = item.precioUnitario ?? item.precio;
+            const subtotal = precio * item.cantidad;
+
+            total += subtotal;
+            cantidadTotal += item.cantidad;
+
+            // Para API items, el _id del subdocumento es item._id
+            // Para localStorage items, usamos índice
+            const itemId = item._id ?? indice;
+
+            return `
+                <li class="carrito-item">
+                    <span>
+                         ${escapeHTML(item.nombreSnapshot ?? item.nombre ?? 'Producto')} x${Number(item.cantidad) || 0}
+                    </span>
+
+                    <span>
+                         $${escapeHTML(subtotal.toLocaleString('es-CO'))}
+                    </span>
+
+                    <button
+                        class="quitar-item"
+                        data-indice="${indice}"
+                         data-item-id="${escapeHTML(itemId)}"
+                        aria-label="Quitar producto"
+                    >
+                        ✕
+                    </button>
+                </li>
+            `;
+        }).join('');
+
+        contador.textContent = cantidadTotal;
+        totalTexto.textContent = `$${total.toLocaleString('es-CO')}`;
+    };
+
+    // ----------------------------------------------------------
+    // AGREGAR PRODUCTO
+    // ----------------------------------------------------------
+    async function agregarProducto(tarjeta) {
+        const id = tarjeta.dataset.id || null;
+        const nombre = tarjeta.dataset.nombre;
+        const precio = Number(tarjeta.dataset.precio);
+
+        if (!id) {
+            window.alert('Este producto no está disponible para compra en este momento.');
+            return;
+        }
+
+        if (modoAPI && carritoCargado) {
+            try {
+                const apiClient = await getApi();
+                const response = await apiClient.addToCart({ productoId: id, cantidad: 1 });
+                if (!response.ok) {
+                    if (response.data?.status === 401) {
+                        modoAPI = false;
+                    } else {
+                        window.alert(response.msg || 'No se pudo agregar el producto');
+                        return;
+                    }
+                } else {
+                    carrito = response.data?.cart?.items || [];
+                    actualizarVista();
+                    abrir();
+                    return;
+                }
+            } catch (error) {
+                console.error('[Carrito] Error API add, fallback local:', error);
+                // Si falla (ej: 401), cambiar a modo local y reintentar
+                modoAPI = false;
+            }
+        }
+
+        // Modo localStorage (invitado o fallback)
+        const identificador = item =>
+            (item.id && id && item.id === id) ||
+            (!id && item.nombre === nombre);
+
+        const existente = carrito.find(identificador);
 
         if (existente) {
             existente.cantidad += 1;
         } else {
             carrito.push({
-                nombre: tarjeta.dataset.nombre,
-                precio: Number(tarjeta.dataset.precio),
+                id,
+                nombre,
+                precio,
                 cantidad: 1
             });
         }
 
-        guardar();
+        guardarLocal(carrito);
         actualizarVista();
         abrir();
+    }
+
+    // ----------------------------------------------------------
+    // QUITAR PRODUCTO
+    // ----------------------------------------------------------
+    async function quitarProducto(indice, itemId) {
+        if (modoAPI && carritoCargado && itemId && itemId !== String(indice)) {
+            try {
+                const apiClient = await getApi();
+                const response = await apiClient.removeFromCart(itemId);
+                if (!response.ok) {
+                    window.alert(response.msg || 'No se pudo quitar el producto');
+                    return;
+                }
+                carrito = response.data?.cart?.items || [];
+                actualizarVista();
+                return;
+            } catch (error) {
+                console.error('[Carrito] Error API remove, fallback local:', error);
+                modoAPI = false;
+            }
+        }
+
+        // Modo localStorage
+        carrito.splice(indice, 1);
+        guardarLocal(carrito);
+        actualizarVista();
+    }
+
+    // ----------------------------------------------------------
+    // ACTUALIZAR CANTIDAD (opcional, para futuros botones + / -)
+    // ----------------------------------------------------------
+    async function actualizarCantidad(indice, itemId, nuevaCantidad) {
+        if (nuevaCantidad < 1) return quitarProducto(indice, itemId);
+
+        if (modoAPI && carritoCargado && itemId && itemId !== String(indice)) {
+            try {
+                const apiClient = await getApi();
+                const response = await apiClient.updateCartItem(itemId, nuevaCantidad);
+                if (!response.ok) {
+                    window.alert(response.msg || 'No se pudo actualizar la cantidad');
+                    return;
+                }
+                carrito = response.data?.cart?.items || [];
+                actualizarVista();
+                return;
+            } catch (error) {
+                console.error('[Carrito] Error API update, fallback local:', error);
+                modoAPI = false;
+            }
+        }
+
+        // Modo localStorage
+        if (carrito[indice]) {
+            carrito[indice].cantidad = nuevaCantidad;
+            guardarLocal(carrito);
+            actualizarVista();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // VACIAR CARRITO
+    // ----------------------------------------------------------
+    async function vaciarCarrito() {
+        if (modoAPI && carritoCargado) {
+            try {
+                const apiClient = await getApi();
+                const response = await apiClient.clearCart();
+                if (!response.ok) {
+                    window.alert(response.msg || 'No se pudo vaciar el carrito');
+                    return;
+                }
+                carrito = [];
+                actualizarVista();
+                return;
+            } catch (error) {
+                console.error('[Carrito] Error API clear, fallback local:', error);
+                modoAPI = false;
+            }
+        }
+
+        carrito = [];
+        guardarLocal(carrito);
+        actualizarVista();
+    }
+
+    // ----------------------------------------------------------
+    // SINCRONIZAR LOCALSTORAGE → API (tras login)
+    // ----------------------------------------------------------
+    async function sincronizarConAPI() {
+        if (!modoAPI || !carritoCargado) return;
+
+        const carritoLocal = cargarLocal();
+        if (!carritoLocal.length) return;
+
+        try {
+            const apiClient = await getApi();
+            
+            const current = await apiClient.getCart();
+            if (!current.ok) throw new Error(current.msg || 'No se pudo leer el carrito');
+            const serverItems = current.data?.cart?.items || [];
+            for (const item of carritoLocal) {
+                const existing = serverItems.find(serverItem => serverItem.producto?._id === item.id || serverItem.producto === item.id);
+                const pending = Math.max(0, Number(item.cantidad || 0) - Number(existing?.cantidad || 0));
+                if (!pending) continue;
+                const result = await apiClient.addToCart({ productoId: item.id, cantidad: pending });
+                if (!result.ok) throw new Error(result.msg || 'No se pudo sincronizar el carrito');
+            }
+
+            const response = await apiClient.getCart();
+            if (!response.ok) throw new Error(response.msg || 'No se pudo leer el carrito sincronizado');
+            carrito = response.data?.cart?.items || [];
+            
+            // Limpiar localStorage tras sync exitoso
+            limpiarLocal();
+            
+            console.log('[Carrito] Sincronizado local → API:', carritoLocal.length, 'items');
+            actualizarVista();
+        } catch (error) {
+            console.error('[Carrito] Error en sincronización:', error);
+        }
+    }
+
+    // ----------------------------------------------------------
+    // ESCUCHAR CAMBIOS DE AUTENTICACIÓN (evento personalizado)
+    // ----------------------------------------------------------
+    window.addEventListener('auth-cambio', async () => {
+        await verificarAuthYCambiarModo();
+        if (modoAPI) {
+            await sincronizarConAPI();
+        } else {
+            // Si se desloguea, cargar localStorage
+            carrito = cargarLocal();
+            actualizarVista();
+        }
     });
 
+    // ----------------------------------------------------------
+    // EVENT LISTENERS
+    // ----------------------------------------------------------
 
+    // Agregar al carrito (click en .cardbtn)
+    document.addEventListener('click', evento => {
+        const botonAgregar = evento.target.closest('.cardbtn');
+        if (!botonAgregar) return;
+
+        const tarjeta = botonAgregar.closest('.card');
+        if (!tarjeta) return;
+
+        agregarProducto(tarjeta);
+    });
+
+    document.addEventListener('carrito-agregar', async evento => {
+        const { id, nombre, precio, onComplete } = evento.detail || {};
+        if (!id) return;
+        await agregarProducto({ dataset: { id, nombre, precio } });
+        onComplete?.();
+    });
+
+    // Quitar del carrito (click en .quitar-item)
     lista?.addEventListener('click', evento => {
-
-        const botonQuitar =
-            evento.target.closest('.quitar-item');
-
+        const botonQuitar = evento.target.closest('.quitar-item');
         if (!botonQuitar) return;
 
-        carrito.splice(
-            Number(botonQuitar.dataset.indice),
-            1
-        );
-
-        guardar();
-        actualizarVista();
+        const indice = Number(botonQuitar.dataset.indice);
+        const itemId = botonQuitar.dataset.itemId;
+        
+        if (!isNaN(indice)) {
+            quitarProducto(indice, itemId);
+        }
     });
 
-
-    document
-        .querySelector('.carrito-icono')
-        ?.addEventListener('click', abrir);
-
-
-    document
-        .querySelector('.carrito-cerrar')
-        ?.addEventListener('click', cerrar);
-
-
+    // Abrir/cerrar panel
+    document.querySelector('.carrito-icono')?.addEventListener('click', abrir);
+    document.querySelector('.carrito-cerrar')?.addEventListener('click', cerrar);
     fondo?.addEventListener('click', cerrar);
 
-
-    window.addEventListener('storage', () => {
-        carrito = cargar();
-        actualizarVista();
+    // Sincronizar entre pestañas (localStorage)
+    window.addEventListener('storage', async (e) => {
+        if (e.key === CART_KEY && !modoAPI) {
+            carrito = cargarLocal();
+            actualizarVista();
+        }
     });
 
+    document.querySelector('.finalizar-pedido')?.addEventListener('click', () => {
+        if (!carrito.length) {
+            window.alert('Tu carrito está vacío. Agrega algún producto primero.');
+            return;
+        }
+        window.location.href = 'checkout.html';
+    });
 
-    document
-        .querySelector('.finalizar-pedido')
-        ?.addEventListener('click', () => {
-
-            if (!carrito.length) {
-                alert(
-                    'Tu carrito está vacío. Agrega algún producto primero 💕'
-                );
-                return;
-            }
-
-            if (NUMERO_WHATSAPP === '573000000000') {
-                alert(
-                    'Agrega el número real de WhatsApp en js/app.js antes de finalizar pedidos.'
-                );
-                return;
-            }
-
-            const detalle = carrito
-                .map(
-                    item =>
-                        `• ${item.nombre} x${item.cantidad} - $${(
-                            item.precio * item.cantidad
-                        ).toLocaleString('es-CO')}`
-                )
-                .join('\n');
-
-            const total = carrito.reduce(
-                (acumulado, item) =>
-                    acumulado +
-                    item.precio * item.cantidad,
-                0
-            );
-
-            window.open(
-                `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(
-                    `Hola, quiero hacer este pedido:\n\n${detalle}\n\nTotal: $${total.toLocaleString('es-CO')}`
-                )}`,
-                '_blank'
-            );
-        });
-
-    actualizarVista();
+    // Inicializar: cargar carrito
+    await cargarCarrito();
 }
 
 
@@ -740,57 +865,39 @@ export function iniciarCarrito() {
  * sin enviar información a un servidor.
  */
 export function iniciarFormularioContacto() {
-
-    const formulario =
-        document.querySelector('.formulario-contacto');
-
-    const mensaje =
-        document.querySelector('.formulario-mensaje');
-
+    const formulario = document.querySelector('.formulario-contacto');
+    const mensaje = formulario?.querySelector('.formulario-mensaje');
     if (!formulario || !mensaje) return;
 
-    formulario.addEventListener('submit', evento => {
-
+    formulario.addEventListener('submit', async evento => {
         evento.preventDefault();
+        const nombre = formulario.elements.nombre.value.trim();
+        const telefono = formulario.elements.telefono.value.trim();
+        const correo = formulario.elements.correo.value.trim();
+        const texto = formulario.elements.mensaje.value.trim();
+        const website = formulario.elements.website?.value || '';
 
-        const nombre =
-            formulario.nombre.value.trim();
-
-        const telefono =
-            formulario.telefono.value.trim();
-
-        const correo =
-            formulario.correo.value.trim();
-
-        let texto =
-            '¡Gracias! Te contactaremos pronto 💕';
-
-        let tipo = 'exito';
-
-        if (!nombre || !telefono || !correo) {
-
-            texto =
-                'Por favor completa todos los campos.';
-
-            tipo = 'error';
-
-        } else if (
-            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)
-        ) {
-
-            texto =
-                'Revisa tu correo, no parece válido.';
-
-            tipo = 'error';
+        if (!nombre || !telefono || !correo || texto.length < 10) {
+            mostrarMensajeGlobal(formulario, 'Completa todos los campos correctamente.', 'error');
+            return;
+        }
+        if (!validarEmail(correo)) {
+            mostrarMensajeGlobal(formulario, 'Revisa tu correo, no parece válido.', 'error');
+            return;
         }
 
-        mensaje.textContent = texto;
-
-        mensaje.className =
-            `formulario-mensaje ${tipo}`;
-
-        if (tipo === 'exito') {
+        const boton = formulario.querySelector('button[type="submit"]');
+        setBtnLoading(boton, true);
+        try {
+            const { api } = await import('./apiClient.js');
+            const response = await api.post('/contact', { nombre, telefono, email: correo, mensaje: texto, website });
+            if (!response.ok) throw new Error(response.msg || 'No se pudo enviar el mensaje');
+            mostrarMensajeGlobal(formulario, response.data?.message || '¡Gracias! Te contactaremos pronto.', 'exito');
             formulario.reset();
+        } catch (error) {
+            mostrarMensajeGlobal(formulario, error.message || 'No se pudo enviar el mensaje.', 'error');
+        } finally {
+            setBtnLoading(boton, false);
         }
     });
 }
@@ -857,10 +964,8 @@ export function iniciarWhatsapp() {
         .querySelector('.whatsapp-boton')
         .addEventListener('click', () => {
 
-            if (NUMERO_WHATSAPP === '573000000000') {
-                alert(
-                    'Agrega el número real de WhatsApp en js/app.js para recibir mensajes.'
-                );
+            if (!NUMERO_WHATSAPP || !/^\d{10,15}$/.test(NUMERO_WHATSAPP)) {
+                alert('Número de WhatsApp no configurado correctamente. Contacta al administrador.');
                 return;
             }
 
@@ -868,7 +973,8 @@ export function iniciarWhatsapp() {
                 `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(
                     '¡Hola! Vi la página de By Jers y quiero saber más sobre sus productos ✨'
                 )}`,
-                '_blank'
+                '_blank',
+                'noopener,noreferrer'
             );
         });
 }
@@ -1189,34 +1295,54 @@ export function iniciarChatbot() {
  */
 export function iniciarAnimacionesScroll() {
 
-    const elementos =
-        document.querySelectorAll('.revelar');
+    const elementos = document.querySelectorAll('.revelar');
 
-    const observador =
-        new IntersectionObserver(
-            entradas => {
+    if (!('IntersectionObserver' in window)) {
+        elementos.forEach(elemento => elemento.classList.add('visible'));
+        return;
+    }
 
-                entradas.forEach(entrada => {
-
-                    if (entrada.isIntersecting) {
-
-                        entrada.target.classList.add(
-                            'visible'
-                        );
-
-                    }
-
-                });
-
-            },
-            {
-                threshold: 0.15
-            }
-        );
+    const observador = new IntersectionObserver(
+        entradas => {
+            entradas.forEach(entrada => {
+                if (entrada.isIntersecting) {
+                    entrada.target.classList.add('visible');
+                }
+            });
+        },
+        {
+            threshold: 0.15
+        }
+    );
 
     elementos.forEach(elemento => {
         observador.observe(elemento);
     });
+}
+
+
+// ==================================================================
+// LOGOUT GLOBAL
+// ==================================================================
+
+/**
+ * Cierra sesión del usuario
+ * Llama a API logout y notifica al carrito para cambiar a modo localStorage
+ * Útil para menú de usuario futuro
+ */
+export async function cerrarSesion() {
+    try {
+        const { api } = await import('./apiClient.js');
+        const result = await api.logout();
+        if (!result.ok) throw new Error(result.msg || 'No se pudo cerrar sesión');
+
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('[Auth] Error en logout:', error);
+        // Aun así notificar cambio de auth
+        window.dispatchEvent(new Event('auth-cambio'));
+        window.location.href = 'index.html';
+    }
 }
 
 
@@ -1232,9 +1358,45 @@ export function iniciarAplicacion() {
 
     iniciarMenuMovil();
     resaltarPaginaActual();
-    iniciarCarrito();
+    iniciarCarrito().catch(error => {
+        console.error('[Carrito] No se pudo inicializar:', error);
+    });
+    inicializarSesionUI();
     iniciarWhatsapp();
     iniciarChatbot();
     iniciarAnimacionesScroll();
+}
 
+async function inicializarSesionUI() {
+    const menu = document.querySelector('.menulist');
+    if (!menu || menu.querySelector('[data-session-ui]')) return;
+    try {
+        const { api } = await import('./apiClient.js');
+        const response = await api.getMe();
+        const item = document.createElement('li');
+        item.className = 'menuitem sesion-menu';
+        item.dataset.sessionUi = 'true';
+        if (response.ok && response.data?.user) {
+            const profile = document.createElement('a');
+            profile.href = 'mi-perfil.html';
+            profile.textContent = 'Mi perfil';
+            const orders = document.createElement('a');
+            orders.href = 'mis-pedidos.html';
+            orders.textContent = 'Mis pedidos';
+            const logout = document.createElement('button');
+            logout.type = 'button';
+            logout.className = 'menu-logout';
+            logout.textContent = 'Cerrar sesión';
+            logout.addEventListener('click', () => cerrarSesion());
+            item.append(profile, orders, logout);
+        } else {
+            const login = document.createElement('a');
+            login.href = 'login.html';
+            login.textContent = 'Iniciar sesión';
+            item.append(login);
+        }
+        menu.append(item);
+    } catch {
+        return;
+    }
 }

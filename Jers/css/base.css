@@ -91,6 +91,26 @@ h3 {
     border-bottom-color: var(--color-mauve);
 }
 
+.sesion-menu {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.menu-logout {
+    background: none;
+    border: 0;
+    color: var(--color-texto);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 0;
+}
+
+.menu-logout:hover {
+    color: var(--color-mauve);
+}
+
 .menu-toggle {
     background: none;
     border: 0;
@@ -291,6 +311,28 @@ h3 {
     transition: background .25s, transform .25s;
 }
 
+.card-acciones {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 0 12px 16px;
+}
+
+.cardlink {
+    background: var(--color-texto);
+    border-radius: 25px;
+    color: white;
+    font: 600 .85rem var(--fuente-texto);
+    padding: 10px 14px;
+    text-decoration: none;
+}
+
+.cardlink:hover {
+    background: var(--color-mauve);
+}
+
 .cardbtn:hover,
 .contact-btn:hover {
     background: var(--color-texto);
@@ -363,7 +405,7 @@ h3 {
 }
 
 .finalizar-pedido {
-    background: var(--color-whatsapp);
+    background: var(--color-mauve);
     border: 0;
     border-radius: 25px;
     color: white;
@@ -389,8 +431,8 @@ h3 {
 
 /* Animación de entrada para las secciones con clase .revelar. */
 .revelar {
-    opacity: 0;
-    transform: translateY(25px);
+    opacity: 1;
+    transform: none;
     transition: opacity .6s ease, transform .6s ease;
 }
 
@@ -599,6 +641,120 @@ h3 {
     cursor: pointer;
     height: 38px;
     width: 38px;
+}
+
+/* Pie de página compartido. */
+.site-footer {
+    background: #222;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.site-footer .redes-sociales {
+    margin-bottom: 10px;
+}
+
+.site-footer .redes-sociales a {
+    display: inline-block;
+    margin: 0 10px;
+    opacity: .85;
+    transition: opacity .3s;
+}
+
+.site-footer .redes-sociales a:hover {
+    opacity: 1;
+}
+
+/* Estados de carga y error para catálogos (API) */
+.catalogo-loading {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+    min-height: 200px;
+    text-align: center;
+}
+
+.catalogo-error {
+    align-items: center;
+    background: #fdf2f2;
+    border: 1px solid #f5c6cb;
+    border-radius: 12px;
+    color: #721c24;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+    min-height: 200px;
+    padding: 40px;
+    text-align: center;
+}
+
+.catalogo-vacio {
+    color: #7a6666;
+    font-size: 1.1rem;
+    grid-column: 1 / -1;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+    border: 3px solid var(--color-rosa);
+    border-radius: 50%;
+    border-top-color: var(--color-mauve);
+    height: 40px;
+    width: 40px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-reintentar {
+    background: var(--color-mauve);
+    border: 0;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font: 600 .9rem var(--fuente-texto);
+    padding: 11px 20px;
+    transition: background .25s, transform .25s;
+}
+
+.btn-reintentar:hover {
+    background: var(--color-texto);
+    transform: translateY(-2px);
+}
+
+/* Badge de descuento en cards */
+.descuento-badge {
+    background: var(--color-dorado);
+    border-radius: 0 0 12px 12px;
+    color: white;
+    font-size: .7rem;
+    font-weight: 600;
+    left: 0;
+    padding: 4px 10px;
+    position: absolute;
+    top: 0;
+    text-transform: uppercase;
+    z-index: 1;
+}
+
+.card {
+    position: relative;
+}
+
+/* Precio anterior tachado */
+.precio-anterior {
+    color: #999;
+    font-size: .9rem;
+    font-weight: 400;
+    margin-right: 8px;
+    text-decoration: line-through;
 }
 
 /* Adaptaciones que se aplican en cualquier página móvil. */

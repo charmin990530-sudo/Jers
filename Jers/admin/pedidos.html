@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Gestión de Pedidos">
+    <title>By Jers Admin | Pedidos</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/admin-productos.css">
+</head>
+
+<body class="admin-page">
+    <header class="header">
+        <nav class="menu">
+            <img src="../img/logo/logo.webp" alt="Logo By Jers" class="menulogo">
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="menulist">
+                <li class="menuitem"><a href="../index.html">Ver tienda</a></li>
+                <li class="menuitem"><a href="dashboard.html">Dashboard</a></li>
+                <li class="menuitem"><a href="productos.html">Productos</a></li>
+                <li class="menuitem"><a href="categorias.html">Categorías</a></li>
+                <li class="menuitem"><a href="marcas.html">Marcas</a></li>
+                <li class="menuitem"><a href="pedidos.html" class="activo">Pedidos</a></li>
+                <li class="menuitem"><a href="usuarios.html">Usuarios</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="admin-main">
+        <section class="pagina-header">
+            <div class="header-content">
+                <div>
+                    <h1>Gestión de Pedidos</h1>
+                    <p>Consulta y actualiza el estado de los pedidos</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="admin-filtros">
+                <div class="filtro-grupo">
+                    <label for="filtroEstado">Estado del pedido</label>
+                    <select id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="confirmado">Confirmado</option>
+                        <option value="procesando">Procesando</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="entregado">Entregado</option>
+                        <option value="cancelado">Cancelado</option>
+                        <option value="reembolsado">Reembolsado</option>
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="filtroPago">Estado del pago</label>
+                    <select id="filtroPago">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="fallido">Fallido</option>
+                        <option value="reembolsado">Reembolsado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    <h2>Listado de Pedidos</h2>
+                    <span class="result-count" id="resultCount">0 pedidos</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table" id="pedidosTable">
+                        <thead>
+                            <tr>
+                                <th>Orden</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Pago</th>
+                                <th>Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pedidosBody">
+                            <tr class="loading-row">
+                                <td colspan="7"><div class="spinner"></div> Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination" hidden>
+                    <button type="button" class="btn-paginacion" id="pagAnterior" disabled>← Anterior</button>
+                    <span class="pag-info" id="pagInfo">Página 1 de 1</span>
+                    <button type="button" class="btn-paginacion" id="pagSiguiente" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal" id="modalPedido" role="dialog" aria-labelledby="modalPedidoTitulo" aria-modal="true" hidden>
+        <div class="modal-contenido modal-grande">
+            <button type="button" class="modal-cerrar" id="btnCerrarPedido" aria-label="Cerrar">✕</button>
+            <h2 id="modalPedidoTitulo">Detalle del pedido</h2>
+            <div id="pedidoDetalle" class="admin-form">
+                <div class="loading-row"><div class="spinner"></div> Cargando pedido...</div>
+            </div>
+            <form id="formPedido" class="admin-form" method="post" novalidate hidden>
+                <input type="hidden" id="pedidoId" name="id">
+                <div class="form-grid">
+                    <div class="form-grupo">
+                        <label for="pedidoEstado">Estado del pedido</label>
+                        <select id="pedidoEstado" name="estado">
+                            <option value="pendiente">Pendiente</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="procesando">Procesando</option>
+                            <option value="enviado">Enviado</option>
+                            <option value="entregado">Entregado</option>
+                            <option value="cancelado">Cancelado</option>
+                            <option value="reembolsado">Reembolsado</option>
+                        </select>
+                    </div>
+                    <div class="form-grupo">
+                        <label for="pedidoPago">Estado del pago</label>
+                        <select id="pedidoPago" name="estadoPago">
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagado">Pagado</option>
+                            <option value="fallido">Fallido</option>
+                            <option value="reembolsado">Reembolsado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grupo">
+                    <label for="pedidoNotas">Notas administrativas</label>
+                    <textarea id="pedidoNotas" name="notas" maxlength="500" rows="4"></textarea>
+                    <span class="campo-error" aria-live="polite"></span>
+                </div>
+                <div class="form-acciones">
+                    <button type="button" class="btn-secundario" id="btnCancelarPedido">Cerrar</button>
+                    <button type="submit" class="btn-primario" id="btnGuardarPedido">
+                        <span class="btn-texto">Guardar cambios</span>
+                        <span class="btn-loader" hidden>⏳</span>
+                    </button>
+                </div>
+                <div class="formulario-mensaje" id="pedidoMensaje" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <p>© 2026 By Jers - Panel de Administración</p>
+    </footer>
+
+    <script type="module" src="../js/admin/pedidos.js"></script>
+</body>
+</html>

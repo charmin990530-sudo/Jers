@@ -1,0 +1,12 @@
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.har
+*.pem
+*.key
+*.p12
+*.pfx
+*.dump
+*.bak

@@ -144,6 +144,83 @@
   margin-top: 5px;
 }
 
+/* ============================================
+   MARCAS
+   Carrusel infinito de logos, estilo "trust bar".
+   ============================================ */
+.marcas-seccion {
+  animation: aparecer 1s ease;
+  margin: 0 auto 70px;
+  max-width: 1250px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.marcas-titulo {
+  color: #7a6666;
+  font-size: .95rem;
+  margin-bottom: 28px;
+}
+
+.marcas-carrusel {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marcas-track {
+  align-items: center;
+  animation: desplazarMarcas 28s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.marcas-carrusel.pausado .marcas-track,
+.marcas-carrusel:hover .marcas-track {
+  animation-play-state: paused;
+}
+
+.marca-item {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 0 42px;
+}
+
+.marca-nombre {
+  color: #7a6666;
+  display: inline-block;
+  font-family: "Playfair Display", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  opacity: .6;
+  transition: color .3s ease, opacity .3s ease, transform .3s ease;
+  white-space: nowrap;
+}
+
+.marca-nombre:hover {
+  color: var(--color-mauve);
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+@keyframes desplazarMarcas {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marcas-track { animation: none; }
+}
+
+@media (max-width: 480px) {
+  .marca-item { padding: 0 26px; }
+  .marca-item img { height: 24px; }
+}
+
 .promo-btn {
   background: white;
   color: var(--color-mauve);

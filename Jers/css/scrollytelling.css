@@ -1,0 +1,34 @@
+/**
+ * scrollytelling.css
+ * Capa de fondo animada por scroll: un <canvas> fijo (sticky) que dibuja
+ * frames de una secuencia mientras el usuario se desplaza, con el
+ * contenido normal de la sección por encima, sin tocarlo.
+ */
+
+.scrolly {
+    position: relative;
+    height: var(--scrolly-alto, 250vh);
+}
+
+.scrolly-pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.scrolly-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+    background: #000;
+}
+
+.scrolly-contenido {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+}

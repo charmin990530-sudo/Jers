@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="By Jers - Mis direcciones">
+    <title>By Jers | Mis direcciones</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/mis-direcciones.css">
+</head>
+
+<body class="mis-direcciones-page">
+
+    <header class="header">
+        <nav class="menu">
+            <img src="img/logo/logo.webp" alt="Logo By Jers" class="menulogo">
+
+            <button class="menu-toggle" aria-label="Abrir menú" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="menulist">
+                <li class="menuitem"><a href="index.html">Inicio</a></li>
+                <li class="menuitem"><a href="maquillaje.html">Maquillaje</a></li>
+                <li class="menuitem"><a href="cabello.html">Cuidado capilar</a></li>
+                <li class="menuitem"><a href="resenas.html">Reseñas</a></li>
+                <li class="menuitem"><a href="contacto.html">Contacto</a></li>
+            </ul>
+
+            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+                🛍️ <span class="carrito-contador">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="pagina-header">
+            <h1>Mis direcciones</h1>
+            <p>Gestiona tus direcciones de envío y facturación</p>
+        </section>
+
+        <section class="container">
+            <!-- Botón agregar -->
+            <div class="direcciones-header">
+                <button class="btn-agregar-direccion" id="btnAgregarDireccion" type="button">
+                    ➕ Agregar dirección
+                </button>
+            </div>
+
+            <!-- Lista de direcciones -->
+            <div id="direccionesContenido">
+                <!-- Loading -->
+                <div class="direcciones-loading" aria-live="polite">
+                    <div class="spinner"></div>
+                    <p>Cargando direcciones...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Agregar/Editar Dirección -->
+    <div class="modal" id="modalDireccion" hidden role="dialog" aria-modal="true" aria-labelledby="modalDireccionTitulo">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" type="button" aria-label="Cerrar">✕</button>
+            <h2 id="modalDireccionTitulo" class="modal-titulo">Agregar dirección</h2>
+            
+            <form id="formDireccion" class="direccion-form" method="post" novalidate>
+                <input type="hidden" name="addressId" id="addressId">
+                <input type="hidden" name="esEdicion" id="esEdicion" value="false">
+
+                <div class="form-grid">
+                    <div class="form-grupo">
+                        <label for="dirAlias">Alias *</label>
+                        <input type="text" id="dirAlias" name="alias" required minlength="2" maxlength="30" placeholder="ej: Casa, Trabajo, Mamá" autocomplete="off">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirNombreCompleto">Nombre completo *</label>
+                        <input type="text" id="dirNombreCompleto" name="nombreCompleto" required minlength="2" maxlength="100" placeholder="Nombre para el paquete" autocomplete="name">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirTelefono">Teléfono *</label>
+                        <input type="tel" id="dirTelefono" name="telefono" required placeholder="300 123 4567" autocomplete="tel" pattern="[\d\s\-\+\(\)]{7,20}">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirDireccion">Dirección *</label>
+                        <input type="text" id="dirDireccion" name="direccion" required minlength="5" maxlength="200" placeholder="Calle, número, apartamento" autocomplete="street-address">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirCiudad">Ciudad *</label>
+                        <input type="text" id="dirCiudad" name="ciudad" required minlength="2" maxlength="50" autocomplete="address-level2">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirDepartamento">Departamento *</label>
+                        <input type="text" id="dirDepartamento" name="departamento" required minlength="2" maxlength="50" autocomplete="address-level1">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="dirCodigoPostal">Código postal</label>
+                        <input type="text" id="dirCodigoPostal" name="codigoPostal" maxlength="10" placeholder="Opcional" autocomplete="postal-code">
+                        <span class="campo-error" aria-live="polite"></span>
+                    </div>
+                </div>
+
+                <div class="form-grupo checkbox-grupo">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="esPrincipal" id="dirEsPrincipal" value="true">
+                        <span class="checkbox-custom"></span>
+                        <span>Establecer como dirección principal</span>
+                    </label>
+                </div>
+
+                <div class="form-acciones">
+                    <button type="button" class="btn-cancelar" id="btnCancelarDireccion">Cancelar</button>
+                    <button type="submit" class="btn-guardar" id="btnGuardarDireccion">
+                        <span class="btn-texto">Guardar dirección</span>
+                        <span class="btn-loader" hidden>⏳</span>
+                    </button>
+                </div>
+
+                <div class="formulario-mensaje" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminar -->
+    <div class="modal" id="modalEliminar" hidden role="dialog" aria-modal="true" aria-labelledby="modalEliminarTitulo">
+        <div class="modal-contenido modal-pequeño">
+            <button class="modal-cerrar" type="button" aria-label="Cerrar">✕</button>
+            <h2 id="modalEliminarTitulo" class="modal-titulo">Eliminar dirección</h2>
+            <p class="modal-mensaje">¿Estás seguro de eliminar esta dirección? Esta acción no se puede deshacer.</p>
+            <div class="modal-acciones">
+                <button type="button" class="btn-cancelar" id="btnCancelarEliminar">Cancelar</button>
+                <button type="button" class="btn-eliminar" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="carrito-panel">
+        <div class="carrito-cabecera">
+            <h2>Tu carrito</h2>
+            <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
+        </div>
+
+        <ul class="carrito-lista"></ul>
+
+        <div class="carrito-resumen">
+            <p>Total: <span class="carrito-total">$0</span></p>
+            <button class="finalizar-pedido" type="button">Finalizar pedido</button>
+        </div>
+    </div>
+    <div class="carrito-fondo"></div>
+
+    <footer class="site-footer">
+        <div class="redes-sociales">
+            <a href="https://facebook.com/tu-tienda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.988H7.898v-2.89h2.54V9.797c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                </svg>
+            </a>
+            <a href="https://instagram.com/tu-tienda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+                    <path d="M7 2C4.243 2 2 4.243 2 7v10c0 2.757 2.243 5 5 5h10c2.757 0 5-2.243-5-5V7c0-1.654 1.346-3-3-3H7zm10 2c1.654 0 3 1.346 3 3v10c0 1.654-1.346 3-3 3H7c-1.654 0-3-1.346-3-3V7c0-1.654 1.346-3 3-3h10zm-5 3a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6zm4.5-2a1.5 1.5 0 11-3.001-.001A1.5 1.5 0 0116.5 7z" />
+                </svg>
+            </a>
+            <a href="https://twitter.com/tu-tienda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69a4.28 4.28 0 001.88-2.37 8.59 8.59 0 01-2.72 1.04 4.27 4.27 0 00-7.27 3.89A12.12 12.12 0 013 4.79a4.27 4.27 0 001.32 5.7 4.24 4.24 0 01-1.94-.54v.05a4.27 4.27 0 003.43 4.18 4.3 4.3 0 01-1.93.07 4.27 4.27 0 003.99 2.97A8.57 8.57 0 012 19.54a12.09 12.09 0 006.56 1.92c7.88 0 12.2-6.53 12.2-12.2 0-.19-.01-.39-.02-.58A8.72 8.72 0 0022.46 6z" />
+                </svg>
+            </a>
+        </div>
+        <p>© 2026 Jers.</p>
+    </footer>
+
+    <script type="module" src="js/mis-direcciones.js"></script>
+</body>
+
+</html>
