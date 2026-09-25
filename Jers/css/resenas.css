@@ -35,3 +35,27 @@
     font-size: .9rem;
     font-weight: 600;
 }
+
+@media (max-width: 768px) {
+    .reviews {
+        padding: 48px 18px;
+    }
+
+    .reviews-grid {
+        gap: 18px;
+    }
+
+    .review-card {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .reviews {
+        padding: 40px 15px;
+    }
+
+    .reviews-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -27,6 +27,9 @@
 
 html {
     scroll-behavior: smooth;
+
+    /* Compensa el encabezado fijo para que los enlaces con ancla no queden debajo. */
+    scroll-padding-top: 90px;
 }
 
 body {
@@ -34,6 +37,28 @@ body {
     color: var(--color-texto);
     font-family: var(--fuente-texto);
     line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* En móviles no debe aparecer el cuadro azul al tocar un enlace o botón. */
+a,
+button,
+input,
+textarea,
+select,
+label {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Los controles táctiles deben medir al menos 44px para ease de usar con el dedo. */
+button,
+.menuitem a,
+.cardlink,
+input,
+select,
+textarea {
+    touch-action: manipulation;
 }
 
 h1,
@@ -159,8 +184,10 @@ h3 {
     text-align: center;
 }
 
+/* Los tamaños usan clamp() para escalar de forma continua con el ancho de la
+   pantalla, en vez de dar saltos bruscos en los cortes de 900/768/480px. */
 .pagina-header h1 {
-    font-size: 2.4rem;
+    font-size: clamp(1.6rem, 1.1rem + 2.4vw, 2.4rem);
     margin-bottom: 10px;
 }
 
@@ -177,7 +204,7 @@ h3 {
 }
 
 .titulo-seccion {
-    font-size: 2.2rem;
+    font-size: clamp(1.45rem, 1.05rem + 2.1vw, 2.2rem);
     margin-bottom: 40px;
     text-align: center;
 }
@@ -818,5 +845,144 @@ h3 {
         left: 12px;
         right: 12px;
         width: auto;
+    }
+
+    /* Menos aire vertical: 80px de padding desperdicia media pantalla en un teléfono. */
+    .container {
+        padding: 52px 18px;
+    }
+
+    .pagina-header {
+        padding: 44px 18px;
+    }
+
+    .titulo-seccion {
+        margin-bottom: 28px;
+    }
+
+    /* Los botones flotantes se apartan de la barra de inicio del iPhone. */
+    .whatsapp-flotante {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        right: calc(18px + env(safe-area-inset-right));
+    }
+
+    .chatbot-boton {
+        bottom: calc(23px + env(safe-area-inset-bottom));
+        right: calc(84px + env(safe-area-inset-right));
+    }
+
+    .chatbot-panel {
+        bottom: calc(88px + env(safe-area-inset-bottom));
+    }
+
+    /* A pantalla completa hay que empujar el panel una vez su ancho completo:
+       con el right: -420px de escritorio, un width: 100% lo dejaba a la vista. */
+    .carrito-panel {
+        max-width: none;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        right: -100vw;
+        width: 100%;
+    }
+
+    /* El carrito se cierra con el dedo, sin pasar el cursor por encima. */
+    .carrito-cerrar,
+    .quitar-item,
+    .chatbot-cerrar,
+    .whatsapp-burbuja-cerrar,
+    .carrito-icono,
+    .menu-toggle,
+    .menu-logout {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .carrito-cerrar,
+    .quitar-item,
+    .chatbot-cerrar,
+    .whatsapp-burbuja-cerrar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Confirmación visual al tocar, ya que no existe :hover en un teléfono. */
+    .cardbtn:active,
+    .contact-btn:active,
+    .finalizar-pedido:active,
+    .btn-reintentar:active,
+    .cardlink:active,
+    .hero-secundario:active {
+        transform: scale(.97);
+    }
+
+    .menuitem a {
+        display: block;
+        padding: 15px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 40px 15px;
+    }
+
+    .pagina-header {
+        padding: 36px 15px;
+    }
+
+    /* Dos tarjetas side-by-side quedan ilegibles en pantallas angostas. */
+    .tarjetas {
+        gap: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .cardimage {
+        height: 165px;
+    }
+
+    /* Los botones ocupan todo el ancho para no fallar con el pulgar.
+       Los <a> necesitan text-align explícito: al blockificarse por flex
+       pierden el centrado que dan por defecto los <button>. */
+    .herobtn,
+    .hero-secundario,
+    .cardbtn,
+    .finalizar-pedido,
+    .btn-reintentar,
+    .cardlink,
+    .contact-btn {
+        text-align: center;
+        width: 100%;
+    }
+
+    .hero-botones,
+    .card-acciones {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        flex: 1 1 auto;
+    }
+
+    /* Evita que el encabezado fijo se coma el contenido en pantallas bajas. */
+    .marca-header {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+/* Respeta a quien pidió menos movimiento en el sistema: se apagan las
+   animaciones infinitas (flotar, pulso) que nunca terminan. */
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
     }
 }

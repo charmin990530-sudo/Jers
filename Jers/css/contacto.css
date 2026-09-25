@@ -54,3 +54,26 @@
 .formulario-mensaje.exito {
     color: #3d8a4d;
 }
+
+@media (max-width: 768px) {
+    .contact {
+        padding: 48px 18px;
+    }
+
+    .formulario-contacto {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact {
+        padding: 40px 15px;
+    }
+
+    /* 16px es el mínimo: por debajo, iOS hace zoom al enfocar el campo. */
+    .campo input,
+    .campo textarea,
+    .campo select {
+        font-size: 1rem;
+    }
+}
