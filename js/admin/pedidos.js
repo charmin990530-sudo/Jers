@@ -1,4 +1,5 @@
 import { api, handleApiError } from '../../js/apiClient.js';
+import { formatearPrecio } from '../config.js';
 import { iniciarAplicacion, setBtnLoading } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
@@ -356,7 +357,7 @@ function normalizarPago(estadoPago) {
 }
 
 function formatearMoneda(valor) {
-    return `$${(Number(valor) || 0).toLocaleString('es-CO')}`;
+    return formatearPrecio(valor);
 }
 
 function formatearFecha(fechaStr) {

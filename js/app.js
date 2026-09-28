@@ -354,7 +354,7 @@ export function renderizarCatalogo(gruposDeMarca, contenedor) {
                 </h3>
 
                 <p class="cardprecio">
-                    $${(Number(producto.precio) || 0).toLocaleString('es-CO')}
+                    ${escapeHTML(formatearPrecio(producto.precio))}
                 </p>
 
                 <div class="card-acciones">
@@ -486,8 +486,8 @@ export function renderizarPromociones(
             ` : crearImagenProducto({ nombre: producto.nombre })}
             <h3 class="cardname">${nombre}</h3>
             <p class="cardprecio">
-                ${tieneDescuento ? `<span class="precio-anterior">$${escapeHTML(producto.precioAnterior.toLocaleString('es-CO'))}</span>` : ''}
-                $${escapeHTML(producto.precio.toLocaleString('es-CO'))}
+                ${tieneDescuento ? `<span class="precio-anterior">${escapeHTML(formatearPrecio(producto.precioAnterior))}</span>` : ''}
+                ${escapeHTML(formatearPrecio(producto.precio))}
             </p>
             <div class="card-acciones">
                 ${enlaceDetalle(producto)}

@@ -10,6 +10,7 @@
  */
 
 import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './apiClient.js';
+import { formatearPrecio } from './config.js';
 import { iniciarAplicacion } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
@@ -507,7 +508,7 @@ function formatearEstado(estado) {
 
 function formatearMonto(valor) {
     const monto = Number(valor);
-    return Number.isFinite(monto) ? monto.toLocaleString('es-CO') : '0';
+    return formatearPrecio(monto);
 }
 
 function formatearFecha(fechaStr) {

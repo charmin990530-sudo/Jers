@@ -1,4 +1,5 @@
 import { api, handleApiError } from '../../js/apiClient.js';
+import { formatearPrecio } from '../config.js';
 import { iniciarAplicacion } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
 
@@ -57,6 +58,8 @@ async function verificarAdminYCargar() {
             return;
         }
 
+        marcarCargando();
+
         await cargarDashboard();
     } catch (error) {
         handleApiError({ message: error.message }, 'admin-dashboard');
@@ -95,6 +98,21 @@ function renderStats(stats) {
     if (statProducts) statProducts.textContent = String(Number(stats.totalProducts) || 0);
     if (statOrders) statOrders.textContent = String(Number(stats.totalOrders) || 0);
     if (statRevenue) statRevenue.textContent = formatearMoneda(stats.totalRevenue);
+}
+
+/**
+ * Marca el panel como cargando ANTES de pedir los datos.
+ *
+ * El dashboard se queda en blanco si la peticion falla o tarda, y el usuario no
+ * puede distinguir "aun cargando" de "no hay datos". Con este estado y el botón
+ * de reintentar de abajo, siempre queda claro en qué situación está.
+ */
+function marcarCargando() {
+    document.querySelectorAll('.status-item').forEach(item => item.classList.add('loading'));
+    const tbody = document.getElementById('recentOrdersBody');
+    if (tbody && !tbody.children.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-vacio">Cargando pedidos recientes...</td></tr>';
+    }
 }
 
 function renderOrdersStatus(ordersByStatus) {
@@ -164,7 +182,7 @@ function formatearEstado(estado) {
 }
 
 function formatearMoneda(valor) {
-    return `$${(Number(valor) || 0).toLocaleString('es-CO')}`;
+    return formatearPrecio(valor);
 }
 
 function formatearFecha(fechaStr) {
@@ -180,12 +198,23 @@ function formatearFecha(fechaStr) {
 
 function mostrarError(mensaje) {
     const container = document.querySelector('.container');
-    if (!container || container.querySelector('.admin-error-global')) return;
+    if (!container) return;
 
+    // Si es un fallo de sesion, tiene sentido ofrecer iniciar sesion. Si no, lo
+    // util es reintentar: casi siempre es un corte de red momentaneo.
+    const esSesion = /sesión|sesion|autorizado|401|403/i.test(mensaje || '');
+    container.querySelector('.admin-error-global')?.remove();
     container.insertAdjacentHTML('afterbegin', `
-        <div class="admin-error-global">
+        <div class="admin-error-global" role="alert">
             <p>${escapeHTML(mensaje)}</p>
-            <a href="../login.html" class="btn-primario">Iniciar sesión</a>
+            ${esSesion
+                ? '<a href="../login.html" class="btn-primario">Iniciar sesión</a>'
+                : '<button type="button" class="btn-primario" data-reintentar-panel>Reintentar</button>'}
         </div>
     `);
+
+    container.querySelector('[data-reintentar-panel]')?.addEventListener('click', () => {
+        container.querySelector('.admin-error-global')?.remove();
+        verificarAdminYCargar();
+    });
 }
