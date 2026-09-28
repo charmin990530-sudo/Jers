@@ -5,27 +5,58 @@ vanilla servido aparte; aquí sólo vive la API.
 
 ## Arranque en local
 
+Un solo proceso sirve **el sitio y la API en el mismo puerto**, así que no hay
+CORS, ni preflight, ni un segundo servidor con otro puerto que se desincronice.
+
 ```bash
 # 1) MongoDB local
-mongod --dbpath /var/lib/mongodb          # si lo tienes como servicio: sudo systemctl start mongod
+sudo systemctl start mongod
 
-# 2) Dependencias
-npm install                                # raíz: dependencias de runtime
-npm install --prefix backend               # backend: + jest/supertest (tests)
+# 2) Dependencias (workspaces: instala la raíz y el backend de una vez)
+npm install
 
 # 3) Variables de entorno
-cp backend/.env.example backend/.env        # y rellena JWT_SECRET
+cp backend/.env.example backend/.env         # rellena JWT_SECRET
+# PORT=3000 por defecto. Si el puerto está ocupado, cambialo aquí: es el único
+# sitio donde hay un puerto escrito.
 
 # 4) Datos iniciales
-npm run seed                               # 6 categorías, 6 marcas, 16 productos, 1 admin, 1 cliente
+npm run seed                                # 6 categorías, 6 marcas, 16 productos, admin y cliente
 
-# 5) API en :3000  y  sitio en :5173
-npm run dev:api
-npm run dev:web
+# 5) Arrancar
+npm start                                   # http://localhost:3000
 ```
 
-`npm test` corre la suite completa (127 tests) contra un **replica set en memoria**,
-así que no necesita nada levantado.
+| Script | Qué hace |
+|---|---|
+| `npm start` | Reconstruye `public/` y arranca el servidor |
+| `npm run dev` | Igual, con recarga al guardar (`node --watch`) |
+| `npm run build:static` | Solo regenera `public/` |
+| `npm run seed` | Carga datos iniciales |
+| `npm test` | 127 tests contra un replica set en memoria |
+
+`npm test` no necesita nada levantado: levanta su propio MongoDB en memoria con
+replica set, que es lo que permite probar transacciones de verdad.
+
+### Estructura
+
+```
+raíz/            HTML, css/, js/, img/, data/, admin/   <- fuente del sitio
+public/          copia generada, la que se sirve        <- artefacto
+backend/         API Express + tests
+scripts/         preparar-estatico.mjs
+thunder-tests/   colección de Thunder Client
+API.md           contrato de la API
+```
+
+`public/` es una **copia generada**: se reconstruye en cada `npm start` y en
+Vercel. Los archivos a editar son siempre los de la raíz.
+
+## Rutas del sitio
+
+El servidor resuelve las páginas sin extensión: `/carrito` sirve
+`carrito.html`, `/admin/dashboard` sirve `admin/dashboard.html`, y lo que no
+existe devuelve `404.html` con código 404.
 
 ## Contrato de errores
 
@@ -98,6 +129,9 @@ mongosh --eval 'rs.initiate()'
 # Endpoints
 
 Base: `/api`. `🔒` = requiere sesión · `🛡` = requiere rol admin.
+
+El detalle completo de cada endpoint, con cuerpos y errores, está en
+[`API.md`](../API.md) (raíz del repositorio).
 
 ## Salud
 
