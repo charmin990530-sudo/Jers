@@ -132,6 +132,25 @@ El proyecto está configurado para Vercel:
 
 Ver `backend/.env.example` para la checklist de producción.
 
+## CI/CD
+
+GitHub Actions ejecuta automáticamente los tests en cada push a `main`/`master`:
+
+```yaml
+# .github/workflows/ci.yml
+- Instala dependencias
+- Ejecuta npm test (127 tests)
+- Genera build estático
+```
+
+## Monitoreo
+
+Sentry está integrado para capturar errores en producción:
+
+1. Crear cuenta en [sentry.io](https://sentry.io)
+2. Crear un proyecto Node.js
+3. Configurar `SENTRY_DSN` en las variables de entorno de Vercel
+
 ## Licencia
 
 ISC

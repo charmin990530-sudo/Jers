@@ -12,6 +12,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createClient } from 'redis';
+import * as Sentry from '@sentry/node';
 import { connectDB } from './config/db.js';
 import { validateSecurityEnvironment } from './config/env.js';
 import { 
@@ -49,6 +50,16 @@ const redactConfig = message => String(message || 'Configuracion de produccion i
 const app = express();
 app.disable('x-powered-by');
 if (TRUST_PROXY_HOPS > 0) app.set('trust proxy', TRUST_PROXY_HOPS);
+
+if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: NODE_ENV,
+    tracesSampleRate: 0.1,
+  });
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // En un entorno serverless, un throw a nivel de módulo tumba TODAS las
 // peticiones con un 500 opaco. Por eso la validación se captura y se reporta
@@ -385,6 +396,10 @@ if (SERVE_STATIC) {
   });
 } else {
   app.use(notFound);
+}
+
+if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
+  app.use(Sentry.Handlers.errorHandler());
 }
 
 // Middleware global de errores
