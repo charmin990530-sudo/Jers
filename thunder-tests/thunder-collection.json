@@ -1,0 +1,1483 @@
+{
+  "info": {
+    "name": "By Jers API",
+    "description": "Colección generada desde backend/src/routes. Todos los errores usan el sobre { error: { code, message, details? }, requestId }.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "cliente@byjers.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "ClientePrueba2026!",
+      "type": "string"
+    },
+    {
+      "key": "emailRegistro",
+      "value": "nuevo@byjers.com",
+      "type": "string"
+    },
+    {
+      "key": "csrfToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "claveIdempotencia",
+      "value": "thunder-{{$guid}}",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "itemIdAjeno",
+      "value": "",
+      "type": "string",
+      "description": "Un _id de item del carrito de OTRO usuario."
+    },
+    {
+      "key": "idPedidoAjeno",
+      "value": "",
+      "type": "string",
+      "description": "El _id de un pedido de OTRO usuario."
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Salud",
+      "item": [
+        {
+          "name": "Health",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/health",
+          "description": "Estado del proceso, Mongo, Redis y configuración. No requiere sesión. Si Mongo está caído responde 200 con database: \"disconnected\", y las rutas que lo necesitan devuelven 503 DATABASE_UNAVAILABLE.",
+          "tests": [
+            {
+              "type": "res.body.success",
+              "operator": "eq",
+              "value": true,
+              "status": "200 OK"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Auth",
+      "item": [
+        {
+          "name": "Obtener token CSRF",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/auth/csrf",
+          "description": "Guarda el valor en la variable {{csrfToken}} de la collection. Es lo que permite las peticiones que mutan."
+        },
+        {
+          "name": "Registro",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/register",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Thunder\",\n  \"email\": \"{{emailRegistro}}\",\n  \"password\": \"ClaveSegura123\",\n  \"aceptoTerminos\": true,\n  \"aceptoPrivacidad\": true\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Deja la cookie de sesión en el cliente de Thunder."
+        },
+        {
+          "name": "Login",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/login",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Usa {{email}} y {{password}}. Guarda la cookie token."
+        },
+        {
+          "name": "Login · recordar sesión",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/login",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Yo",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/auth/me",
+          "description": "Requiere sesión."
+        },
+        {
+          "name": "Actualizar perfil",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/auth/profile",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Cliente\",\n  \"telefono\": \"3009999999\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Cambiar contraseña",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/auth/password",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"NuevaClave123\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Olvidé mi contraseña",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/forgot-password",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"{{email}}\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Siempre 200, exista o no el email: no enumera usuarios."
+        },
+        {
+          "name": "Restablecer contraseña",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/reset-password",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"token\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"password\": \"NuevaClave123\",\n  \"confirmPassword\": \"NuevaClave123\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Alta de dirección",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/addresses",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"alias\": \"Casa\",\n  \"nombreCompleto\": \"Cliente Thunder\",\n  \"telefono\": \"3001234567\",\n  \"direccion\": \"Calle 1 #2-3\",\n  \"ciudad\": \"Bogota\",\n  \"departamento\": \"Cundinamarca\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "La primera dirección queda como principal."
+        },
+        {
+          "name": "Editar dirección",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/auth/addresses/{{addressId}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"alias\": \"Oficina\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Borrar dirección",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/auth/addresses/{{addressId}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/logout",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Invalida la sesión incrementando tokenVersion."
+        }
+      ]
+    },
+    {
+      "name": "03 Productos (público)",
+      "item": [
+        {
+          "name": "Listado con filtros",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products",
+          "description": "page, limit, categoria, marca, search, minPrice, maxPrice, enPromocion, destacado, sort."
+        },
+        {
+          "name": "Detalle por id",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/{{id}}",
+          "description": "404 si el producto está inactivo."
+        },
+        {
+          "name": "Destacados",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/featured"
+        },
+        {
+          "name": "Promociones",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/promociones"
+        },
+        {
+          "name": "Categorías",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/categorias"
+        },
+        {
+          "name": "Marcas",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/marcas"
+        },
+        {
+          "name": "Por categoría (slug)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/categoria/{{slug}}"
+        },
+        {
+          "name": "Buscar",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/buscar",
+          "description": "Mínimo 2 caracteres."
+        }
+      ]
+    },
+    {
+      "name": "04 Carrito",
+      "item": [
+        {
+          "name": "Ver carrito",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/cart"
+        },
+        {
+          "name": "Agregar producto",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/cart",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"productoId\": \"6aba1d040f6091d754035656\",\n  \"cantidad\": 2\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Guarda el _id del item en {{itemId}}."
+        },
+        {
+          "name": "Cambiar cantidad",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/cart/{{itemId}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"cantidad\": 3\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Quitar producto",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/cart/{{itemId}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Vaciar carrito",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/cart",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Pedidos",
+      "item": [
+        {
+          "name": "Crear pedido",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/orders",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"direccionEnvio\": {\n    \"alias\": \"Casa\",\n    \"nombreCompleto\": \"Cliente Thunder\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 1 #2-3\",\n    \"ciudad\": \"Bogota\",\n    \"departamento\": \"Cundinamarca\"\n  },\n  \"notas\": \"Pedido de prueba\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            },
+            {
+              "key": "Idempotency-Key",
+              "value": "{{claveIdempotencia}}",
+              "description": "Repetir la misma clave devuelve el MISMO pedido: es la protección contra el doble clic."
+            }
+          ],
+          "description": "Transaccional: o se descuenta el stock y se crea el pedido, o no pasa nada."
+        },
+        {
+          "name": "Listar mis pedidos",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/orders"
+        },
+        {
+          "name": "Detalle de pedido",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/orders/{{id}}",
+          "description": "Solo los del usuario autenticado."
+        },
+        {
+          "name": "Cancelar pedido",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/orders/{{id}}/cancelar",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"motivo\": \"Prueba\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Solo desde pendiente/confirmado y si no está pagado. Devuelve el stock."
+        }
+      ]
+    },
+    {
+      "name": "06 Contacto",
+      "item": [
+        {
+          "name": "Enviar mensaje",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/contact",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Prueba\",\n  \"email\": \"prueba@byjers.com\",\n  \"mensaje\": \"Mensaje de prueba con longitud suficiente.\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Sin sesión. Si viene el campo trampa website, responde 202 sin guardar."
+        }
+      ]
+    },
+    {
+      "name": "07 Admin (requiere rol admin)",
+      "item": [
+        {
+          "name": "Dashboard",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/dashboard",
+          "description": "totalRevenue suma solo pedidos PAGADOS."
+        },
+        {
+          "name": "Listar productos",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/productos",
+          "description": "Incluye los inactivos, a diferencia del catálogo público."
+        },
+        {
+          "name": "Crear producto",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/admin/productos",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Producto Thunder\",\n  \"descripcion\": \"Creado desde Thunder Client para pruebas\",\n  \"precio\": 47500,\n  \"precioAnterior\": 57000,\n  \"stock\": 10,\n  \"categoria\": \"6aba1d040f6091d754035656\",\n  \"marca\": \"6aba1d040f6091d754035656\",\n  \"imagenes\": [\n    {\n      \"url\": \"/img/placeholder.svg\",\n      \"esPrincipal\": true\n    }\n  ]\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Editar producto",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/admin/productos/{{id}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"precio\": 42500,\n  \"stock\": 12\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Desactivar producto",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/admin/productos/{{id}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Baja lógica: activo=false."
+        },
+        {
+          "name": "Listar categorías",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/categorias"
+        },
+        {
+          "name": "Crear categoría",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/admin/categorias",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"labios\",\n  \"descripcion\": \"Categoría de prueba\",\n  \"orden\": 1\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "La lista es cerrada: rostro, ojos, labios, shampoo, acondicionador, tratamientos."
+        },
+        {
+          "name": "Editar categoría",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/admin/categorias/{{id}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"descripcion\": \"Editada desde Thunder\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Borrar categoría",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/admin/categorias/{{id}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "403/400 si tiene productos asociados."
+        },
+        {
+          "name": "Productos de una categoría",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/categorias/{{id}}/check-products",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Listar marcas",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/marcas"
+        },
+        {
+          "name": "Crear marca",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/admin/marcas",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Marca Thunder\",\n  \"descripcion\": \"Marca de prueba\",\n  \"orden\": 1\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Editar marca",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/admin/marcas/{{id}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"descripcion\": \"Editada desde Thunder\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Borrar marca",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/admin/marcas/{{id}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Productos de una marca",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/marcas/{{id}}/check-products",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Listar pedidos",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/pedidos"
+        },
+        {
+          "name": "Detalle de pedido",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/pedidos/{{id}}"
+        },
+        {
+          "name": "Actualizar pedido",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/admin/pedidos/{{id}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"estado\": \"confirmado\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Transiciones inválidas dan 409 INVALID_ORDER_TRANSITION."
+        },
+        {
+          "name": "Listar contactos",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/contactos"
+        },
+        {
+          "name": "Marcar contacto atendido",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/admin/contactos/{{id}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"estado\": \"atendido\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 Usuarios (requiere rol admin)",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/users"
+        },
+        {
+          "name": "Detalle de usuario",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/users/{{id}}"
+        },
+        {
+          "name": "Cambiar rol",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/users/{{id}}/role",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"role\": \"admin\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "No se puede degradar al último administrador."
+        },
+        {
+          "name": "Activar/desactivar",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/users/{{id}}/toggle-active",
+          "body": {
+            "mode": "raw",
+            "raw": "{}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        },
+        {
+          "name": "Desactivar usuario",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/users/{{id}}",
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 Casos de error y seguridad",
+      "item": [
+        {
+          "name": "ERR · Sin token · /auth/me",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/auth/me",
+          "headers": [],
+          "description": "Sin cookie de sesión. Comprueba que 401 llega sin token.\nEsperado: HTTP 401 con error.code = \"UNAUTHENTICATED\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 401,
+              "status": "401"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "UNAUTHENTICATED"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Token inválido · /auth/me",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/auth/me",
+          "headers": [
+            {
+              "key": "Cookie",
+              "value": "token=no-es-un-jwt"
+            }
+          ],
+          "description": "Cookie de sesión corrupta o firmada con otra clave.\nEsperado: HTTP 401 con error.code = \"INVALID_TOKEN\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 401,
+              "status": "401"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "INVALID_TOKEN"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Sin token · GET /cart",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/cart",
+          "headers": [],
+          "description": "El carrito exige sesión.\nEsperado: HTTP 401 con error.code = \"UNAUTHENTICATED\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 401,
+              "status": "401"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "UNAUTHENTICATED"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Rol insuficiente · /admin/dashboard",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/admin/dashboard",
+          "headers": [],
+          "description": "Cliente normal intentando el panel. Usa {{token}} de un usuario no admin.\nEsperado: HTTP 403 con error.code = \"FORBIDDEN\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 403,
+              "status": "403"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "FORBIDDEN"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Usuario intruso · pedido ajeno",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/orders/{{idPedidoAjeno}}",
+          "headers": [],
+          "description": "Un usuario NO puede leer el pedido de otro. Debe ser 404 y no 403, para no confirmar que ese pedido existe.\nEsperado: HTTP 404 con error.code = \"ORDER_NOT_FOUND\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 404,
+              "status": "404"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "ORDER_NOT_FOUND"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Usuario intruso · cancelar pedido ajeno",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/orders/{{idPedidoAjeno}}/cancelar",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"motivo\": \"intento\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "No puede cancelar el pedido de otro usuario.\nEsperado: HTTP 404 con error.code = \"ORDER_NOT_FOUND\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 404,
+              "status": "404"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "ORDER_NOT_FOUND"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Usuario intruso · carrito ajeno",
+          "method": "PATCH",
+          "url": "{{baseUrl}}/api/cart/{{itemIdAjeno}}",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"cantidad\": 99\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "No puede tocar un item del carrito de otro.\nEsperado: HTTP 404 con error.code = \"ITEM_NOT_FOUND\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 404,
+              "status": "404"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "ITEM_NOT_FOUND"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Decimales en un monto",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/admin/productos",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Precio decimal\",\n  \"descripcion\": \"No debe aceptar decimales en el precio\",\n  \"precio\": 100.5,\n  \"stock\": 1,\n  \"categoria\": \"6aba1d040f6091d754035656\",\n  \"marca\": \"6aba1d040f6091d754035656\",\n  \"imagenes\": [\n    {\n      \"url\": \"/img/placeholder.svg\"\n    }\n  ]\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "El dinero es entero: 100.5 pesos debe rechazarse.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Monto negativo",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/admin/productos",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"Precio negativo\",\n  \"descripcion\": \"No debe aceptar precios negativos\",\n  \"precio\": -500,\n  \"stock\": 1,\n  \"categoria\": \"6aba1d040f6091d754035656\",\n  \"marca\": \"6aba1d040f6091d754035656\",\n  \"imagenes\": [\n    {\n      \"url\": \"/img/placeholder.svg\"\n    }\n  ]\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Un precio negativo es un bug de cálculo, no un dato válido.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Cantidad enorme en el carrito",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/cart",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"productoId\": \"6aba1d040f6091d754035656\",\n  \"cantidad\": 100000\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "El esquema limita a 99 unidades por línea.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Cantidad negativa",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/cart",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"productoId\": \"6aba1d040f6091d754035656\",\n  \"cantidad\": -5\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Mínimo 1 unidad.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · ID inexistente",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/aaaaaaaaaaaaaaaaaaaaaaaa",
+          "headers": [],
+          "description": "ObjectId bien formado pero que no existe.\nEsperado: HTTP 404 con error.code = \"PRODUCT_NOT_FOUND\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 404,
+              "status": "404"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "PRODUCT_NOT_FOUND"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · ID mal formado",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products/abc",
+          "headers": [],
+          "description": "No es un ObjectId.\nEsperado: HTTP 400 con error.code = \"INVALID_ID\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "INVALID_ID"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Datos faltantes en el registro",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/register",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"nombre\": \"A\",\n  \"apellido\": \"B\",\n  \"email\": \"no-es-un-correo\",\n  \"password\": \"123\",\n  \"aceptoTerminos\": false,\n  \"aceptoPrivacidad\": true\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Email inválido, contraseña corta y sin aceptar términos: todo en un 400 con details por campo.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Inyección NoSQL en el login",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/auth/login",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": {\n    \"$ne\": null\n  },\n  \"password\": {\n    \"$gt\": \"\"\n  }\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "{{csrfToken}}",
+              "description": "Token de /api/auth/csrf"
+            }
+          ],
+          "description": "Claves de identificación sin tipo. Zod debe rechazar los objetos y nunca consultar con un operador como valor.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Inyección NoSQL en la búsqueda",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/products?search[$ne]=x",
+          "headers": [],
+          "description": "Parámetro de consulta con operator inesperado.\nEsperado: HTTP 400 con error.code = \"VALIDATION_ERROR\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 400,
+              "status": "400"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "VALIDATION_ERROR"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Token CSRF inválido",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/cart",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"productoId\": \"6aba1d040f6091d754035656\",\n  \"cantidad\": 1\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "headers": [
+            {
+              "key": "X-CSRF-Token",
+              "value": "falso"
+            }
+          ],
+          "description": "Petición mutante sin el par cookie+cabecera CSRF.\nEsperado: HTTP 403 con error.code = \"CSRF_TOKEN_INVALID\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 403,
+              "status": "403"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "CSRF_TOKEN_INVALID"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Content-Type incorrecto",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/contact",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/plain"
+            }
+          ],
+          "description": "Las rutas que mutan exigen application/json.\nEsperado: HTTP 415 con error.code = \"UNSUPPORTED_MEDIA_TYPE\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 415,
+              "status": "415"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "UNSUPPORTED_MEDIA_TYPE"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        },
+        {
+          "name": "ERR · Ruta inexistente",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/no-existe",
+          "headers": [],
+          "description": "404 con el mismo sobre de error que el resto.\nEsperado: HTTP 404 con error.code = \"NOT_FOUND\".",
+          "tests": [
+            {
+              "type": "res.status",
+              "operator": "eq",
+              "value": 404,
+              "status": "404"
+            },
+            {
+              "type": "res.body.error.code",
+              "operator": "eq",
+              "value": "NOT_FOUND"
+            },
+            {
+              "type": "res.body.error.message",
+              "operator": "isNotEmpty"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
