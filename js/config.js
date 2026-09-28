@@ -81,6 +81,34 @@ export const formatearPrecio = valor => {
     return formateadorPesos.format(Math.round(numero));
 };
 
+// ---------------------------------------------------------------
+// Fechas
+// ---------------------------------------------------------------
+const FECHA_LARGA = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+const FECHA_CORTA = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const FECHA_HORA = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Formatea una fecha sin arriesgar "Invalid Date" en pantalla.
+ *
+ * Antes cada pantalla hacía `new Date(algo).toLocaleDateString('es-CO')`. Si el
+ * backend devolvía `createdAt: null` o un formato inesperado, el resultado era
+ * literalmente "Invalid Date" o "NaN de NaN de NaN" en la tabla de pedidos.
+ * Aquí se valida antes de formatear y, si no hay fecha usable, se devuelve "—".
+ *
+ * @param {string|number|Date|null|undefined} valor
+ * @param {'larga'|'corta'|'hora'} [estilo]
+ * @returns {string}
+ */
+export const formatearFecha = (valor, estilo = 'corta') => {
+    if (valor === null || valor === undefined || valor === '') return '—';
+    const fecha = valor instanceof Date ? valor : new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return '—';
+    if (estilo === 'larga') return FECHA_LARGA.format(fecha);
+    if (estilo === 'hora') return FECHA_HORA.format(fecha);
+    return FECHA_CORTA.format(fecha);
+};
+
 export const CONFIG = {
     SESSION_EXPIRY_MS: 7 * 24 * 60 * 60 * 1000,
 

@@ -21,6 +21,7 @@ import { api } from './apiClient.js';
 import { safeExternalUrl } from './sanitize.js';
 import { sincronizar } from './carrito.js';
 import { formatearPrecio } from './config.js';
+import { protegerRuta } from './rutas.js';
 
 const form = document.getElementById('checkout-form');
 const itemsElement = document.getElementById('checkout-items');
@@ -102,13 +103,10 @@ const loadAddresses = addresses => {
 const main = async () => {
     if (!form || !submitButton) return;
 
-    const me = await api.getMe();
-    if (!me.ok) {
-        // Sin sesión: al login. `redirect` hace que vuelva aquí. El carrito de
-        // invitado no se pierde porque vive en localStorage.
-        window.location.replace('/login?redirect=/checkout');
-        return;
-    }
+    // El guard central decide si esta pantalla exige sesión y a dónde va el
+    // invitado. Además devuelve el usuario, así no hace falta un segundo getMe.
+    const { ok, user } = await protegerRuta();
+    if (!ok) return;
 
     // Por si el carrito de invitado quedó sin fusionar (por ejemplo, el usuario
     // se identificó en otra pestaña). Es idempotente: si localStorage ya está
@@ -129,7 +127,7 @@ const main = async () => {
     }
 
     renderCart(cart);
-    loadAddresses(me.data?.user?.direcciones || []);
+    loadAddresses(user?.direcciones || []);
 };
 
 addressSelect?.addEventListener('change', async () => {
@@ -166,7 +164,7 @@ form?.addEventListener('submit', async event => {
             ...(form.elements.notas.value.trim() ? { notas: form.elements.notas.value.trim() } : {}),
         };
 
-        const response = await api.createOrder(data, { headers: { 'Idempotency-Key': idempotencyKey } });
+        const response = await api.createOrder(data, { idempotencyKey });
         if (!response.ok) throw new Error(response.msg || 'No se pudo crear el pedido');
 
         // El intento ya se consumió: la siguiente compra necesita su propia clave.

@@ -398,58 +398,6 @@ export function renderizarCatalogo(gruposDeMarca, contenedor) {
 // PESTAÑAS DEL CATÁLOGO
 // ==================================================================
 
-/**
- * Conecta las pestañas de una página con el catálogo
- * y abre la categoría indicada en la URL.
- */
-export function iniciarPestanasCatalogo(
-    grupo,
-    catalogo,
-    idContenedor
-) {
-
-    const pestañas = document.querySelector(
-        `.tabs[data-grupo="${grupo}"]`
-    );
-
-    const contenedor = document.getElementById(idContenedor);
-
-    if (!pestañas || !contenedor) return;
-
-    const botones = [
-        ...pestañas.querySelectorAll('.tab-btn')
-    ];
-
-    const mostrarCategoria = categoria => {
-
-        botones.forEach(boton => {
-            boton.classList.toggle(
-                'tab-activo',
-                boton.dataset.categoria === categoria
-            );
-        });
-
-        renderizarCatalogo(
-            catalogo[categoria],
-            contenedor
-        );
-    };
-
-    botones.forEach(boton => {
-        boton.addEventListener('click', () => {
-            mostrarCategoria(boton.dataset.categoria);
-        });
-    });
-
-    const categoriaInicial = window.location.hash.slice(1);
-
-    mostrarCategoria(
-        catalogo[categoriaInicial]
-            ? categoriaInicial
-            : botones[0].dataset.categoria
-    );
-}
-
 
 // ==================================================================
 // RENDERIZAR PROMOCIONES
@@ -511,8 +459,14 @@ export function renderizarPromociones(
  * tienda. Antes vivía aquí, en auth.js y en checkout.js, con tres
  * comportamientos distintos.
  */
-export { iniciarCarrito } from './carrito.js';
-export { formatearPrecio } from './config.js';
+// OJO: un `export { x } from './y.js'` solo reexporta; NO crea un binding local,
+// así que aquí dentro `iniciarCarrito` sería undefined y `iniciarAplicacion()`
+// reventaría con ReferenceError en todas las páginas. Por eso se importa y
+// además se reexporta, que es lo que necesitan las páginas que usan app.js.
+import { iniciarCarrito } from './carrito.js';
+import { formatearPrecio } from './config.js';
+
+export { iniciarCarrito, formatearPrecio };
 
 // ==================================================================
 // FORMULARIO DE CONTACTO
@@ -1030,6 +984,15 @@ async function inicializarSesionUI() {
     if (!menu || menu.querySelector('[data-session-ui]')) return;
     try {
         const { api } = await import('./apiClient.js');
+
+        // La capa de red ya no manda al login por su cuenta: eso lo decide
+        // protegerRuta() en las pantallas que exigen sesión. Lo que sí hace falta
+        // es reaccionar a que la sesiónMUERA con la pantalla ya abierta, que es
+        // justo lo que emite js/api.js. Este es el único punto que escucha, y
+        // solo entra cuando el usuario tenía sesión, así que un invitado que
+        // recibe un 401 al mirar su carrito no se ve expulsado.
+        window.addEventListener('sesion-caducada', () => api.irAlLogin());
+
         const response = await api.getMe();
         const item = document.createElement('li');
         item.className = 'menuitem sesion-menu';

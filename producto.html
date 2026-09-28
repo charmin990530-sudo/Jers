@@ -8,6 +8,13 @@
     <meta name="description" content="By Jers - Detalle del producto">
     <title>By Jers | Producto</title>
 
+    <meta property="og:type" content="product">
+    <meta property="og:title" content="By Jers | Producto">
+    <meta property="og:description" content="Detalle de producto By Jers">
+    <meta property="og:image" content="/img/logo/logo.webp">
+    <meta property="og:locale" content="es_CO">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -16,6 +23,20 @@
 
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/producto.css">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "By Jers Producto",
+      "brand": { "@type": "Brand", "name": "By Jers" },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "COP",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+    </script>
 </head>
 
 <body class="producto-page">

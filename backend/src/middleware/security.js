@@ -74,10 +74,38 @@ export const requestSecurity = (req, res, next) => {
   if (rawPath.includes('//') || /%2f/i.test(rawPath)) {
     return reject(res, 400, ErrorCodes.INVALID_PATH, 'Ruta no válida');
   }
-  if (['POST', 'PATCH', 'PUT'].includes(req.method) && req.path !== '/api/csp-report' && !req.is('application/json')) {
+  // Se comprueba la cabecera declarada y no `req.is()`, que devuelve falso
+  // cuando la peticion no trae cuerpo: un POST sin cuerpo pero que declara
+  // application/json es una peticion legitima (cerrar sesion, por ejemplo) y
+  // antes se rechazaba con 415. El riesgo de CSRF sigue cubierto porque un
+  // formulario HTML solo puede enviar text/plain, multipart o urlencoded, nunca
+  // application/json.
+  const declaraJson = String(req.get('content-type') || '').toLowerCase().includes('application/json');
+  if (['POST', 'PATCH', 'PUT'].includes(req.method) && req.path !== '/api/csp-report' && !declaraJson) {
     return reject(res, 415, ErrorCodes.UNSUPPORTED_MEDIA_TYPE, 'Content-Type debe ser application/json');
   }
   next();
+};
+
+/**
+ * ¿El origen de la petición es esta misma servidor?
+ *
+ * Hace falta porque este backend también sirve el sitio, así que la página y la
+ * API comparten host. Una lista de orígenes admitidos no puede cubrir todos los
+ * nombres con los que se puede entrar al mismo servidor (localhost, 127.0.0.1, la
+ * IP de la red, un dominio propio...) y quedarse sin ninguno provocaba un 403
+ * "Origen no permitido" en todas las peticiones que mutan. Comparar con el host
+ * real de la petición cubre todos esos casos a la vez sin abrir la puerta: si el
+ * host no coincide, el origen es de otro sitio y se sigue rechazando.
+ */
+const esMismoServidor = (origin, req) => {
+  try {
+    const host = req.get('host');
+    if (!host) return false;
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 };
 
 export const originGuard = (req, res, next) => {
@@ -91,11 +119,13 @@ export const originGuard = (req, res, next) => {
     try { return new URL(referer).origin; } catch { return null; }
   })() : null;
   if (origin) {
-    return FRONTEND_ALLOWED_ORIGINS.includes(origin)
+    return FRONTEND_ALLOWED_ORIGINS.includes(origin) || esMismoServidor(origin, req)
       ? next()
       : reject(res, 403, ErrorCodes.ORIGIN_NOT_ALLOWED, 'Origen no permitido');
   }
-  if (refererOrigin && FRONTEND_ALLOWED_ORIGINS.includes(refererOrigin)) return next();
+  if (refererOrigin && (FRONTEND_ALLOWED_ORIGINS.includes(refererOrigin) || esMismoServidor(refererOrigin, req))) {
+    return next();
+  }
   if (NODE_ENV !== 'production') return next();
   return reject(res, 403, ErrorCodes.ORIGIN_REQUIRED, 'Origen de solicitud requerido');
 };

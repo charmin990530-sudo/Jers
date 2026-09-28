@@ -11,6 +11,7 @@
  */
 
 import { getMe, updateProfile, changePassword, handleApiError } from './apiClient.js';
+import { protegerRuta } from './rutas.js';
 import { 
     iniciarAplicacion, 
     validarTelefono,
@@ -46,16 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Verifica autenticación y carga datos del usuario
  */
 async function verificarAuthYCargar() {
+    // La proteccion vive en js/rutas.js: decide una sola vez que hacer ante falta
+    // de sesion o de rol, y devuelve al usuario a esta pagina tras identificarse.
+    const { ok } = await protegerRuta({ pantalla: 'mi-perfil' });
+    if (!ok) return;
     const response = await getMe();
     if (!response.ok) {
-        if (response.data?.status === 401 || response.msg.includes('expirada') || response.msg.includes('No autenticado')) {
-            // Redirigir a login con URL de retorno
-            sessionStorage.setItem('auth_redirect_url', window.location.pathname);
-            window.location.href = 'login.html';
-        } else {
-            handleApiError({ message: response.msg, status: response.data?.status }, 'mi-perfil');
-            mostrarErrorGlobal('No se pudo cargar tu perfil');
-        }
+        handleApiError({ message: response.msg, status: response.data?.status }, 'mi-perfil');
+        mostrarErrorGlobal('No se pudo cargar tu perfil');
         return;
     }
     usuarioActual = response.data.user;

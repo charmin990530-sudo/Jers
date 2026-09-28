@@ -36,15 +36,6 @@ export const demoActivado = () => {
     }
 };
 
-export const activarDemo = valor => {
-    try {
-        if (valor) localStorage.setItem(CLAVE_DEMO, '1');
-        else localStorage.removeItem(CLAVE_DEMO);
-    } catch {
-        /* modo privado: se queda en false */
-    }
-};
-
 /** Estado de carga. */
 export const renderCargando = (contenedor, mensaje = 'Cargando productos...') => {
     if (!contenedor) return;

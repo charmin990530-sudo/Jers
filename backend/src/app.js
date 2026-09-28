@@ -162,13 +162,33 @@ app.use((req, res, next) => {
   })(req, res, next);
 });
 
-const isAllowedOrigin = (origin) => !origin || FRONTEND_ALLOWED_ORIGINS.includes(origin);
+// La CORS acepta además el propio origen del servidor: el sitio lo sirve este
+// mismo backend, así que su página es same-origin por definición. Sin esto, la
+// cabecera Access-Control-Allow-Origin no volvía y el navegador bloqueaba la
+// respuesta de las peticiones que mutan.
+const esMismoServidor = (origin, req) => {
+  try {
+    const host = req.get('host');
+    return !!host && new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+};
+const isAllowedOrigin = (origin, req) => !origin
+  || FRONTEND_ALLOWED_ORIGINS.includes(origin)
+  || esMismoServidor(origin, req);
 
-app.use(cors({
-  origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
-  credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token', 'Idempotency-Key'],
+// Forma delegada (`cors(fn)`) en vez de `cors({...})`: el callback de `origin`
+// solo recibe el origen, y aquí hace falta la petición para comparar el host y
+// reconocer el propio origen del servidor.
+app.use(cors((req, callback) => {
+  const origin = req.get('origin');
+  callback(null, {
+    origin: isAllowedOrigin(origin, req),
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token', 'Idempotency-Key'],
+  });
 }));
 
 app.use(securityMiddleware);

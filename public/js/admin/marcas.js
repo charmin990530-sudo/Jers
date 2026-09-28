@@ -1,4 +1,5 @@
 import { api, handleApiError, apiErrorFromResponse } from '../../js/apiClient.js';
+import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,
     mostrarErrorCampo,
@@ -16,28 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function verificarAdminYCargar() {
-    try {
-        const response = await api.getMe();
-        if (!response.ok) {
-            const status = response.data?.status;
-            if (status === 401 || status === 403) {
-                window.location.href = '../login.html?redirect=admin/marcas.html';
-            } else {
-                handleApiError({ message: response.msg, status }, 'admin-marcas');
-            }
-            return;
-        }
-
-        const user = response.data?.user;
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../index.html';
-            return;
-        }
-        await cargarMarcas();
-    } catch (error) {
-        handleApiError({ message: error.message }, 'admin-marcas');
-        window.location.href = '../login.html?redirect=admin/marcas.html';
-    }
+    // Proteccion centralizada (js/rutas.js). Una sola politica para todo el
+    // panel: sin sesion -> login con esta URL de vuelta; con sesion pero sin
+    // rol de admin -> inicio. Antes cada script repetia el chequeo con rutas
+    // relativas distintas ('../login.html' frente a '/login'), y se colgaba con
+    // '../index.html' en una app que ya no tiene esa estructura.
+    const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-marcas' });
+    if (!ok) return;
+    await cargarMarcas();
 }
 
 async function cargarMarcas() {

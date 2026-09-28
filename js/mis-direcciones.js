@@ -12,6 +12,7 @@
  */
 
 import { getMe, addAddress, updateAddress, deleteAddress, handleApiError } from './apiClient.js';
+import { protegerRuta } from './rutas.js';
 import { 
     iniciarAplicacion,
     mostrarErrorCampo,
@@ -37,15 +38,14 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Verifica autenticación y carga direcciones
  */
 async function verificarAuthYCargar() {
+    // Proteccion centralizada (js/rutas.js): sin sesion se va al login
+    // conservando esta URL para volver aqui al entrar.
+    const { ok } = await protegerRuta({ pantalla: 'mis-direcciones' });
+    if (!ok) return;
     const response = await getMe();
     if (!response.ok) {
-        if (response.data?.status === 401 || response.msg?.includes('expirada') || response.msg?.includes('No autenticado')) {
-            sessionStorage.setItem('auth_redirect_url', window.location.pathname);
-            window.location.href = 'login.html';
-        } else {
-            handleApiError({ message: response.msg, status: response.data?.status }, 'mis-direcciones');
-            mostrarError('No se pudieron cargar las direcciones');
-        }
+        handleApiError({ message: response.msg, status: response.data?.status }, 'mis-direcciones');
+        mostrarError('No se pudieron cargar las direcciones');
         return;
     }
     direcciones = Array.isArray(response.data?.user?.direcciones) ? response.data.user.direcciones : [];
