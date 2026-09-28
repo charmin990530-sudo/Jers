@@ -87,11 +87,20 @@ async function request(endpoint, options = {}) {
 
         // Si la respuesta no es exitosa (4xx, 5xx)
         if (!response.ok) {
+            // El backend responde siempre { error: { code, message, details? }, requestId }.
+            // Se aplana a data para que el resto del frontend siga leyendo
+            // response.data.code / .message / .details igual que antes.
+            const envelope = data && data.error ? data.error : {};
             return {
                 ok: false,
-                msg: data.message || 'Error en la petición',
+                msg: envelope.message || data?.message || 'Error en la petición',
                 data: {
-                    ...data,
+                    ...envelope,
+                    // `errors` se mantiene como alias de `details` porque varios
+                    // formularios (register, mi-perfil, checkout) recorren
+                    // error.errors para pintar el mensaje campo a campo.
+                    errors: envelope.details || envelope.errors || data?.errors,
+                    requestId: data?.requestId,
                     status: response.status,
                 }
             };

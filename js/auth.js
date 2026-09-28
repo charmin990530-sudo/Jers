@@ -9,67 +9,12 @@ import { ensureCsrfToken } from './csrf.js';
 // ==========================================
 // SINCRONIZACIÓN DE CARRITO (localStorage ↔ API)
 // ==========================================
+// Se delega en js/carrito.js, que es la única implementación. Aquí quedaban
+// antes tres copias de la misma fusión con tres comportamientos distintos, y una
+// de ellas abortaba el merge entero si un solo item local no era válido
+// (quedaba en localStorage para siempre y rompía cada inicio de sesión).
 
-const CART_KEY = 'jers_carrito';
-
-/**
- * Obtiene carrito local del localStorage
- * @returns {Array} Array de items del carrito local
- */
-function obtenerCarritoLocal() {
-    try {
-        return JSON.parse(localStorage.getItem(CART_KEY)) || [];
-    } catch {
-        return [];
-    }
-}
-
-/**
- * Limpia carrito local después de merge exitoso
- */
-function limpiarCarritoLocal() {
-    localStorage.removeItem(CART_KEY);
-}
-
-/**
- * Sincroniza carrito local → API tras login/registro exitoso
- * POST /api/cart con array de items (el backend mergea sumando cantidades)
- * @returns {Promise<boolean>} true si sync exitoso
- */
-export async function sincronizarCarritoTrasAuth() {
-    const carritoLocal = obtenerCarritoLocal();
-    
-    if (!carritoLocal.length) {
-        return true; // Nada que sincronizar
-    }
-
-    try {
-        // Importar api dinámicamente para evitar dependencia circular
-        const { addToCart, getCart } = await import('./apiClient.js');
-        const current = await getCart();
-        if (!current.ok) throw new Error(current.msg || 'No se pudo leer el carrito');
-        const serverItems = current.data?.cart?.items || [];
-
-        for (const item of carritoLocal) {
-            const existing = serverItems.find(serverItem => serverItem.producto?._id === item.id || serverItem.producto === item.id);
-            const pending = Math.max(0, Number(item.cantidad || 0) - Number(existing?.cantidad || 0));
-            if (!pending) continue;
-            const response = await addToCart({ productoId: item.id, cantidad: pending });
-            if (!response.ok) throw new Error(response.msg);
-        }
-        
-        // Si todo OK, limpiar localStorage
-        limpiarCarritoLocal();
-        
-        console.log('[Auth] Carrito local sincronizado con API:', carritoLocal.length, 'items');
-        return true;
-        
-    } catch (error) {
-        console.error('[Auth] Error sincronizando carrito:', error);
-        // NO limpiar localStorage si falla - reintentar en próxima carga
-        return false;
-    }
-}
+export { sincronizar as sincronizarCarritoTrasAuth } from './carrito.js';
 
 /**
  * Verifica si el usuario está autenticado llamando a /api/auth/me
