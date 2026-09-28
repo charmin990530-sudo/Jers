@@ -1,4 +1,5 @@
 import { api, handleApiError, apiErrorFromResponse } from '../../js/apiClient.js';
+import { formatearPrecio } from '../config.js';
 import {
     iniciarAplicacion,
     mostrarErrorCampo,
@@ -618,7 +619,7 @@ function mostrarToast(mensaje) {
 }
 
 function formatearMoneda(valor) {
-    return `$${(Number(valor) || 0).toLocaleString('es-CO')}`;
+    return formatearPrecio(valor);
 }
 
 function debounce(fn, delay) {

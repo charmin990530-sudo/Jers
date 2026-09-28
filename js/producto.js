@@ -10,6 +10,7 @@
  */
 
 import { getProduct, getProducts, handleApiError } from './apiClient.js';
+import { formatearPrecio } from './config.js';
 import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { renderCargando, renderError, renderVacio, resolverCatalogo, demoActivado } from './estados.js';
@@ -202,10 +203,10 @@ function renderizarProducto(producto, contenedor) {
 
             <div class="producto-precio">
                 ${tieneDescuento ? `
-                    <span class="precio-anterior">$${escapeHTML(producto.precioAnterior.toLocaleString('es-CO'))}</span>
+                    <span class="precio-anterior">${escapeHTML(formatearPrecio(producto.precioAnterior))}</span>
                     <span class="descuento-badge">${escapeHTML(Number(descuentoPct) || 0)}% OFF</span>
                 ` : ''}
-                <span class="precio-actual">$${escapeHTML(producto.precio.toLocaleString('es-CO'))}</span>
+                <span class="precio-actual">${escapeHTML(formatearPrecio(producto.precio))}</span>
             </div>
 
             ${stockConocido ? `
@@ -538,8 +539,8 @@ function pintarRelacionados(relacionados) {
                     ${desc ? `<span class="descuento-badge">${Number(p.descuentoPorcentaje) || 0}% OFF</span>` : ''}
                     <h3 class="cardname">${escapeHTML(p.nombre || 'Producto')}</h3>
                     <p class="cardprecio">
-                        ${desc ? `<span class="precio-anterior">$${escapeHTML(p.precioAnterior.toLocaleString('es-CO'))}</span>` : ''}
-                        $${escapeHTML(p.precio.toLocaleString('es-CO'))}
+                        ${desc ? `<span class="precio-anterior">${escapeHTML(formatearPrecio(p.precioAnterior))}</span>` : ''}
+                        ${escapeHTML(formatearPrecio(p.precio))}
                     </p>
                     <div class="card-acciones">
                         ${enlaceDetalle(p)}
