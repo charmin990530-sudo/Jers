@@ -123,10 +123,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Dominios externos que el sitio carga de verdad. Deben coincidir con los que
+// usan las cabeceras de Vercel (vercel.json), o el sitio funciona en un
+// despliegue y da errores de consola en el otro.
+//
+// - cdn.jsdelivr.net: GSAP y ScrollTrigger, que carga bienvenida.html.
+// - fonts.googleapis.com: los CSS de las tipografías (eso va en style-src).
+const CDN_SCRIPTS = ['https://cdn.jsdelivr.net'];
+const CDN_STYLES = ['https://fonts.googleapis.com'];
+
 const cspDirectives = nonce => ({
   defaultSrc: ["'self'"],
-  scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`] : ["'self'"],
-  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`, ...CDN_SCRIPTS] : ["'self'", ...CDN_SCRIPTS],
+  styleSrc: ["'self'", "'unsafe-inline'", ...CDN_STYLES],
   fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
   imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
   connectSrc: ["'self'", API_ORIGIN, ...FRONTEND_ALLOWED_ORIGINS],
