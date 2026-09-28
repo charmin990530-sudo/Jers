@@ -3,6 +3,7 @@
  * Configura Express, middlewares globales, rutas y arranca el servidor
  */
 import express from 'express';
+import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
@@ -27,6 +28,7 @@ import {
   CONTACT_RATE_LIMIT_MAX_REQUESTS,
   REDIS_URL,
   REDIS_ENABLED,
+  REDIS_CONNECT_TIMEOUT_MS,
   TRUST_PROXY_HOPS,
   CSP_NONCE_ENABLED,
   CSP_REPORT_ONLY,
@@ -34,13 +36,32 @@ import {
 } from './config/env.js';
 import { routes } from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import { ErrorCodes, sendError, buildErrorBody } from './middleware/apiError.js';
 import RedisRateLimitStore from './middleware/redisRateLimitStore.js';
 import { securityMiddleware, csrfProtection } from './middleware/security.js';
+
+// El detalle de la configuración incompleta puede incluir el nombre de una
+// variable, nunca su valor. Se limita a un solo campo para no filtrar el
+// contenido del archivo .env.
+const redactConfig = message => String(message || 'Configuracion de produccion incompleta').slice(0, 300);
 
 const app = express();
 app.disable('x-powered-by');
 if (TRUST_PROXY_HOPS > 0) app.set('trust proxy', TRUST_PROXY_HOPS);
-if (NODE_ENV === 'production') validateSecurityEnvironment();
+
+// En un entorno serverless, un throw a nivel de módulo tumba TODAS las
+// peticiones con un 500 opaco. Por eso la validación se captura y se reporta
+// desde un middleware: el sitio estático sigue sirviéndose y la API dice
+// exactamente qué variable falta.
+let configError = null;
+if (NODE_ENV === 'production') {
+  try {
+    validateSecurityEnvironment();
+  } catch (error) {
+    configError = error;
+    console.error('Configuración de producción incompleta:', error.message);
+  }
+}
 let httpServer = null;
 
 // ==========================================
@@ -50,19 +71,41 @@ let redisClient = null;
 let redisGeneralStore = null;
 let redisAuthStore = null;
 let redisContactStore = null;
+let redisError = null;
 
 if (REDIS_ENABLED) {
-  redisClient = createClient({ url: REDIS_URL });
+  redisClient = createClient({
+    url: REDIS_URL,
+    // Sin esto el cliente reintenta para siempre y un REDIS_URL inalcanzable
+    // deja el cold start colgado hasta que Vercel lo corta por timeout.
+    socket: {
+      connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+      reconnectStrategy: retries => (retries > 3 ? false : Math.min(retries * 200, 1000)),
+    },
+  });
   redisClient.on('error', err => console.error('Redis Client Error', { name: err.name }));
   try {
     await redisClient.connect();
+    redisGeneralStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:general:' });
+    redisAuthStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:auth:' });
+    redisContactStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:contact:' });
   } catch (error) {
-    console.error('Redis no disponible', { name: error.name });
-    throw new Error('Redis no disponible');
+    // Sin Redis se cae al store en memoria: menos estricto, pero la API
+    // sigue respondiendo en vez de desaparecer por completo.
+    redisError = error;
+    // `disconnect()` es async y lanza ClientClosedError cuando el socket nunca
+    // llegó a abrir (justo este caso, el de Redis caído). Sin await el
+    // try/catch no lo captura, el rechazo queda sin manejar y tumba el proceso
+    // en vez de degradar a rate limit en memoria. Mismo patrón que shutdown().
+    try {
+      if (redisClient.isOpen) await redisClient.disconnect();
+    } catch { /* ya estaba cerrado */ }
+    redisClient = null;
+    redisGeneralStore = null;
+    redisAuthStore = null;
+    redisContactStore = null;
+    console.error('Redis no disponible, se usara rate limit en memoria:', error.message);
   }
-  redisGeneralStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:general:' });
-  redisAuthStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:auth:' });
-  redisContactStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:contact:' });
 }
 
 // ==========================================
@@ -123,11 +166,14 @@ app.use(securityMiddleware);
 // ==========================================
 // RATE LIMITING: Configuración
 // ==========================================
+// `message` es un objeto, no una funcion: express-rate-limit lo emite tal cual en
+// el cuerpo de la respuesta, asi que se reutiliza el sobre de error de la API en
+// lugar del { message } pelado que devolvia antes.
 const createRateLimiter = (windowMs, max, message, code, store = undefined, skip = () => false) => {
   const config = {
     windowMs,
     limit: max,
-    message: { success: false, message, code },
+    message: buildErrorBody(code, message),
     standardHeaders: true,
     legacyHeaders: false,
     skip,
@@ -141,7 +187,7 @@ const limiter = createRateLimiter(
   RATE_LIMIT_WINDOW_MS,
   RATE_LIMIT_MAX_REQUESTS,
   'Demasiadas solicitudes. Intenta de nuevo más tarde.',
-  'RATE_LIMIT_EXCEEDED',
+  ErrorCodes.RATE_LIMIT_EXCEEDED,
   redisGeneralStore,
   req => req.path === '/api/health'
 );
@@ -155,7 +201,7 @@ const authLimiter = createRateLimiter(
   AUTH_RATE_LIMIT_WINDOW_MS,
   AUTH_RATE_LIMIT_MAX_REQUESTS,
   'Demasiados intentos de autenticación. Intenta de nuevo en un minuto.',
-  'AUTH_RATE_LIMIT_EXCEEDED',
+  ErrorCodes.AUTH_RATE_LIMIT_EXCEEDED,
   redisAuthStore,
   req => !isAuthRateLimitedPath(req)
 );
@@ -163,7 +209,7 @@ const contactLimiter = createRateLimiter(
   CONTACT_RATE_LIMIT_WINDOW_MS,
   CONTACT_RATE_LIMIT_MAX_REQUESTS,
   'Demasiados mensajes. Intenta de nuevo más tarde.',
-  'CONTACT_RATE_LIMIT_EXCEEDED',
+  ErrorCodes.CONTACT_RATE_LIMIT_EXCEEDED,
   redisContactStore,
 );
 
@@ -176,12 +222,19 @@ app.use(cookieParser());
 app.use(csrfProtection);
 
 // Health Check
+// No depende de la base a proposito: sirve como sonda de vida del proceso.
+// `database`, `redis` y `configured` reflejan el estado real para poder
+// diagnosticar un despliegue sin tener que mirar los logs.
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'API By Jers funcionando',
     timestamp: new Date().toISOString(),
     environment: NODE_ENV,
+    database: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown',
+    redis: redisClient?.isOpen ? 'connected' : (REDIS_ENABLED ? 'unavailable' : 'disabled'),
+    configured: !configError,
+    ...(configError ? { configError: configError.message } : {}),
   });
 });
 
@@ -196,6 +249,27 @@ if (CSP_REPORT_ONLY && CSP_REPORT_URI) {
 // ==========================================
 // RUTAS PRINCIPALES
 // ==========================================
+// En un entorno serverless (Vercel) el módulo se importa por cada petición y
+// startServer() nunca llega a ejecutarse, así que la conexión se abre aquí de
+// forma perezosa. connectDB() reutiliza la conexión existente, por lo que en
+// las siguientes peticiones es prácticamente un no-op.
+app.use(async (req, res, next) => {
+  if (configError) {
+    return sendError(res, 503, ErrorCodes.CONFIG_INCOMPLETA, 'La API no está configurada para producción todavía.', {
+      details: [{ field: 'config', message: redactConfig(configError.message) }],
+    });
+  }
+  try {
+    const connected = await connectDB({ allowRetry: true });
+    if (!connected) {
+      return sendError(res, 503, ErrorCodes.DATABASE_UNAVAILABLE, 'La base de datos no está disponible en este momento.');
+    }
+    return next();
+  } catch (error) {
+    return sendError(res, 503, ErrorCodes.DATABASE_UNAVAILABLE, 'La base de datos no está disponible en este momento.');
+  }
+});
+
 app.use('/api/auth', authLimiter, routes.auth);
 app.use('/api/products', routes.products);
 app.use('/api/cart', routes.cart);
@@ -226,12 +300,47 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 /**
+ * Sincroniza los indices declarados en los modelos con los que hay en Mongo.
+ *
+ * POR QUE NO BASTA CON `autoIndex`
+ * ---------------------------------
+ * Mongoose construye los indices en `Model.init()`, que es perezoso: solo se
+ * dispara al usar el modelo por primera vez. Comprobado en este proyecto:
+ * declarados `orders: {estado, createdAt}` y `contacts: {estado, createdAt}`,
+ * arranco la API, hice peticiones, y los indices NO estaban en la base. Se
+ *Tenian que crear a mano con `syncIndexes()`.
+ *
+ * Un indice declarado pero no creado no da error en ninguna parte: simplemente
+ * no existe, y la consulta que dependia de el se resuelve con un COLLSCAN. Es
+ * la forma mas facil de perder rendimiento sin enterarse.
+ *
+ * En un entorno serverless (Vercel) NO se ejecuta: cada invocacion es un proceso
+ * nuevo y construir indices ahi seria trabajo inutil (ademas requiere permisos de
+ * escritura en la BD). Ahi los indices se despliegan una vez por adelantado.
+ */
+const syncModelIndexes = async () => {
+  try {
+    const { User, Product, Category, Brand, Cart, Order, Contact } = await import('./models/index.js');
+    const models = { User, Product, Category, Brand, Cart, Order, Contact };
+    for (const [name, model] of Object.entries(models)) {
+      await model.syncIndexes();
+      console.log(`  [db] indices de ${name} sincronizados`);
+    }
+  } catch (error) {
+    // Un fallo aqui no debe impedir arrancar la API: la app funciona sin indice
+    // nuevo, solo que mas lenta. Se avisa para que se investigue.
+    console.error('No se pudieron sincronizar los indices:', error.message);
+  }
+};
+
+/**
  * Inicia el servidor conectando primero a MongoDB
  */
 export const startServer = async () => {
   try {
     validateSecurityEnvironment();
     await connectDB();
+    await syncModelIndexes();
     httpServer = app.listen(PORT, HOST, () => {
       console.log(`
 ╔════════════════════════════════════════════════════════════╗

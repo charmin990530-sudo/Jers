@@ -13,7 +13,6 @@
 import { getMe, updateProfile, changePassword, handleApiError } from './apiClient.js';
 import { 
     iniciarAplicacion, 
-    validarEmail, 
     validarTelefono,
     calcularFortalezaPassword,
     textoFortaleza,

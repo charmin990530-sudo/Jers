@@ -27,7 +27,7 @@ describe('Central security middleware', () => {
       .set('Origin', origin)
       .send({ email: 'nobody@example.com', password: 'bad' })
       .expect(403);
-    expect(missing.body.code).toBe('CSRF_TOKEN_INVALID');
+    expect(missing.body.error.code).toBe('CSRF_TOKEN_INVALID');
 
     const valid = await request(app)
       .post('/api/auth/login')
@@ -36,7 +36,7 @@ describe('Central security middleware', () => {
       .set('X-CSRF-Token', issued.body.csrfToken)
       .send({ email: 'nobody@example.com', password: 'bad' })
       .expect(401);
-    expect(valid.body.code).toBe('INVALID_CREDENTIALS');
+    expect(valid.body.error.code).toBe('INVALID_CREDENTIALS');
   });
 
   it('allows a valid CSRF flow to authenticate', async () => {
@@ -67,7 +67,7 @@ describe('Central security middleware', () => {
       .send({ email: 'nobody@example.com', password: 'bad' })
       .expect(400);
 
-    expect(response.body.code).toBe('INVALID_PATH');
+    expect(response.body.error.code).toBe('INVALID_PATH');
   });
 
   it('rejects untrusted origins and unsupported methods', async () => {

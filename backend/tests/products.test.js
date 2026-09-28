@@ -249,8 +249,9 @@ describe('Products API', () => {
         .get(`/api/products/${fakeId}`)
         .expect(404);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('PRODUCT_NOT_FOUND');
     });
   });
 });

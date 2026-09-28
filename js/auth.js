@@ -301,10 +301,16 @@ async function request(endpoint, options = {}) {
         }
 
         if (!response.ok) {
+            const envelope = data && data.error ? data.error : {};
             return {
                 ok: false,
-                msg: data.message || 'Error en la petición',
-                data: { ...data, status: response.status },
+                msg: envelope.message || data?.message || 'Error en la petición',
+                data: {
+                    ...envelope,
+                    errors: envelope.details || envelope.errors || data?.errors,
+                    requestId: data?.requestId,
+                    status: response.status,
+                },
             };
         }
 

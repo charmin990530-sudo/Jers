@@ -29,6 +29,22 @@
  * - compuestos para filtros comunes (categoria+activo, marca+activo, etc.)
  */
 import mongoose from 'mongoose';
+import { discountPercentage, isMinorAmount } from '../services/money.js';
+
+/**
+ * Validador de importes: exige entero representable con exactitud.
+ *
+ * `min: 0` por si solo no basta: Mongoose acepta 58000.5 porque 58000.5 es un
+ * Number valido, y ese medio peso se arrastra por cada subtotal y por cada total
+ * hasta acabar en el cobro. Se rechaza en la capa de persistencia para que ningun
+ * camino (seed, admin, script) pueda introducir un importe fraccionario.
+ */
+const minorAmount = (label) => ({
+  validate: {
+    validator: value => value === undefined || isMinorAmount(value),
+    message: `${label} debe ser un numero entero (la moneda no tiene centavos)`,
+  },
+});
 
 const productSchema = new mongoose.Schema({
   nombre: {
@@ -58,10 +74,12 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'El precio es obligatorio'],
     min: [0, 'El precio no puede ser negativo'],
+    ...minorAmount('El precio'),
   },
   precioAnterior: {
     type: Number,
     min: [0, 'El precio anterior no puede ser negativo'],
+    ...minorAmount('El precio anterior'),
     // Validación custom: si existe, debe ser mayor que precio actual
     validate: {
       validator: function (value) {
@@ -130,11 +148,11 @@ productSchema.pre('validate', function () {
 
 // Virtual: % descuento calculado dinámicamente
 // Ej: precioAnterior=100, precio=80 -> 20%
+// El calculo vive en services/money.js: division entera con redondeo explicito.
+// La version anterior hacia ((pa - p) / pa) * 100 en coma flotante, que para
+// algunos pares de precios redondeaba 1 punto distinto al esperado.
 productSchema.virtual('descuentoPorcentaje').get(function () {
-  if (this.precioAnterior && this.precioAnterior > this.precio) {
-    return Math.round(((this.precioAnterior - this.precio) / this.precioAnterior) * 100);
-  }
-  return 0;
+  return discountPercentage(this.precioAnterior, this.precio);
 });
 
 // Virtual: URL de imagen principal para cards/listados

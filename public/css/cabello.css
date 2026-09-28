@@ -1,0 +1,14 @@
+/* cabello.css: identidad visual propia de la página de cuidado capilar. */
+.cabello-page .pagina-header {
+    background: linear-gradient(180deg, #dce8d7, var(--color-fondo));
+}
+
+.cabello-page .tab-btn.tab-activo {
+    background: #75966c;
+    border-color: #75966c;
+}
+
+.cabello-page .marca-nombre::before {
+    color: #75966c;
+    content: '✦ ';
+}

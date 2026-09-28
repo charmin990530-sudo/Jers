@@ -159,7 +159,7 @@
 }
 
 .precio-actual {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 1.2rem + 3vw, 2.5rem);
     font-weight: 700;
     color: var(--color-mauve);
     font-family: var(--fuente-titulos);
@@ -171,13 +171,18 @@
     text-decoration: line-through;
 }
 
+/* En base.css el badge va como cinta absolute pegada a la esquina de la tarjeta.
+   Aquí vive dentro de la fila de precio, así que debe seguir el flujo: si no,
+   se posiciona fuera de la pantalla y el "% OFF" no llega a verse. */
 .descuento-badge {
+    position: static;
     background: var(--color-dorado);
     color: white;
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
+    text-transform: none;
 }
 
 .producto-precio-anterior {
@@ -247,9 +252,11 @@
     transform: translateY(-2px);
 }
 
+/* El dorado es claro: con texto blanco el contraste queda en ~1.9:1 y no pasa
+   el mínimo AA. Texto oscuro sobre el mismo dorado da ~5.5:1. */
 .btn-comprar-ahora {
     background: var(--color-dorado);
-    color: white;
+    color: var(--color-texto);
 }
 
 .btn-comprar-ahora:hover:not(:disabled) {
@@ -417,8 +424,10 @@
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
+    /* La sección de relacionados ya tiene su propio padding superior; sumarle
+       otro aquí dejaba ~100px de vacío entre el producto y los relacionados. */
     .producto-detalle {
-        padding: 20px 16px 60px;
+        padding: 20px 16px 0;
     }
 
     .producto-acciones {

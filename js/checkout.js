@@ -12,6 +12,13 @@ const whatsappLink = document.getElementById('whatsapp-link');
 const createIdempotencyKey = () => globalThis.crypto?.randomUUID?.() || `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let idempotencyKey = createIdempotencyKey();
 
+// Renueva la clave después de cada pedido creado. La clave identifica UN intento
+// de compra: si se reutilizara, el backend respondería "El pedido ya había sido
+// creado" con el pedido anterior, esta pantalla lo tomaría como éxito, vaciaría
+// el carrito y mostraría el número viejo. El segundo pedido del cliente nunca
+// llegaría a existir.
+const renovarIdempotencyKey = () => { idempotencyKey = createIdempotencyKey(); };
+
 const money = value => `$${Number(value || 0).toLocaleString('es-CO')}`;
 const setMessage = (text, type = 'error') => {
     messageElement.textContent = text;
@@ -118,6 +125,8 @@ form.addEventListener('submit', async event => {
         };
         const response = await apiClient.createOrder(data, { headers: { 'Idempotency-Key': idempotencyKey } });
         if (!response.ok) throw new Error(response.msg || 'No se pudo crear el pedido');
+        // El intento ya se consumió: la siguiente compra necesita su propia clave.
+        renovarIdempotencyKey();
         const order = response.data.order;
         localStorage.removeItem('jers_carrito');
         form.reset();

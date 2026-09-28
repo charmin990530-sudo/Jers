@@ -125,31 +125,104 @@ const setLoadProgress = (loaded, total) => {
     elements.loaderBar.style.transform = `scaleX(${percentage / 100})`;
 };
 
-const preloadFrames = product => {
+/**
+ * Decide cuántos frames de la secuencia se cargan de verdad.
+ * Los 153 webp ocupan ~17 MB en disco y mucho más una vez decodificados, así que
+ * en pantallas pequeñas se carga una muestra cada N frames: la animación se ve
+ * igual de fluida (es un paneo lento) y baja drásticamente la memoria y el tráfico.
+ */
+const resolveFrameStep = total => {
+    const ancho = window.innerWidth || window.screen?.width || 1024;
+    const memoria = Number(navigator.deviceMemory) || (ancho <= 480 ? 4 : 8);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Math.max(1, Math.ceil(total / 2));
+    if (ancho <= 480 || memoria <= 2) return 3;
+    if (ancho <= 900 || memoria <= 4) return 2;
+    return 1;
+};
+
+const loadFrame = (product, index) => new Promise(resolve => {
+    const image = new Image();
+    let settled = false;
+    const finish = ok => {
+        if (settled) return;
+        settled = true;
+        resolve(ok ? image : null);
+    };
+    image.decoding = 'async';
+    image.onload = () => finish(image.complete && image.naturalWidth > 0);
+    image.onerror = () => finish(false);
+    image.src = framePath(product, index);
+});
+
+const idle = callback => {
+    if (typeof window.requestIdleCallback === 'function') {
+        return window.requestIdleCallback(callback, { timeout: 400 });
+    }
+    return window.setTimeout(callback, 32);
+};
+
+/**
+ * Carga la secuencia por tandas en lugar de lanzar los 153 downloads de una vez.
+ * La primera tanda es la que desbloquea el loader, así la portada aparece rápido;
+ * el resto se rellena en segundo plano respetando el hilo principal.
+ */
+const preloadFrames = async product => {
     const total = product.totalFrames;
+    const step = resolveFrameStep(total);
+    const indices = [];
+    for (let index = 0; index < total; index += step) indices.push(index);
+    // Siempre conservar el último frame para que el final de la animación sea fiel.
+    const ultimo = indices[indices.length - 1];
+    if (ultimo !== total - 1) indices.push(total - 1);
+
+    const frames = new Array(indices.length).fill(null);
+    const firstBatch = Math.min(indices.length, 6);
+    const CONCURRENCY = 4;
     let loaded = 0;
-    return Promise.all(Array.from({ length: total }, (_, index) => new Promise(resolve => {
-        const image = new Image();
-        let settled = false;
-        const finish = () => {
-            if (settled) return;
-            settled = true;
+    let cursor = 0;
+    let releaseFirstBatch = null;
+    const firstBatchReady = new Promise(resolve => { releaseFirstBatch = resolve; });
+
+    const worker = async () => {
+        while (cursor < indices.length) {
+            const position = cursor;
+            cursor += 1;
+            const image = await loadFrame(product, indices[position]);
+            frames[position] = image;
             loaded += 1;
-            setLoadProgress(loaded, total);
-            resolve(image.complete && image.naturalWidth > 0 ? image : null);
-        };
-        image.decoding = 'async';
-        image.onload = finish;
-        image.onerror = finish;
-        image.src = framePath(product, index);
-    })));
+            setLoadProgress(loaded, indices.length);
+            if (position < firstBatch) releaseFirstBatch();
+        }
+    };
+
+    const firstWorkers = Array.from({ length: Math.min(CONCURRENCY, firstBatch) }, worker);
+    // El resto espera a que el navegador respire entre tandas.
+    const drainRemaining = async () => {
+        await Promise.all(firstWorkers);
+        while (cursor < indices.length) {
+            await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+            await new Promise(resolve => idle(resolve));
+        }
+    };
+    drainRemaining();
+
+    await firstBatchReady;
+    return { frames, waitForAll: () => drainRemaining() };
 };
 
 const drawFrame = (requestedIndex, force = false) => {
     if (!context || !frames.length) return;
     const index = clamp(Math.round(requestedIndex), 0, frames.length - 1);
     if (!force && index === lastDrawnFrame) return;
-    const image = frames[index] || frames.find(Boolean);
+    // Mientras se rellenan las tandas puede haber huecos: usar el frame cargado más cercano.
+    let image = frames[index];
+    if (!image) {
+        for (let offset = 1; offset < frames.length; offset += 1) {
+            image = frames[index - offset] || frames[index + offset];
+            if (image) break;
+        }
+    }
+    image = image || frames.find(Boolean);
     if (!image) return;
     const bounds = elements.canvas.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return;
@@ -260,8 +333,10 @@ const initialize = async () => {
         usedFallback = true;
     }
     renderProduct(product, usedFallback);
+    let pending = null;
     try {
-        frames = await preloadFrames(product);
+        pending = await preloadFrames(product);
+        frames = pending.frames;
     } catch {
         frames = [];
     }
@@ -278,6 +353,12 @@ const initialize = async () => {
     } else {
         setupMotion(lastFrame);
     }
+    // Cuando lasequence termine de descargarse, redibujar para que no queden
+    // frames ausentes congelados en la imagen actual.
+    pending?.waitForAll?.().then(() => {
+        const currentFrame = motionState?.frameState.frame ?? lastFrame;
+        drawFrame(currentFrame, true);
+    });
     window.addEventListener('resize', handleResize, { passive: true });
     hideLoader();
 };

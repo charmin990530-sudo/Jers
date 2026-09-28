@@ -66,17 +66,20 @@ const buildFilter = (query) => {
 
 /**
  * Construye ordenamiento MongoDB desde string
+ * SIEMPRE termina con _id como desempate: sin un campo único, Mongo no garantiza
+ * un orden estable entre consultas y skip/limit repite o salta productos
+ * (los lotes del seed comparten createdAt, y hay precios iguales).
  * @param {String} sort - 'nuevos' | 'mas_vendidos' | 'precio_asc' | 'precio_desc' | 'descuento'
  * @returns {Object} Sort MongoDB
  */
 const buildSort = (sort) => {
   switch (sort) {
-    case 'mas_vendidos': return { vendidos: -1, createdAt: -1 };  // Más vendidos, luego nuevos
-    case 'precio_asc': return { precio: 1 };
-    case 'precio_desc': return { precio: -1 };
-    case 'descuento': return { precioAnterior: -1, precio: 1 };   // Mayor descuento primero
+    case 'mas_vendidos': return { vendidos: -1, createdAt: -1, _id: 1 };  // Más vendidos, luego nuevos
+    case 'precio_asc': return { precio: 1, _id: 1 };
+    case 'precio_desc': return { precio: -1, _id: 1 };
+    case 'descuento': return { precioAnterior: -1, precio: 1, _id: 1 };  // Mayor descuento primero
     case 'nuevos':
-    default: return { createdAt: -1 };                            // Más recientes primero
+    default: return { createdAt: -1, _id: 1 };                            // Más recientes primero
   }
 };
 
@@ -95,6 +98,7 @@ export const getProducts = asyncHandler(async (req, res) => {
   // Paraleliza: data + count total
   const [products, total] = await Promise.all([
     Product.find(filter)
+      .select('-__v')
       .populate('categoria', 'nombre slug')           // Solo campos necesarios
       .populate('marca', 'nombre slug logo')
       .sort(sort)
@@ -121,6 +125,7 @@ export const getProducts = asyncHandler(async (req, res) => {
  */
 export const getProduct = asyncHandler(async (req, res, next) => {
   const product = await Product.findById(req.params.id)
+    .select('-__v')
     .populate('categoria', 'nombre slug')
     .populate('marca', 'nombre slug logo descripcion');
 
@@ -141,7 +146,7 @@ export const getProduct = asyncHandler(async (req, res, next) => {
  * Usado en index.html -> js/index.js -> renderizarPromociones
  */
 export const getFeaturedProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ destacado: true, activo: true })
+  const products = await Product.find({ destacado: true, activo: true }).select('-__v')
     .populate('categoria', 'nombre slug')
     .populate('marca', 'nombre slug logo')
     .sort({ createdAt: -1 })
@@ -160,7 +165,7 @@ export const getFeaturedProducts = asyncHandler(async (req, res) => {
  * Productos en promoción para home (máx 12)
  */
 export const getPromoProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ enPromocion: true, activo: true })
+  const products = await Product.find({ enPromocion: true, activo: true }).select('-__v')
     .populate('categoria', 'nombre slug')
     .populate('marca', 'nombre slug logo')
     .sort({ createdAt: -1 })
@@ -228,6 +233,7 @@ export const getProductsByCategory = asyncHandler(async (req, res, next) => {
 
   const [products, total] = await Promise.all([
     Product.find(filter)
+      .select('-__v')
       .populate('marca', 'nombre slug logo')
       .sort(buildSort(sort))
       .skip(skip)
@@ -276,7 +282,7 @@ export const searchProducts = asyncHandler(async (req, res) => {
 
   // Ordena por score de relevancia (textScore)
   const [products, total] = await Promise.all([
-    Product.find(filter, { score: { $meta: 'textScore' } })
+    Product.find(filter, { score: { $meta: 'textScore' } }).select('-__v')
       .populate('categoria', 'nombre slug')
       .populate('marca', 'nombre slug logo')
       .sort({ score: { $meta: 'textScore' } })

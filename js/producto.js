@@ -10,30 +10,33 @@
  */
 
 import { getProduct, getProducts, handleApiError } from './apiClient.js';
-import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto } from './app.js';
+import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
+import { buscarFallbackPorSlug, FALLBACK_CATALOG } from './fallbackCatalog.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializa componentes compartidos
     iniciarAplicacion();
 
-    // Obtiene ID de la URL
+    // Acepta ?id= (con backend) o ?slug= (catálogo local, sin backend)
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
+    const productSlug = urlParams.get('slug');
 
-    if (!productId) {
+    if (!productId && !productSlug) {
         mostrarError('Producto no especificado');
         return;
     }
 
-    await cargarProducto(productId);
+    await cargarProducto(productId, productSlug);
 });
 
 /**
  * Carga y renderiza el producto
- * @param {string} productId
+ * @param {string|null} productId
+ * @param {string|null} productSlug
  */
-async function cargarProducto(productId) {
+async function cargarProducto(productId, productSlug) {
     const contenedor = document.getElementById('productoContenido');
     
     // Loading
@@ -44,26 +47,47 @@ async function cargarProducto(productId) {
         </div>
     `;
 
+    // Con ?slug= se resuelve contra el catálogo local: así el detalle funciona
+    // aunque el backend esté apagado, que es como se usa el sitio sin base de datos.
+    if (!productId && productSlug) {
+        const local = buscarFallbackPorSlug(productSlug);
+        if (!local) {
+            mostrarError('No se pudo cargar el producto');
+            return;
+        }
+        mostrarProducto(local);
+        return;
+    }
+
     const response = await getProduct(productId);
     if (!response.ok) {
         handleApiError({ message: response.msg, status: response.data?.status }, 'producto');
         mostrarError('No se pudo cargar el producto');
         return;
     }
-    
-    const producto = response.data.product;
-    
+
+    mostrarProducto(response.data.product);
+}
+
+/**
+ * Actualiza la página con el producto ya resuelto (de la API o del catálogo local)
+ * @param {Object} producto
+ */
+function mostrarProducto(producto) {
+    const contenedor = document.getElementById('productoContenido');
+    if (!contenedor) return;
+
     // Actualiza título de página
     document.title = `By Jers | ${producto.nombre}`;
-    
+
     // Actualiza breadcrumb
     actualizarBreadcrumb(producto);
-    
+
     // Renderiza producto
     renderizarProducto(producto, contenedor);
-    
+
     // Carga productos relacionados (misma categoría, excluyendo actual)
-    await cargarRelacionados(producto.categoria?._id || producto.categoria, productId);
+    cargarRelacionados(producto.categoria?._id || producto.categoria, producto._id || producto.slug);
 }
 
 /**
@@ -97,8 +121,11 @@ function renderizarProducto(producto, contenedor) {
     const imagenPrincipal = safeAssetUrl(principal?.url || producto.imagenPrincipal || obtenerImagenProducto(producto)) || '/img/placeholder.svg';
     const tieneDescuento = producto.precioAnterior && producto.precioAnterior > producto.precio;
     const descuentoPct = producto.descuentoPorcentaje || (tieneDescuento ? Math.round(((producto.precioAnterior - producto.precio) / producto.precioAnterior) * 100) : 0);
-    const stock = producto.stock ?? 0;
-    const enStock = stock > 0;
+    // El catálogo local no guarda stock. Sin ese dato no se puede afirmar que el
+    // producto esté agotado, así que solo se marca sin stock cuando el valor viene.
+    const stockConocido = producto.stock !== undefined && producto.stock !== null;
+    const stock = stockConocido ? Number(producto.stock) || 0 : null;
+    const enStock = stockConocido ? stock > 0 : true;
 
     // Genera thumbnails de galería
     const thumbnails = imagenes.length > 1 
@@ -130,8 +157,8 @@ function renderizarProducto(producto, contenedor) {
         </div>
 
         <div class="producto-info">
-            <span class="producto-categoria">${escapeHTML(producto.categoria?.nombre || 'Sin categoría')}</span>
-            <span class="producto-marca">${escapeHTML(producto.marca?.nombre || 'Sin marca')}</span>
+            ${producto.categoria?.nombre ? `<span class="producto-categoria">${escapeHTML(producto.categoria.nombre)}</span>` : ''}
+            ${producto.marca?.nombre ? `<span class="producto-marca">${escapeHTML(producto.marca.nombre)}</span>` : ''}
 
             <h1 class="producto-nombre">${escapeHTML(producto.nombre || 'Producto')}</h1>
 
@@ -143,19 +170,17 @@ function renderizarProducto(producto, contenedor) {
                 <span class="precio-actual">$${escapeHTML(producto.precio.toLocaleString('es-CO'))}</span>
             </div>
 
-            ${tieneDescuento && producto.precioAnterior ? `
-                <p class="producto-precio-anterior">Antes: $${escapeHTML(Number(producto.precioAnterior).toLocaleString('es-CO'))}</p>
+            ${stockConocido ? `
+                <div class="producto-stock ${enStock ? 'en-stock' : 'sin-stock'}">
+                    ${enStock ? `
+                        <span class="stock-icon">✓</span>
+                        <span>Disponible: ${escapeHTML(stock)} unidad${stock === 1 ? '' : 'es'}</span>
+                    ` : `
+                        <span class="stock-icon">✕</span>
+                        <span>Agotado</span>
+                    `}
+                </div>
             ` : ''}
-
-            <div class="producto-stock ${enStock ? 'en-stock' : 'sin-stock'}">
-                ${enStock ? `
-                    <span class="stock-icon">✓</span>
-                    <span>Disponible: ${escapeHTML(Number(stock) || 0)} unidad${Number(stock) === 1 ? '' : 'es'}</span>
-                ` : `
-                    <span class="stock-icon">✕</span>
-                    <span>Agotado</span>
-                `}
-            </div>
 
             ${producto.descripcionCorta ? `
                 <p class="producto-descripcion-corta">${escapeHTML(producto.descripcionCorta)}</p>
@@ -179,20 +204,28 @@ function renderizarProducto(producto, contenedor) {
                 </button>
             </div>
 
-            <div class="producto-meta">
-                <div class="meta-item">
-                    <span class="meta-label">SKU:</span>
-                    <span class="meta-valor">${escapeHTML(producto.sku || 'N/A')}</span>
+            ${(producto.sku || producto.categoria?.nombre || producto.marca?.nombre) ? `
+                <div class="producto-meta">
+                    ${producto.sku ? `
+                        <div class="meta-item">
+                            <span class="meta-label">SKU:</span>
+                            <span class="meta-valor">${escapeHTML(producto.sku)}</span>
+                        </div>
+                    ` : ''}
+                    ${producto.categoria?.nombre ? `
+                        <div class="meta-item">
+                            <span class="meta-label">Categoría:</span>
+                            <span class="meta-valor">${escapeHTML(producto.categoria.nombre)}</span>
+                        </div>
+                    ` : ''}
+                    ${producto.marca?.nombre ? `
+                        <div class="meta-item">
+                            <span class="meta-label">Marca:</span>
+                            <span class="meta-valor">${escapeHTML(producto.marca.nombre)}</span>
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="meta-item">
-                    <span class="meta-label">Categoría:</span>
-                    <span class="meta-valor">${escapeHTML(producto.categoria?.nombre || 'N/A')}</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Marca:</span>
-                    <span class="meta-valor">${escapeHTML(producto.marca?.nombre || 'N/A')}</span>
-                </div>
-            </div>
+            ` : ''}
         </div>
     `;
 
@@ -370,7 +403,13 @@ function inicializarTabsDetalles() {
  * @param {string} excluirId - ID del producto actual para excluir
  */
 async function cargarRelacionados(categoriaId, excluirId) {
-    if (!categoriaId) return;
+    // El catálogo local no tiene categorías con ObjectId, así que sin backend
+    // se arma la lista desde el propio catálogo para no dejar la sección vacía.
+    if (!categoriaId) {
+        const locales = relacionadosLocales(excluirId);
+        if (locales.length) pintarRelacionados(locales);
+        return;
+    }
 
     const response = await getProducts({ categoria: categoriaId, limit: 8 });
     if (!response.ok) {
@@ -379,23 +418,42 @@ async function cargarRelacionados(categoriaId, excluirId) {
     }
 
     const relacionados = response.data.products.filter(p => p._id !== excluirId).slice(0, 4);
-
     if (relacionados.length === 0) return;
+    pintarRelacionados(relacionados);
+}
 
+/**
+ * Productos del catálogo local de la misma familia que el producto actual
+ * @param {string} excluirSlug
+ * @returns {Object[]}
+ */
+function relacionadosLocales(excluirSlug) {
+    const familia = Object.entries(FALLBACK_CATALOG)
+        .find(([, lista]) => lista.some(p => p.slug === excluirSlug));
+    if (!familia) return [];
+    const clave = familia[0];
+    return FALLBACK_CATALOG[clave].filter(p => p.slug !== excluirSlug).slice(0, 4);
+}
+
+/**
+ * Pinta la rejilla de productos relacionados
+ * @param {Object[]} relacionados
+ */
+function pintarRelacionados(relacionados) {
     const seccion = document.getElementById('seccionRelacionados');
     const grid = document.getElementById('relacionadosGrid');
 
     if (seccion && grid) {
         seccion.hidden = false;
         grid.innerHTML = relacionados.map(p => {
-            const img = safeAssetUrl(p.imagenPrincipal || p.imagenes?.[0]?.url);
+            const img = safeAssetUrl(obtenerImagenProducto(p));
             const pos = safePosition(p.imagenes?.[0]?.posicion);
             const desc = p.precioAnterior && p.precioAnterior > p.precio;
             const id = escapeHTML(p._id || '');
 
             return `
                 <article class="card" data-id="${id}" data-nombre="${escapeHTML(p.nombre || '')}" data-precio="${Number(p.precio) || 0}">
-                    ${img ? `<img class="cardimage" src="${escapeHTML(img)}" alt="${escapeHTML(p.nombre || '')}" style="object-position: ${escapeHTML(pos)};">` : crearImagenProducto({ nombre: p.nombre })}
+                    ${img ? `<img class="cardimage" src="${escapeHTML(img)}" alt="${escapeHTML(p.nombre || '')}" loading="lazy" decoding="async" style="object-position: ${escapeHTML(pos)};">` : crearImagenProducto({ nombre: p.nombre })}
                     ${desc ? `<span class="descuento-badge">${Number(p.descuentoPorcentaje) || 0}% OFF</span>` : ''}
                     <h3 class="cardname">${escapeHTML(p.nombre || 'Producto')}</h3>
                     <p class="cardprecio">
@@ -403,7 +461,7 @@ async function cargarRelacionados(categoriaId, excluirId) {
                         $${escapeHTML(p.precio.toLocaleString('es-CO'))}
                     </p>
                     <div class="card-acciones">
-                        <a class="cardlink" href="producto.html?id=${encodeURIComponent(p._id || '')}">Ver detalle</a>
+                        ${enlaceDetalle(p)}
                         <button class="cardbtn" type="button">Añadir al carrito</button>
                     </div>
                 </article>

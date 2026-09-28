@@ -29,14 +29,26 @@
     font-weight: 600;
 }
 
-.campo input {
+/* El <textarea> del mensaje también entra aquí: si no, se ve con el estilo del
+   navegador (monoespaciado, sin borde) y en iPad provoca zoom al enfocarlo. */
+.campo input,
+.campo textarea,
+.campo select {
     border: 1px solid #ead6d3;
     border-radius: 10px;
     font: 1rem var(--fuente-texto);
     padding: 11px;
+    width: 100%;
 }
 
-.campo input:focus {
+.campo textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.campo input:focus,
+.campo textarea:focus,
+.campo select:focus {
     border-color: var(--color-mauve);
     outline: none;
 }

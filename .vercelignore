@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+.vercel
+public
+backend/.env
+backend/.env.*
+.env
+.env.*
+**/*.log
+coverage
+**/coverage
+backend/tests
+**/*.test.js
+*.md
+**/.DS_Store

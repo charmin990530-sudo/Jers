@@ -29,6 +29,7 @@
  * si el admin modifica el precio del producto mientras está en carrito
  */
 import mongoose from 'mongoose';
+import { isMinorAmount } from '../services/money.js';
 
 // Subdocumento: Item del carrito con snapshot de precio/nombre/imagen
 const cartItemSchema = new mongoose.Schema({
@@ -47,6 +48,12 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: [0, 'El precio no puede ser negativo'],
+    // Snapshot del precio: si admite decimales, cada subtotal arrastra la
+    // imprecision de coma flotante. Ver services/money.js.
+    validate: {
+      validator: value => value === undefined || isMinorAmount(value),
+      message: 'El precio unitario debe ser un numero entero (la moneda no tiene centavos)',
+    },
   },
   nombreSnapshot: { type: String, required: true },  // Nombre al momento de agregar
   imagenSnapshot: { type: String },                  // Imagen al momento de agregar

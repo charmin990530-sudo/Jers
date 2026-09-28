@@ -63,8 +63,9 @@ describe('Auth API', () => {
         .send(testUser)
         .expect(400);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('EMAIL_EXISTS');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('EMAIL_EXISTS');
     });
 
     it('debe fallar con datos inválidos (validación Zod)', async () => {
@@ -73,9 +74,10 @@ describe('Auth API', () => {
         .send({ email: 'invalid', password: '123' })
         .expect(400);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('VALIDATION_ERROR');
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.details).toBeDefined();
     });
   });
 
@@ -106,8 +108,9 @@ describe('Auth API', () => {
         .send({ email: testUser.email, password: 'wrongpassword' })
         .expect(401);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('INVALID_CREDENTIALS');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
     });
 
     it('debe fallar con email inexistente', async () => {
@@ -116,8 +119,9 @@ describe('Auth API', () => {
         .send({ email: 'nonexistent@example.com', password: testUser.password })
         .expect(401);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('INVALID_CREDENTIALS');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
     });
   });
 
@@ -148,8 +152,9 @@ describe('Auth API', () => {
         .get('/api/auth/me')
         .expect(401);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('UNAUTHENTICATED');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('UNAUTHENTICATED');
     });
 
     it('debe fallar con token inválido', async () => {
@@ -158,8 +163,9 @@ describe('Auth API', () => {
         .set('Cookie', `${JWT_COOKIE_NAME}=invalidtoken`)
         .expect(401);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('INVALID_TOKEN');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('INVALID_TOKEN');
     });
   });
 

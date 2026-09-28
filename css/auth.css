@@ -172,7 +172,7 @@
 
 .strength-text {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     margin-top: 4px;
     text-align: right;
 }
@@ -388,12 +388,17 @@
    MODALES (Términos, Privacidad)
    ========================================== */
 .modal {
-    align-items: center;
+    align-items: flex-start;
     background: rgb(0 0 0 / 50%);
     display: none;
     inset: 0;
     justify-content: center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
     position: fixed;
     z-index: 1000;
 }
@@ -409,9 +414,13 @@
 .modal-contenido {
     background: var(--color-blanco);
     border-radius: 20px;
+    margin: auto;
     max-height: 80vh;
+    max-height: 80dvh;
     max-width: 500px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: 32px;
     position: relative;
     width: 100%;
@@ -422,12 +431,17 @@
     border: none;
     cursor: pointer;
     font-size: 1.5rem;
+    align-items: center;
+    display: inline-flex;
+    height: 44px;
+    justify-content: center;
     position: absolute;
-    right: 16px;
-    top: 16px;
+    right: 8px;
+    top: 8px;
     color: #7a6666;
     line-height: 1;
-    padding: 4px;
+    min-width: 44px;
+    padding: 0;
 }
 
 .modal-cerrar:hover {

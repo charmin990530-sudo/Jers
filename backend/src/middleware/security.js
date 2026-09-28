@@ -6,6 +6,7 @@ import {
   COOKIE_SECURE,
   COOKIE_SAME_SITE,
 } from '../config/env.js';
+import { ErrorCodes, sendError } from './apiError.js';
 
 export const CSRF_COOKIE_NAME = 'jers_csrf';
 export const CSRF_HEADER_NAME = 'x-csrf-token';
@@ -52,12 +53,7 @@ const ensureCsrfToken = (req, res) => {
   return token;
 };
 
-const reject = (res, status, code, message) => res.status(status).json({
-  success: false,
-  message,
-  code,
-  requestId: res.locals.requestId,
-});
+const reject = (res, status, code, message, options) => sendError(res, status, code, message, options);
 
 export const requestSecurity = (req, res, next) => {
   const suppliedId = req.get('x-request-id');
@@ -73,13 +69,13 @@ export const requestSecurity = (req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
-  if (!ALLOWED_METHODS.has(req.method)) return reject(res, 405, 'METHOD_NOT_ALLOWED', 'Método no permitido');
+  if (!ALLOWED_METHODS.has(req.method)) return reject(res, 405, ErrorCodes.METHOD_NOT_ALLOWED, 'Método no permitido');
   const rawPath = String(req.originalUrl || '').split('?')[0];
   if (rawPath.includes('//') || /%2f/i.test(rawPath)) {
-    return reject(res, 400, 'INVALID_PATH', 'Ruta no válida');
+    return reject(res, 400, ErrorCodes.INVALID_PATH, 'Ruta no válida');
   }
   if (['POST', 'PATCH', 'PUT'].includes(req.method) && req.path !== '/api/csp-report' && !req.is('application/json')) {
-    return reject(res, 415, 'UNSUPPORTED_MEDIA_TYPE', 'Content-Type debe ser application/json');
+    return reject(res, 415, ErrorCodes.UNSUPPORTED_MEDIA_TYPE, 'Content-Type debe ser application/json');
   }
   next();
 };
@@ -87,7 +83,7 @@ export const requestSecurity = (req, res, next) => {
 export const originGuard = (req, res, next) => {
   if (SAFE_METHODS.has(req.method)) return next();
   if (req.get('sec-fetch-site') === 'cross-site') {
-    return reject(res, 403, 'ORIGIN_NOT_ALLOWED', 'Origen no permitido');
+    return reject(res, 403, ErrorCodes.ORIGIN_NOT_ALLOWED, 'Origen no permitido');
   }
   const origin = req.get('origin');
   const referer = req.get('referer');
@@ -97,11 +93,11 @@ export const originGuard = (req, res, next) => {
   if (origin) {
     return FRONTEND_ALLOWED_ORIGINS.includes(origin)
       ? next()
-      : reject(res, 403, 'ORIGIN_NOT_ALLOWED', 'Origen no permitido');
+      : reject(res, 403, ErrorCodes.ORIGIN_NOT_ALLOWED, 'Origen no permitido');
   }
   if (refererOrigin && FRONTEND_ALLOWED_ORIGINS.includes(refererOrigin)) return next();
   if (NODE_ENV !== 'production') return next();
-  return reject(res, 403, 'ORIGIN_REQUIRED', 'Origen de solicitud requerido');
+  return reject(res, 403, ErrorCodes.ORIGIN_REQUIRED, 'Origen de solicitud requerido');
 };
 
 export const csrfProtection = (req, res, next) => {
@@ -113,7 +109,7 @@ export const csrfProtection = (req, res, next) => {
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
   const headerToken = req.get(CSRF_HEADER_NAME);
   if (!cookieToken || !headerToken || !constantTimeEqual(cookieToken, headerToken) || !isValidCsrfToken(cookieToken)) {
-    return reject(res, 403, 'CSRF_TOKEN_INVALID', 'Token de seguridad inválido');
+    return reject(res, 403, ErrorCodes.CSRF_TOKEN_INVALID, 'Token de seguridad inválido');
   }
   req.csrfToken = cookieToken;
   next();

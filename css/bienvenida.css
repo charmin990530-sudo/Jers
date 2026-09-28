@@ -1,11 +1,13 @@
 .bienvenida-page {
     background: var(--color-texto);
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
 }
 
 .bienvenida {
     min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .intro-loader {
@@ -72,6 +74,7 @@ body.is-ready .intro-loader {
 .intro-pin {
     background: var(--color-texto);
     height: 100vh;
+    height: 100dvh;
     min-height: 620px;
     overflow: hidden;
     position: relative;
@@ -99,7 +102,7 @@ body.is-ready .intro-loader {
     align-items: center;
     color: var(--color-blanco);
     display: flex;
-    font: 600 .68rem var(--fuente-texto);
+    font: 600 .75rem var(--fuente-texto);
     justify-content: space-between;
     left: clamp(24px, 5vw, 80px);
     letter-spacing: .2em;
@@ -112,6 +115,7 @@ body.is-ready .intro-loader {
 
 .intro-copy {
     bottom: clamp(64px, 10vh, 112px);
+    bottom: clamp(64px, 10dvh, 112px);
     color: var(--color-blanco);
     left: clamp(24px, 8vw, 140px);
     max-width: min(720px, calc(100vw - 48px));
@@ -121,7 +125,7 @@ body.is-ready .intro-loader {
 
 .intro-eyebrow {
     color: var(--color-rosa);
-    font: 600 .72rem var(--fuente-texto);
+    font: 600 .75rem var(--fuente-texto);
     letter-spacing: .24em;
     margin-bottom: 14px;
     text-transform: uppercase;
@@ -157,7 +161,7 @@ body.is-ready .intro-loader {
     background: var(--color-dorado);
     border-radius: 999px;
     color: var(--color-texto);
-    font: 600 .7rem var(--fuente-texto);
+    font: 600 .75rem var(--fuente-texto);
     letter-spacing: .08em;
     padding: 7px 11px;
     text-transform: uppercase;
@@ -215,7 +219,7 @@ body.is-ready .intro-loader {
     color: rgb(255 255 255 / 76%);
     display: flex;
     flex-direction: column;
-    font: 400 .64rem var(--fuente-texto);
+    font: 400 .75rem var(--fuente-texto);
     gap: 12px;
     letter-spacing: .16em;
     position: absolute;
@@ -257,7 +261,9 @@ body.is-fallback .intro-pin {
 
 body.is-static .intro-scroll {
     height: 100vh;
+    height: 100dvh;
     min-height: 100vh;
+    min-height: 100dvh;
 }
 
 body.is-static .intro-scroll-hint {
@@ -303,7 +309,7 @@ body.is-static .intro-copy > * {
     }
 
     .intro-topline {
-        font-size: .58rem;
+        font-size: .75rem;
     }
 
     .intro-topline span:last-child {
@@ -337,7 +343,9 @@ body.is-static .intro-copy > * {
 
     .intro-scroll {
         height: 100vh;
+        height: 100dvh;
         min-height: 100vh;
+        min-height: 100dvh;
     }
 
     .intro-copy > * {

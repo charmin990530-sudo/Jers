@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title">
+  <title>Producto By Jers</title>
+  <rect width="800" height="800" fill="#f6eef4"/>
+  <circle cx="400" cy="330" r="150" fill="#ead8e8"/>
+  <text x="400" y="570" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" fill="#6c4b69">By Jers</text>
+</svg>

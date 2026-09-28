@@ -14,6 +14,35 @@
     --color-dorado: #d4af87;
     --color-blanco: #ffffff;
     --color-whatsapp: #25d366;
+
+    /* Alias del panel de administración: se apoyan en la misma paleta. */
+    --color-cream: #f7f1ec;
+    --color-graphite: #3d3333;
+    --color-gray-light: #e6ded8;
+    --color-gray-medium: #8a7a78;
+    --color-rose-gold: #d4af87;
+
+    /* Escala de espaciado */
+    --spacing-xs: 4px;
+    --spacing-sm: 10px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 40px;
+
+    /* Escala de esquinas redondeadas */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-full: 9999px;
+
+    /* Sombras */
+    --shadow-md: 0 4px 15px rgb(0 0 0 / 6%);
+    --shadow-lg: 0 10px 30px rgb(0 0 0 / 16%);
+    --shadow-xl: 0 30px 70px rgb(0 0 0 / 12%);
+
+    /* Movimiento */
+    --transition-fast: .25s ease;
+
     --fuente-titulos: 'Playfair Display', serif;
     --fuente-texto: 'Poppins', sans-serif;
 }
@@ -38,7 +67,11 @@ body {
     font-family: var(--fuente-texto);
     line-height: 1.6;
     overflow-x: hidden;
+    overflow-x: clip;
     -webkit-text-size-adjust: 100%;
+
+    /* Evita el parche blanco del navegador en la barra del notch. */
+    color-scheme: light;
 }
 
 /* En móviles no debe aparecer el cuadro azul al tocar un enlace o botón. */
@@ -52,12 +85,12 @@ label {
 }
 
 /* Los controles táctiles deben medir al menos 44px para ease de usar con el dedo. */
+a[href],
 button,
-.menuitem a,
-.cardlink,
 input,
 select,
-textarea {
+textarea,
+[role='button'] {
     touch-action: manipulation;
 }
 
@@ -85,7 +118,7 @@ h3 {
 
 .menulogo {
     border-radius: 50%;
-    height: auto;
+    height: 50px;
     width: 50px;
 }
 
@@ -167,7 +200,7 @@ h3 {
     border-radius: 50%;
     color: white;
     display: flex;
-    font-size: .7rem;
+    font-size: .75rem;
     font-weight: 600;
     height: 18px;
     justify-content: center;
@@ -454,6 +487,145 @@ h3 {
 .carrito-fondo.visible {
     opacity: 1;
     pointer-events: auto;
+}
+
+/* ==========================================
+   MODALES
+   Componente compartido: términos, direcciones, pedidos y panel admin.
+   El overlay envejece con align-items:flex-start + overflow-y:auto para que
+   en iOS el contenido alto siga siendo alcanzable (con align-items:center el
+   excedente superior queda inalcanzable en WebKit).
+   ========================================== */
+.modal {
+    align-items: flex-start;
+    background: rgb(0 0 0 / 50%);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+    padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
+    position: fixed;
+    z-index: 1000;
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal-contenido {
+    background: var(--color-blanco);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    margin: auto;
+    max-width: min(90vw, 500px);
+    position: relative;
+    width: 100%;
+
+    /* dvh evita el salto de la barra de direcciones en iOS; vh queda como respaldo. */
+    max-height: 80vh;
+    max-height: 80dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.modal-grande {
+    max-width: min(94vw, 1000px);
+    max-height: 90vh;
+    max-height: 90dvh;
+}
+
+.modal-pequeno {
+    max-width: min(90vw, 420px);
+}
+
+.modal-cabecera {
+    align-items: center;
+    border-bottom: 1px solid var(--color-cream);
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+}
+
+.modal-cabecera h2,
+.modal-titulo {
+    font-size: 1.25rem;
+    margin: 0;
+    padding-right: var(--spacing-md);
+}
+
+.modal-contenido > .modal-titulo,
+.modal-contenido > h2 {
+    font-size: 1.25rem;
+    margin: 0 0 var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-lg) 0;
+}
+
+.modal-cerrar {
+    align-items: center;
+    background: var(--color-cream);
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-graphite);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    height: 44px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 44px;
+    z-index: 1;
+}
+
+.modal-cerrar:hover {
+    background: var(--color-rosa);
+    color: var(--color-blanco);
+}
+
+.modal-mensaje {
+    color: var(--color-texto);
+    margin-bottom: var(--spacing-lg);
+    padding: 0 var(--spacing-lg);
+}
+
+.modal-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    padding: var(--spacing-lg);
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+}
+
+.modal-acciones button {
+    min-height: 44px;
+    padding: 12px 24px;
+}
+
+/* Los formularios y bloques que viven directo dentro del modal necesitan aire. */
+.modal-contenido > form,
+.modal-contenido > .admin-form,
+.modal-contenido > .direccion-form {
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.modal-contenido > form:last-child,
+.modal-contenido > .admin-form:last-child {
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+}
+
+body.modal-abierto {
+    overflow: hidden;
 }
 
 /* Animación de entrada para las secciones con clase .revelar. */
@@ -761,7 +933,7 @@ h3 {
     background: var(--color-dorado);
     border-radius: 0 0 12px 12px;
     color: white;
-    font-size: .7rem;
+    font-size: .75rem;
     font-weight: 600;
     left: 0;
     padding: 4px 10px;
@@ -811,18 +983,31 @@ h3 {
         max-height: 0;
         order: 4;
         overflow: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         transition: max-height .4s ease;
         width: 100%;
+
+        /* Recorta el alto sobrante sin dejar el menú a media altura */
+        -webkit-overflow-scrolling: touch;
     }
 
+    /* Un tope derivado del propio contenido: un menú con más entradas ya no queda recortado. */
     .menulist.activo {
-        max-height: 400px;
+        max-height: 100vh;
+        max-height: 100dvh;
     }
 
     .menuitem {
         padding: 15px 0;
         text-align: center;
         width: 100%;
+    }
+
+    /* La fila de sesión lleva tres acciones: en wrapping evita que se desborden. */
+    .sesion-menu {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .chatbot-boton {
@@ -862,24 +1047,24 @@ h3 {
 
     /* Los botones flotantes se apartan de la barra de inicio del iPhone. */
     .whatsapp-flotante {
-        bottom: calc(20px + env(safe-area-inset-bottom));
-        right: calc(18px + env(safe-area-inset-right));
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        right: calc(18px + env(safe-area-inset-right, 0px));
     }
 
     .chatbot-boton {
-        bottom: calc(23px + env(safe-area-inset-bottom));
-        right: calc(84px + env(safe-area-inset-right));
+        bottom: calc(23px + env(safe-area-inset-bottom, 0px));
+        right: calc(84px + env(safe-area-inset-right, 0px));
     }
 
     .chatbot-panel {
-        bottom: calc(88px + env(safe-area-inset-bottom));
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     }
 
     /* A pantalla completa hay que empujar el panel una vez su ancho completo:
        con el right: -420px de escritorio, un width: 100% lo dejaba a la vista. */
     .carrito-panel {
         max-width: none;
-        padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
         right: -100vw;
         width: 100%;
     }
@@ -891,9 +1076,25 @@ h3 {
     .whatsapp-burbuja-cerrar,
     .carrito-icono,
     .menu-toggle,
-    .menu-logout {
+    .menu-logout,
+    .chatbot-chip,
+    .chatbot-enviar,
+    .cardbtn,
+    .contact-btn,
+    .cardlink,
+    .finalizar-pedido,
+    .btn-reintentar,
+    .tab-btn,
+    .modal-cerrar,
+    .site-footer .redes-sociales a {
         min-height: 44px;
         min-width: 44px;
+    }
+
+    /* Los chips del chatbot son especialmente pequeños: hay que agrandarlos de verdad. */
+    .chatbot-chip {
+        font-size: .8rem;
+        padding: 11px 14px;
     }
 
     .carrito-cerrar,
@@ -918,6 +1119,27 @@ h3 {
     .menuitem a {
         display: block;
         padding: 15px 0;
+    }
+}
+
+/* En pantallas táctiles no existe :hover, así que cada control necesita su
+   propia confirmación al presionarlo o el toque parece no registrar. */
+@media (hover: none) {
+    a[href]:active,
+    button:active,
+    [role='button']:active,
+    .tab-btn:active,
+    .perfil-tab:active,
+    .filtro-btn:active,
+    .pag-btn:active,
+    .galeria-thumb:active {
+        transform: scale(.97);
+    }
+
+    /* El carrusel de marcas se detiene solo: es una animación infinita
+       y en táctil no hay forma de pausarla con :hover. */
+    .marcas-track {
+        animation-play-state: paused;
     }
 }
 
@@ -967,6 +1189,37 @@ h3 {
     .marca-header {
         flex-direction: column;
         gap: 4px;
+    }
+}
+
+/* Los elementos fijos también se apartan de la barra de inicio en los iPad con
+   indicador (834px, 1024px, 1180px y 1366px), que no entran en el bloque de 768px. */
+@media (min-width: 769px) {
+    .whatsapp-flotante {
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        right: calc(24px + env(safe-area-inset-right, 0px));
+    }
+
+    .chatbot-boton {
+        bottom: calc(27px + env(safe-area-inset-bottom, 0px));
+        right: calc(102px + env(safe-area-inset-right, 0px));
+    }
+}
+
+/* Entre 769px y 1024px el menú de escritorio todavía no colapsa, pero la barra
+   del panel tiene siete entradas: sin comprimir se parten en dos líneas y el
+   encabezado crece, desalineando el scroll-padding de 90px. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .menu {
+        padding: 15px 24px;
+    }
+
+    .menulist {
+        gap: 16px;
+    }
+
+    .menuitem a {
+        font-size: .9rem;
     }
 }
 

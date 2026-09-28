@@ -22,6 +22,23 @@
  */
 
 import { z } from 'zod';
+import { CATEGORIAS_FIJAS } from '../models/Category.js';
+import { MAX_MINOR_AMOUNT } from '../services/money.js';
+import { ErrorCodes, sendError } from './apiError.js';
+
+/**
+ * Importe monetario: entero, no negativo y dentro del rango representable.
+ *
+ * `z.number().min(0)` acepta 58000.5, y medio peso arrastrado por cada subtotal
+ * se convierte en un total que no cuadra. Al exigir entero aqui, ningun cliente
+ * puede introducir fracciones: la base de datos es la segunda barrera (ver
+ * services/money.js y los validadores de los modelos).
+ */
+const minorAmount = (label) =>
+  z.number({ invalid_type_error: `${label} debe ser un numero` })
+    .int(`${label} debe ser un numero entero (la moneda no tiene centavos)`)
+    .min(0, `${label} no puede ser negativo`)
+    .max(MAX_MINOR_AMOUNT, `${label} excede el maximo representable`);
 
 const assetUrl = z.string().trim().min(1).refine(value => {
   if (/[\u0000-\u001f\\]/.test(value)) return false;
@@ -35,6 +52,21 @@ const assetUrl = z.string().trim().min(1).refine(value => {
 }, 'Debe ser una URL HTTP(S) válida o una ruta local segura');
 
 const imagePosition = z.string().trim().regex(/^(?:center|top|bottom|left|right)(?:\s+(?:center|top|bottom|left|right|[0-9]{1,3}%|[0-9]{1,3}(?:px|rem|em)))?$|^[0-9]{1,3}%\s+[0-9]{1,3}%$/i, 'Posición de imagen inválida').default('center');
+
+/**
+ * Nombre de categoría válido. La lista es cerrada (ver Category.js) porque las
+ * pestañas del catálogo están escritas contra esos nombres. Se valida aquí y no
+ * solo en Mongoose para devolver un error de campo uniforme, en vez del mensaje
+ * interno de BSON que se escapa al cliente.
+ */
+const categoryName = z.string()
+  .trim()
+  .toLowerCase()
+  .min(2, 'El nombre de la categoría debe tener al menos 2 caracteres')
+  .refine(
+    value => CATEGORIAS_FIJAS.includes(value),
+    `Categoría no válida. Las permitidas son: ${CATEGORIAS_FIJAS.join(', ')}`
+  );
 
 const optionalBooleanQuery = z.preprocess(
   value => value === undefined ? undefined : value === 'true' || value === true,
@@ -50,16 +82,11 @@ export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
   if (!result.success) {
     // Formatea errores Zod a array simple {field, message}
-    const errors = result.error.errors.map(err => ({
+    const details = result.error.errors.map(err => ({
       field: err.path.join('.'),    // ej: "direccionEnvio.ciudad"
       message: err.message,
     }));
-    return res.status(400).json({
-      success: false,
-      message: 'Datos de entrada inválidos',
-      errors,
-      code: 'VALIDATION_ERROR',
-    });
+    return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Datos de entrada inválidos', { details });
   }
   // Reemplaza body con data validada y tipada (coerción aplicada)
   req.body = result.data;
@@ -230,14 +257,32 @@ export const schemas = {
     estado: z.enum(['nuevo', 'atendido']),
   }),
 
+  // PATCH /api/users/:id/role
+  // Estas dos rutas no tenian esquema: el controlador comprobaba el rol a mano
+  // con `['user','admin'].includes(role)`, lo que deja pasar cuerpos con tipos
+  // raros y sin `role` (undefined -> "Rol invalido" en vez de un error de campo).
+  updateUserRole: z.object({
+    role: z.enum(['user', 'admin'], {
+      errorMap: () => ({ message: 'El rol debe ser "user" o "admin"' }),
+    }),
+  }),
+
+  // PATCH /api/users/:id/toggle-active
+  // Alterna el estado, asi que un cuerpo vacio es valido. Se acepta tambien un
+  // `activo` explicito para que un cliente pueda fijar el valor en vez de
+  // confiar del toggle.
+  toggleUserActive: z.object({
+    activo: z.boolean().optional(),
+  }).strict().default({}),
+
   // POST /api/admin/productos
   createProduct: z.object({
     nombre: z.string().min(2).max(100),
     slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/).optional(),
     descripcion: z.string().min(10).max(1000),
     descripcionCorta: z.string().max(200).optional(),
-    precio: z.number().min(0),
-    precioAnterior: z.number().min(0).optional(),
+    precio: minorAmount('El precio'),
+    precioAnterior: minorAmount('El precio anterior').optional(),
     stock: z.number().int().min(0).default(0),
     categoria: z.string().regex(/^[0-9a-fA-F]{24}$/),  // ObjectId requerido
     marca: z.string().regex(/^[0-9a-fA-F]{24}$/),
@@ -263,8 +308,8 @@ export const schemas = {
     slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/).optional(),
     descripcion: z.string().min(10).max(1000).optional(),
     descripcionCorta: z.string().max(200).nullable().optional(),
-    precio: z.number().min(0).optional(),
-    precioAnterior: z.number().min(0).nullable().optional(),
+    precio: minorAmount('El precio').optional(),
+    precioAnterior: minorAmount('El precio anterior').nullable().optional(),
     stock: z.number().int().min(0).optional(),
     categoria: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
     marca: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
@@ -301,7 +346,7 @@ export const schemas = {
 
   // POST /api/admin/categorias
   createCategory: z.object({
-    nombre: z.string().min(2).max(50),
+    nombre: categoryName,
     slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/).optional(),
     descripcion: z.string().max(200).optional(),
     imagen: assetUrl.optional(),
@@ -311,7 +356,7 @@ export const schemas = {
 
   // PATCH /api/admin/categorias/:id
   updateCategory: z.object({
-    nombre: z.string().min(2).max(50).optional(),
+    nombre: categoryName.optional(),
     slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/).optional(),
     descripcion: z.string().max(200).nullable().optional(),
     imagen: assetUrl.nullable().optional(),
@@ -350,16 +395,11 @@ export const schemas = {
 export const validateParams = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.params);
   if (!result.success) {
-    const errors = result.error.errors.map(err => ({
+    const details = result.error.errors.map(err => ({
       field: err.path.join('.'),
       message: err.message,
     }));
-    return res.status(400).json({
-      success: false,
-      message: 'Parámetros inválidos',
-      errors,
-      code: 'VALIDATION_ERROR',
-    });
+    return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Parámetros inválidos', { details });
   }
   next();
 };
@@ -371,16 +411,11 @@ export const validateParams = (schema) => (req, res, next) => {
 export const validateQuery = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.query);
   if (!result.success) {
-    const errors = result.error.errors.map(err => ({
+    const details = result.error.errors.map(err => ({
       field: err.path.join('.'),
       message: err.message,
     }));
-    return res.status(400).json({
-      success: false,
-      message: 'Parámetros de consulta inválidos',
-      errors,
-      code: 'VALIDATION_ERROR',
-    });
+    return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Parámetros de consulta inválidos', { details });
   }
   // Reemplaza query con data validada y tipada
   req.query = result.data;

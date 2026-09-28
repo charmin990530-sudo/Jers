@@ -10,7 +10,7 @@
  */
 
 import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './apiClient.js';
-import { iniciarAplicacion, crearImagenProducto } from './app.js';
+import { iniciarAplicacion } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
 // Estado

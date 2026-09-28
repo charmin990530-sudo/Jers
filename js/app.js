@@ -65,6 +65,9 @@ export function obtenerPaginaActual() {
 
 /**
  * Activa o cierra el menú hamburguesa en pantallas pequeñas.
+ * Mantiene sincronizado el estado accesible (aria-expanded / aria-label),
+ * permite cerrarlo con Escape o tocando fuera, y devuelve el foco al botón
+ * para que nunca quede sobre un enlace que ya está oculto.
  */
 export function iniciarMenuMovil() {
     const botonMenu = document.querySelector('.menu-toggle');
@@ -72,15 +75,51 @@ export function iniciarMenuMovil() {
 
     if (!botonMenu || !listaMenu) return;
 
+    if (!listaMenu.id) listaMenu.id = 'menu-principal';
+    botonMenu.setAttribute('aria-controls', listaMenu.id);
+    botonMenu.setAttribute('aria-expanded', 'false');
+
+    const estaAbierto = () => listaMenu.classList.contains('activo');
+
+    const setAbierto = (abierto, devolverFoco = false) => {
+        listaMenu.classList.toggle('activo', abierto);
+        botonMenu.setAttribute('aria-expanded', String(abierto));
+        botonMenu.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+        if (devolverFoco) botonMenu.focus();
+    };
+
     botonMenu.addEventListener('click', () => {
-        listaMenu.classList.toggle('activo');
+        setAbierto(!estaAbierto());
     });
 
     listaMenu.querySelectorAll('a').forEach(enlace => {
         enlace.addEventListener('click', () => {
-            listaMenu.classList.remove('activo');
+            setAbierto(false);
         });
     });
+
+    document.addEventListener('keydown', evento => {
+        if (evento.key === 'Escape' && estaAbierto()) {
+            setAbierto(false, true);
+        }
+    });
+
+    document.addEventListener('click', evento => {
+        if (!estaAbierto()) return;
+        if (evento.target.closest('.menu')) return;
+        setAbierto(false);
+    });
+
+    // Al pasar a escritorio el menú deja de colapsarse: limpiar el estado móvil.
+    const escritorio = window.matchMedia('(min-width: 769px)');
+    const alCambiarViewport = evento => {
+        if (evento.matches) setAbierto(false);
+    };
+    if (typeof escritorio.addEventListener === 'function') {
+        escritorio.addEventListener('change', alCambiarViewport);
+    } else if (typeof escritorio.addListener === 'function') {
+        escritorio.addListener(alCambiarViewport);
+    }
 }
 
 
@@ -153,6 +192,28 @@ function normalizarNombre(valor) {
         .replace(/(^-|-$)/g, '');
 }
 
+/**
+ * Enlace al detalle de un producto.
+ *
+ * Con backend el producto trae _id y se consulta por id. Sin backend el
+ * catálogo local no tiene _id, así que se enlaza por slug y producto.js lo
+ * resuelve contra el catálogo local. Antes, en modo sin backend, la tarjeta se
+ * quedaba sin botón "Ver detalle" y el producto era inalcanzable.
+ *
+ * @param {Object} producto
+ * @returns {string} HTML del ancla, o cadena vacía si no hay forma de identificarlo
+ */
+export function enlaceDetalle(producto) {
+    if (!producto) return '';
+    const id = producto._id || producto.id;
+    if (id) {
+        return `<a class="cardlink" href="producto.html?id=${encodeURIComponent(id)}">Ver detalle</a>`;
+    }
+    const slug = producto.slug || (producto.nombre ? normalizarNombre(producto.nombre) : '');
+    if (!slug) return '';
+    return `<a class="cardlink" href="producto.html?slug=${encodeURIComponent(slug)}">Ver detalle</a>`;
+}
+
 export function obtenerImagenProducto(producto) {
     const candidatas = [
         producto.imagen,
@@ -213,6 +274,8 @@ export function crearImagenProducto(producto) {
                 class="cardimage"
                 src="${escapeHTML(imagen)}"
                 alt="${nombre}"
+                loading="lazy"
+                decoding="async"
                 style="object-position: ${escapeHTML(posicion)};"
             >
         `;
@@ -295,7 +358,7 @@ export function renderizarCatalogo(gruposDeMarca, contenedor) {
                 </p>
 
                 <div class="card-acciones">
-                    ${producto._id || producto.id ? `<a class="cardlink" href="producto.html?id=${encodeURIComponent(producto._id || producto.id)}">Ver detalle</a>` : ''}
+                    ${enlaceDetalle(producto)}
                     <button
                         class="cardbtn"
                         type="button"
@@ -419,7 +482,7 @@ export function renderizarPromociones(
         >
             <span class="descuento-badge">Oferta</span>
             ${imagenPrincipal ? `
-              <img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" style="object-position: ${escapeHTML(posicion)};">
+              <img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" loading="lazy" decoding="async" style="object-position: ${escapeHTML(posicion)};">
             ` : crearImagenProducto({ nombre: producto.nombre })}
             <h3 class="cardname">${nombre}</h3>
             <p class="cardprecio">
@@ -427,7 +490,7 @@ export function renderizarPromociones(
                 $${escapeHTML(producto.precio.toLocaleString('es-CO'))}
             </p>
             <div class="card-acciones">
-                ${id ? `<a class="cardlink" href="producto.html?id=${encodeURIComponent(id)}">Ver detalle</a>` : ''}
+                ${enlaceDetalle(producto)}
                 <button class="cardbtn" type="button">Añadir al carrito</button>
             </div>
         </article>

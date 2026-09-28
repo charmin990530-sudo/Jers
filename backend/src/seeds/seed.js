@@ -287,6 +287,7 @@ const promoProductsData = [
   {
     nombre: 'Paleta de Sombras Nude',
     descripcion: 'Paleta de sombras en tonos nude para looks naturales y sofisticados.',
+    descripcionCorta: 'Paleta de sombras en tonos nude',
     precio: 45000,
     precioAnterior: 58000,
     stock: 20,
@@ -295,12 +296,19 @@ const promoProductsData = [
     imagenes: [
       { url: '/img/promociones/paleta-de-sombras.webp', alt: 'Paleta de Sombras Nude', esPrincipal: true },
     ],
+    ingredientes: [
+      { nombre: 'Talco de sílice', descripcion: 'Suaviza y difumina el acabado' },
+      { nombre: 'Óxido de hierro', descripcion: 'Pigmentos minerales de alta duración' },
+      { nombre: 'Vitamina E', descripcion: 'Protege la zona de los párpados' },
+    ],
+    uso: 'Aplicar con brosel sobre el párpado. Combinar tonos para crear profundidad.',
     enPromocion: true,
     destacado: true,
   },
   {
     nombre: 'Labial Mate Larga Duración',
     descripcion: 'Labial mate de alta fijación hasta 12 horas. No transfiere.',
+    descripcionCorta: 'Labial mate de fijación hasta 12 horas',
     precio: 29000,
     precioAnterior: 38000,
     stock: 25,
@@ -309,6 +317,12 @@ const promoProductsData = [
     imagenes: [
       { url: '/img/promociones/labial-mate.webp', alt: 'Labial Mate Larga Duración', esPrincipal: true, posicion: 'center 65%' },
     ],
+    ingredientes: [
+      { nombre: 'Cera de carnauba', descripcion: 'Sella la humedad y fija el color' },
+      { nombre: 'Vitamina E', descripcion: 'Hidrata los labios' },
+      { nombre: 'Pigmentos de alta cobertura', descripcion: 'Color intenso en una sola pasada' },
+    ],
+    uso: 'Aplicar sobre labios hidratados. Dejar secar antes de beber o comer.',
     enPromocion: true,
     destacado: true,
   },
@@ -346,9 +360,16 @@ async function seed() {
 
     console.log('📦 Creando productos...');
     const generateSlug = (nombre) => nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const productsToCreate = [...productsData, ...promoProductsData].map(p => ({
+    // El SKU se fija aquí en vez de dejar que lo arme el hook pre('validate') del
+    // modelo. Ese hook usa `Date.now().toString(36)` y `insertMany` valida todos
+    // los documentos en el mismo milisegundo, así que los productos que comparten
+    // las tres primeras letras del nombre (los tres "Shampoo ..." dan "SHA")
+    // salían con SKU idéntico y el índice único de `sku` rechazaba el lote entero
+    // con E11000. El índice de posición mantiene la unicidad dentro del seed.
+    const productsToCreate = [...productsData, ...promoProductsData].map((p, i) => ({
       ...p,
       slug: generateSlug(p.nombre),
+      sku: `BJ-${generateSlug(p.nombre).slice(0, 3).toUpperCase()}-${String(i + 1).padStart(3, '0')}`,
       categoria: categoryMap[p.categoria],
       marca: brandMap[p.marca],
     }));
@@ -405,7 +426,12 @@ async function seed() {
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error en seed', { name: error.name });
+    console.error('❌ Error en seed:', error.message);
+    if (error.writeErrors) {
+      for (const we of error.writeErrors) {
+        console.error(`   · ${we.path?.join('.') ?? 'desconocido'}: ${we.err?.errmsg ?? we.err?.message}`);
+      }
+    }
     process.exit(1);
   }
 }

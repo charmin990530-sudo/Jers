@@ -20,7 +20,7 @@ import {
     mostrarMensajeGlobal,
     setBtnLoading
 } from './app.js';
-import { escapeHTML, safeAssetUrl } from './sanitize.js';
+import { escapeHTML } from './sanitize.js';
 
 let direcciones = [];
 let direccionAEliminar = null;
@@ -458,9 +458,12 @@ function mostrarToast(mensaje) {
     toast.textContent = mensaje;
     toast.style.cssText = `
         position: fixed;
-        bottom: 100px;
+        bottom: calc(100px + env(safe-area-inset-bottom, 0px));
         left: 50%;
         transform: translateX(-50%);
+        box-sizing: border-box;
+        max-width: calc(100vw - 32px);
+        text-align: center;
         background: var(--color-mauve);
         color: white;
         padding: 14px 24px;

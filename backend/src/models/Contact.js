@@ -8,4 +8,8 @@ const contactSchema = new mongoose.Schema({
   estado: { type: String, enum: ['nuevo', 'atendido'], default: 'nuevo' },
 }, { timestamps: true });
 
+// El panel de admin filtra por estado y ordena por fecha descripcion, y ademas
+// pagina. Este indice compuesto evita el escaneo completo en cada carga.
+contactSchema.index({ estado: 1, createdAt: -1 });
+
 export default mongoose.model('Contact', contactSchema);

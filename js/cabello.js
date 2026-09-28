@@ -10,7 +10,7 @@
 
 import { getProductsByCategory, handleApiError } from './apiClient.js';
 import { FALLBACK_CATALOG } from './fallbackCatalog.js';
-import { renderizarCatalogo, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion } from './app.js';
+import { renderizarCatalogo, obtenerImagenProducto, iniciarAplicacion } from './app.js';
 
 // Mapeo de slugs de categoría a nombres legibles para la UI
 const CATEGORIAS_CABELLO = {

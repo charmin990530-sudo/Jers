@@ -10,7 +10,7 @@
 
 import { getFeaturedProducts, getPromoProducts, handleApiError } from './apiClient.js';
 import { FALLBACK_FEATURED, FALLBACK_PROMOS } from './fallbackCatalog.js';
-import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion } from './app.js';
+import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 
 let productosMostrados = new Set();
@@ -129,7 +129,7 @@ function renderizarDestacados(products, contenedor) {
 
     return `
       <article class="card" ${id ? `data-id="${escapeHTML(id)}"` : ''} data-nombre="${nombre}" data-precio="${Number(producto.precio) || 0}">
-        ${imagenPrincipal ? `<img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" style="object-position: ${escapeHTML(posicion)};">` : crearImagenProducto({ nombre: producto.nombre })}
+        ${imagenPrincipal ? `<img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" loading="lazy" decoding="async" style="object-position: ${escapeHTML(posicion)};">` : crearImagenProducto({ nombre: producto.nombre })}
         ${tieneDescuento ? `<span class="descuento-badge">${descuento}% OFF</span>` : ''}
         <h3 class="cardname">${nombre}</h3>
         <p class="cardprecio">
@@ -137,7 +137,7 @@ function renderizarDestacados(products, contenedor) {
           $${escapeHTML(producto.precio.toLocaleString('es-CO'))}
         </p>
         <div class="card-acciones">
-          ${id ? `<a class="cardlink" href="producto.html?id=${encodeURIComponent(id)}">Ver detalle</a>` : ''}
+          ${enlaceDetalle(producto)}
           <button class="cardbtn" type="button">Añadir al carrito</button>
         </div>
       </article>
