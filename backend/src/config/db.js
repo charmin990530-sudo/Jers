@@ -28,7 +28,11 @@ export const connectDB = async ({ allowRetry = false } = {}) => {
       .connect(MONGODB_URI, {
         // Atlas necesita reutilizar conexiones en Lambdas en frío.
         maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 5,
-        serverSelectionTimeoutMS: 10000,
+        // Configurable porque 10 s es mucho rato para una tienda: con la base
+        // caida, cada peticion a la API se quedaba 10 s colgada antes de
+        // responder 503. En local 2 s es de sobra para distinguir "Mongo no
+        // arranca" de "Mongo tardo en arrancar".
+        serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 2000,
       })
       .then((conn) => {
         console.log(`MongoDB conectado: ${conn.connection.host}`);
@@ -45,8 +49,18 @@ export const connectDB = async ({ allowRetry = false } = {}) => {
     return await globalThis.__byJersMongoPromise;
   } catch (error) {
     console.error('Error conectando a MongoDB', { name: error.name, message: error.message });
-    if (!allowRetry) process.exit(1);
-    return null;
+    // ANTES aqui se hacia `process.exit(1)` cuando no venia `allowRetry`. Eso
+    // hacia imposible que el llamador decidiera: con la base caida el proceso
+    // moria antes de que el servidor HTTP llegara a escuchar, y el navegador se
+    // quedaba sin pagina ni mensaje, solo un "connection refused".
+    //
+    // Ahora la decision es de quien llama:
+    //   - startServer() arranca igual y deja que cada ruta devuelva 503, o
+    //     sale si pidio fail-fast con FAIL_FAST_ON_DB_ERROR=true.
+    //   - el middleware por peticion devuelve 503 DATABASE_UNAVAILABLE y
+    //     `allowRetry` sigue significando "no abortes el proceso".
+    if (allowRetry) return null;
+    throw error;
   }
 };
 

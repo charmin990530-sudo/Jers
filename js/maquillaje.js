@@ -9,7 +9,7 @@
  */
 
 import { getProductsByCategory, handleApiError } from './apiClient.js';
-import { FALLBACK_CATALOG } from './fallbackCatalog.js';
+import { renderCargando, renderError, resolverCatalogo, demoActivado } from './estados.js';
 import { renderizarCatalogo, obtenerImagenProducto, iniciarAplicacion } from './app.js';
 
 // Mapeo de slugs de categoría a nombres legibles para la UI
@@ -56,15 +56,13 @@ async function inicializarPestanas() {
     // Actualiza hash URL sin recargar (para deep linking)
     window.history.replaceState(null, '', `#${slug}`);
 
-    // Muestra loading
-    contenedor.innerHTML = `
-      <div class="catalogo-loading" aria-live="polite">
-        <div class="spinner"></div>
-        <p>Cargando ${CATEGORIAS_MAQUILLAJE[slug] || slug}...</p>
-      </div>
-    `;
+    // Estado de carga
+    renderCargando(contenedor, `Cargando ${etiqueta}...`);
 
-    // Usa cache si ya cargamos esta categoría
+    // La cache solo guarda respuestas reales de la API. Antes aqui se guardaba
+    // tambien el catalogo de demostracion, con lo que un fallo transitorio
+    // quedaba "pegado" en la cache y seidia mostrando productos falsos ya
+    // entrada la sesion, sin posibilidad de reintentar.
     if (catalogoCache[slug]) {
       renderizarCatalogoDesdeAPI(catalogoCache[slug], contenedor);
       return;
@@ -72,18 +70,26 @@ async function inicializarPestanas() {
 
     // Petición a API: GET /api/products/categoria/:slug
     const response = await getProductsByCategory(slug, { limit: 50 });
-    
+
     if (!response.ok) {
+      // Fallo real: se registra para diagnostico y se muestra el estado de error
+      // con boton de reintentar. NO se inventan productos.
       handleApiError({ message: response.msg, status: response.data?.status }, 'maquillaje');
-      catalogoCache[slug] = FALLBACK_CATALOG[slug] || [];
-      renderizarCatalogoDesdeAPI(catalogoCache[slug], contenedor);
+      renderError(contenedor, response.msg || 'No pudimos cargar los productos.', () => mostrarCategoria(slug));
       return;
     }
 
-    const products = response.data.products?.length ? response.data.products : (FALLBACK_CATALOG[slug] || []);
-    catalogoCache[slug] = products;
-
-    renderizarCatalogoDesdeAPI(products, contenedor);
+    const products = resolverCatalogo(contenedor, response, {
+      claves: ['products'],
+      vacio: 'No hay productos en esta categoria todavia.',
+      alReintentar: () => mostrarCategoria(slug),
+      alRecibir: lista => {
+        catalogoCache[slug] = lista;
+        renderizarCatalogoDesdeAPI(lista, contenedor);
+        return lista;
+      },
+    });
+    if (products.length) catalogoCache[slug] = products;
   };
 
   // Event listeners para botones de pestañas

@@ -22,6 +22,7 @@ const PAGINAS = [
   'index.html', 'bienvenida.html', 'cabello.html', 'checkout.html', 'contacto.html',
   'login.html', 'maquillaje.html', 'mi-perfil.html', 'mis-direcciones.html',
   'mis-pedidos.html', 'producto.html', 'register.html', 'reset-password.html', 'resenas.html',
+  '404.html',
 ];
 
 // Carpetas que se copian completas.

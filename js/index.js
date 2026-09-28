@@ -1,17 +1,28 @@
 /**
- * index.js - Página de Inicio (Home) conectada a API
- * 
- * FLUJO:
- * 1. Carga productos destacados (featured) desde /api/products/featured
- * 2. Carga productos en promoción desde /api/products/promociones
- * 3. Renderiza usando funciones de app.js
- * 4. Maneja loading, errores y estado vacío
+ * index.js - Página de Inicio (Home) conectada a la API
+ *
+ * FLUJO
+ * 1. Inicia los componentes compartidos (menú, carrito, chatbot).
+ * 2. Carga destacados (`GET /api/products/featured`) y ofertas
+ *    (`GET /api/products/promociones`) con estados de carga, vacío y error.
+ * 3. Cada sección se pinta por separado: si falla una, la otra sigue funcionando.
+ *
+ * CAMBIO IMPORTANTE
+ * -----------------
+ * Antes, si la API devolvía una lista vacía o fallaba, se pintaba un catálogo de
+ * DEMOSTRACIÓN con precios y stock inventados y sin ningún aviso. El cliente veía
+ * productos reales con precios que no eran los reales, y no podía comprarlos
+ * porque no tenían `_id`. Ahora (ver js/estados.js) una sección sin datos de la
+ * API muestra un estado vacío o un error con botón de reintentar, nunca datos
+ * inventados. El catálogo demo solo aparece si alguien activa el modo demo a
+ * mano, y sus tarjetas llevan una insignia "Demo".
  */
 
 import { getFeaturedProducts, getPromoProducts, handleApiError } from './apiClient.js';
-import { FALLBACK_FEATURED, FALLBACK_PROMOS } from './fallbackCatalog.js';
 import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
+import { formatearPrecio } from './config.js';
+import { renderCargando, resolverCatalogo, demoActivado } from './estados.js';
 
 let productosMostrados = new Set();
 
@@ -32,92 +43,100 @@ function deduplicarProductos(productos) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Inicializa componentes compartidos (menú, carrito, chatbot, etc.)
   iniciarAplicacion();
 
-  await cargarDestacados();
-  await cargarPromociones();
+  // Se lanzan en paralelo: cada sección resuelve su propio estado.
+  await Promise.all([cargarDestacados(), cargarPromociones()]);
 
-  // El botón principal lleva a la sección de categorías sin recargar la página.
   document.querySelector('.herobtn')?.addEventListener('click', () => {
     document.getElementById('categorias')?.scrollIntoView({ behavior: 'smooth' });
   });
 });
 
-/**
- * Carga y renderiza productos destacados (sección "Novedades/Destacados")
- * GET /api/products/featured
- */
+/** Carga y renderiza productos destacados. */
 async function cargarDestacados() {
   const contenedor = document.getElementById('destacadosGrid');
   if (!contenedor) return;
 
-  contenedor.innerHTML = `
-    <div class="catalogo-loading" aria-live="polite">
-      <div class="spinner"></div>
-      <p>Cargando destacados...</p>
-    </div>
-  `;
+  renderCargando(contenedor, 'Cargando novedades...');
 
-  const response = await getFeaturedProducts();
-  const products = response.ok && response.data.products?.length
-    ? response.data.products
-    : FALLBACK_FEATURED;
-  const productsUnicos = deduplicarProductos(products);
-  productosMostrados = new Set(productsUnicos.map(claveProducto));
+  let intentos = 0;
+  const intentar = async () => {
+    intentos += 1;
+    const respuesta = await getFeaturedProducts();
 
-  if (!response.ok) {
-    handleApiError({ message: response.msg, status: response.data?.status }, 'index-destacados');
-  }
+    const productos = resolverCatalogo(contenedor, respuesta, {
+      claves: ['products'],
+      alReintentar: intentar,
+      intento: intentos,
+      vacio: 'Todavía no hay novedades publicadas.',
+      alRecibir: lista => {
+        const unicos = deduplicarProductos(lista);
+        productosMostrados = new Set(unicos.map(claveProducto));
+        renderizarDestacados(unicos, contenedor);
+        return unicos;
+      },
+    });
 
-  renderizarDestacados(productsUnicos, contenedor);
+    if (!respuesta.ok) {
+      // Se registra para diagnóstico, pero el usuario ya ve el mensaje en pantalla.
+      handleApiError({ message: respuesta.msg, status: respuesta.data?.status }, 'index-destacados');
+    }
+    return productos;
+  };
+
+  await intentar();
 }
 
-/**
- * Carga y renderiza productos en promoción (sección "Ofertas")
- * GET /api/products/promociones
- */
+/** Carga y renderiza productos en promoción. */
 async function cargarPromociones() {
   const contenedor = document.getElementById('promoGrid');
   if (!contenedor) return;
 
-  contenedor.innerHTML = `
-    <div class="catalogo-loading" aria-live="polite">
-      <div class="spinner"></div>
-      <p>Cargando ofertas...</p>
-    </div>
-  `;
+  renderCargando(contenedor, 'Cargando ofertas...');
 
-  const response = await getPromoProducts();
-  const products = response.ok && response.data.products?.length
-    ? response.data.products
-    : FALLBACK_PROMOS;
-  const productsUnicos = deduplicarProductos(products)
-    .filter(producto => !productosMostrados.has(claveProducto(producto)));
+  let intentos = 0;
+  const intentar = async () => {
+    intentos += 1;
+    const respuesta = await getPromoProducts();
 
-  if (!response.ok) {
-    handleApiError({ message: response.msg, status: response.data?.status }, 'index-promociones');
-  }
+    const productos = resolverCatalogo(contenedor, respuesta, {
+      claves: ['products'],
+      alReintentar: intentar,
+      intento: intentos,
+      vacio: 'Ahora mismo no hay ofertas activas.',
+      alRecibir: lista => {
+        // No repetimos un destacado en la fila de ofertas.
+        const unicos = deduplicarProductos(lista)
+          .filter(producto => !productosMostrados.has(claveProducto(producto)));
+        renderizarPromociones(unicos, contenedor);
+        return unicos;
+      },
+    });
 
-  renderizarPromociones(productsUnicos, contenedor);
+    if (!respuesta.ok) {
+      handleApiError({ message: respuesta.msg, status: respuesta.data?.status }, 'index-promociones');
+    }
+    return productos;
+  };
+
+  await intentar();
 }
 
 /**
- * Renderiza productos destacados (cards simples sin badge de oferta)
- * Reutiliza crearImagenProducto de app.js
- * 
- * @param {Array} products - Productos desde API
+ * Tarjetas de novedades.
+ * @param {Array} productos
  * @param {HTMLElement} contenedor
  */
-function renderizarDestacados(products, contenedor) {
-  if (!products?.length) {
-    contenedor.innerHTML = `
-      <p class="catalogo-vacio">No hay productos destacados por el momento.</p>
-    `;
+function renderizarDestacados(productos, contenedor) {
+  if (!productos?.length) {
+    contenedor.innerHTML = '<p class="catalogo-vacio">No hay productos destacados por el momento.</p>';
     return;
   }
 
-  contenedor.innerHTML = products.map(producto => {
+  const conDemo = demoActivado();
+
+  contenedor.innerHTML = productos.map(producto => {
     const imagenPrincipal = safeAssetUrl(obtenerImagenProducto(producto));
     const posicion = safePosition(producto.imagenes?.[0]?.posicion);
     const tieneDescuento = producto.precioAnterior && producto.precioAnterior > producto.precio;
@@ -126,19 +145,26 @@ function renderizarDestacados(products, contenedor) {
       : 0);
     const id = producto._id || producto.id || '';
     const nombre = escapeHTML(producto.nombre || 'Producto');
+    // Sin `_id` real el producto no se puede comprar; se marca y se desactiva el
+    // botón en vez de dejar un botón que falla al pulsarlo.
+    const comprable = Boolean(id);
+    const insigniaDemo = conDemo ? '<span class="demo-badge">Demo</span>' : '';
 
     return `
       <article class="card" ${id ? `data-id="${escapeHTML(id)}"` : ''} data-nombre="${nombre}" data-precio="${Number(producto.precio) || 0}">
+        ${insigniaDemo}
         ${imagenPrincipal ? `<img class="cardimage" src="${escapeHTML(imagenPrincipal)}" alt="${nombre}" loading="lazy" decoding="async" style="object-position: ${escapeHTML(posicion)};">` : crearImagenProducto({ nombre: producto.nombre })}
         ${tieneDescuento ? `<span class="descuento-badge">${descuento}% OFF</span>` : ''}
         <h3 class="cardname">${nombre}</h3>
         <p class="cardprecio">
-          ${tieneDescuento ? `<span class="precio-anterior">$${escapeHTML(producto.precioAnterior.toLocaleString('es-CO'))}</span>` : ''}
-          $${escapeHTML(producto.precio.toLocaleString('es-CO'))}
+          ${tieneDescuento ? `<span class="precio-anterior">${escapeHTML(formatearPrecio(producto.precioAnterior))}</span>` : ''}
+          ${escapeHTML(formatearPrecio(producto.precio))}
         </p>
         <div class="card-acciones">
           ${enlaceDetalle(producto)}
-          <button class="cardbtn" type="button">Añadir al carrito</button>
+          ${comprable
+            ? '<button class="cardbtn" type="button">Añadir al carrito</button>'
+            : '<button class="cardbtn" type="button" disabled title="Producto de demostración: no se puede comprar">No disponible</button>'}
         </div>
       </article>
     `;

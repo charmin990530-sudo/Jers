@@ -12,7 +12,7 @@
 import { getProduct, getProducts, handleApiError } from './apiClient.js';
 import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
-import { buscarFallbackPorSlug, FALLBACK_CATALOG } from './fallbackCatalog.js';
+import { renderCargando, renderError, renderVacio, resolverCatalogo, demoActivado } from './estados.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializa componentes compartidos
@@ -39,38 +39,76 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarProducto(productId, productSlug) {
     const contenedor = document.getElementById('productoContenido');
     
-    // Loading
-    contenedor.innerHTML = `
-        <div class="producto-loading" aria-live="polite">
-            <div class="spinner"></div>
-            <p>Cargando producto...</p>
-        </div>
-    `;
+    renderCargando(contenedor, 'Cargando producto...');
 
-    // Con ?slug= se resuelve contra el catálogo local: así el detalle funciona
-    // aunque el backend esté apagado, que es como se usa el sitio sin base de datos.
-    if (!productId && productSlug) {
+    // Sin id ni slug no hay nada que pedir.
+    if (!productId && !productSlug) {
+        renderError(contenedor, 'El enlace del producto esta incompleto.', () => {
+            window.location.href = '/';
+        });
+        return;
+    }
+
+    // ANTES: con ?slug= se resolvia contra el catalogo local hardcodeado, asi que
+    // la ficha de un producto se podia pintar con un precio que no era el de la
+    // base de datos. Ahora el detalle sale SIEMPRE de la API. El catalogo demo
+    // solo se usa si alguien lo activa a mano (localStorage.byJersDemo = '1').
+    if (productSlug && !productId && demoActivado()) {
+        const { buscarFallbackPorSlug } = await import('./fallbackCatalog.js');
         const local = buscarFallbackPorSlug(productSlug);
-        if (!local) {
-            mostrarError('No se pudo cargar el producto');
+        if (local) {
+            mostrarProducto({ ...local, esDemo: true });
             return;
         }
-        mostrarProducto(local);
-        return;
     }
 
-    const response = await getProduct(productId);
-    if (!response.ok) {
-        handleApiError({ message: response.msg, status: response.data?.status }, 'producto');
-        mostrarError('No se pudo cargar el producto');
-        return;
-    }
+    const cargar = async () => {
+        renderCargando(contenedor, 'Cargando producto...');
+        // El backend expone el detalle por id. Con slug se pide el listado de la
+        // categoria y se filtra, porque /api/products/:id espera un ObjectId.
+        const response = productId
+            ? await getProduct(productId)
+            : await buscarPorSlug(productSlug);
 
-    mostrarProducto(response.data.product);
+        if (!response.ok) {
+            handleApiError({ message: response.msg, status: response.data?.status }, 'producto');
+            renderError(contenedor, response.msg || 'No se pudo cargar el producto.', cargar);
+            return;
+        }
+        const producto = response.data?.product;
+        if (!producto) {
+            renderVacio(contenedor, 'Ese producto ya no esta disponible.');
+            return;
+        }
+        mostrarProducto(producto);
+    };
+
+    await cargar();
 }
 
 /**
- * Actualiza la página con el producto ya resuelto (de la API o del catálogo local)
+ * Busca un producto por su slug usando los endpoints que ya existen.
+ *
+ * `GET /api/products/:id` espera un ObjectId, asi que para resolver por slug se
+ * pide el catalogo completo (16 productos, pagina de 50) y se filtra en el
+ * cliente. No es una consulta por producto, pero evita depender del catalogo
+ * hardcodeado: el precio que se muestra es el de la base de datos.
+ *
+ * @param {string} slug
+ * @returns {Promise<{ok: boolean, data?: any, msg?: string}>}
+ */
+async function buscarPorSlug(slug) {
+    if (!slug) return { ok: false, msg: 'Falta el identificador del producto.' };
+    const respuesta = await getProducts({ limit: 50 });
+    if (!respuesta.ok) return respuesta;
+    const lista = Array.isArray(respuesta.data?.products) ? respuesta.data.products : [];
+    const producto = lista.find(p => p.slug === slug);
+    if (!producto) return { ok: false, msg: 'Ese producto ya no esta disponible.' };
+    return { ok: true, data: { product: producto } };
+}
+
+/**
+ * Actualiza la página con el producto ya resuelto
  * @param {Object} producto
  */
 function mostrarProducto(producto) {
@@ -186,6 +224,23 @@ function renderizarProducto(producto, contenedor) {
                 <p class="producto-descripcion-corta">${escapeHTML(producto.descripcionCorta)}</p>
             ` : ''}
 
+            ${enStock ? `
+                <div class="producto-cantidad">
+                    <label for="productoCantidad">Cantidad</label>
+                    <div class="producto-cantidad__control">
+                        <button type="button" id="productoCantidadMenos" aria-label="Quitar una unidad">&minus;</button>
+                        <input type="number" id="productoCantidad" name="cantidad"
+                               value="1" min="1" max="${Math.max(1, Math.min(99, stock))}"
+                               step="1" inputmode="numeric"
+                               aria-describedby="productoCantidadMax">
+                        <button type="button" id="productoCantidadMas" aria-label="Añadir una unidad">+</button>
+                    </div>
+                    <p class="producto-cantidad__ayuda" id="productoCantidadMax">
+                        Máximo ${stock} ${stock === 1 ? 'unidad disponible' : 'unidades disponibles'}
+                    </p>
+                </div>
+            ` : ''}
+
             <div class="producto-acciones">
                 <button id="btnAgregarCarrito" 
                         class="btn-agregar-carrito" 
@@ -236,22 +291,61 @@ function renderizarProducto(producto, contenedor) {
     const btnCarrito = document.getElementById('btnAgregarCarrito');
     const btnComprar = document.getElementById('btnComprarAhora');
 
+    // Stepper de cantidad: no habia selector, asi que "Comprar ahora" siempre
+    // compraba 1 unidad aunque el usuario quisiera varias.
+    const inputCantidad = document.getElementById('productoCantidad');
+    const maxCantidad = Math.max(1, Math.min(99, stock));
+    const ajustar = delta => {
+        if (!inputCantidad) return;
+        const actual = Number(inputCantidad.value) || 1;
+        inputCantidad.value = String(Math.max(1, Math.min(maxCantidad, actual + delta)));
+    };
+    document.getElementById('productoCantidadMenos')?.addEventListener('click', () => ajustar(-1));
+    document.getElementById('productoCantidadMas')?.addEventListener('click', () => ajustar(1));
+
+    // `cantidad` sale del selector. Con 1 (o sin selector) equivale a "añadir uno".
+    const cantidadElegida = () => {
+        const input = document.getElementById('productoCantidad');
+        const n = Number(input?.value) || 1;
+        return Math.max(1, Math.min(99, n));
+    };
+
     if (btnCarrito) {
         btnCarrito.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('carrito-agregar', {
-                detail: { id: producto._id, nombre: producto.nombre, precio: producto.precio },
+                detail: {
+                    id: producto._id,
+                    nombre: producto.nombre,
+                    precio: producto.precio,
+                    imagen: producto.imagenes?.[0]?.url || '',
+                    cantidad: cantidadElegida(),
+                },
             }));
         });
     }
 
     if (btnComprar) {
         btnComprar.addEventListener('click', () => {
+            // C2: antes onComplete se llamaba SIEMPRE, incluso si agregarProducto
+            // fallaba (sin _id, error de API, sin stock). El usuario llegaba al
+            // checkout con el carrito vacío y un mensaje de "carrito vacío" sin
+            // explicación. Ahora solo se navega si el producto entró de verdad, y
+            // la cantidad y el precio viajan con el evento.
+            btnComprar.disabled = true;
             document.dispatchEvent(new CustomEvent('carrito-agregar', {
                 detail: {
                     id: producto._id,
                     nombre: producto.nombre,
                     precio: producto.precio,
-                    onComplete: () => { window.location.href = 'checkout.html'; },
+                    imagen: producto.imagenes?.[0]?.url || '',
+                    cantidad: cantidadElegida(),
+                    onComplete: ok => {
+                        btnComprar.disabled = false;
+                        if (!ok) return;
+                        // Ruta sin extensión: el servidor la resuelve a
+                        // /checkout.html (mismo origen, mismo puerto).
+                        window.location.href = '/checkout';
+                    },
                 },
             }));
         });
@@ -405,11 +499,10 @@ function inicializarTabsDetalles() {
 async function cargarRelacionados(categoriaId, excluirId) {
     // El catálogo local no tiene categorías con ObjectId, así que sin backend
     // se arma la lista desde el propio catálogo para no dejar la sección vacía.
-    if (!categoriaId) {
-        const locales = relacionadosLocales(excluirId);
-        if (locales.length) pintarRelacionados(locales);
-        return;
-    }
+    // Sin categoria no hay forma de pedir relacionados. Antes se sustitulian por
+    // productos del catalogo local (precios que no eran los reales); ahora la
+    // seccion simplemente no se muestra, que es la verdad.
+    if (!categoriaId) return;
 
     const response = await getProducts({ categoria: categoriaId, limit: 8 });
     if (!response.ok) {
@@ -417,22 +510,10 @@ async function cargarRelacionados(categoriaId, excluirId) {
         return;
     }
 
-    const relacionados = response.data.products.filter(p => p._id !== excluirId).slice(0, 4);
+    const lista = Array.isArray(response.data?.products) ? response.data.products : [];
+    const relacionados = lista.filter(p => p._id !== excluirId).slice(0, 4);
     if (relacionados.length === 0) return;
     pintarRelacionados(relacionados);
-}
-
-/**
- * Productos del catálogo local de la misma familia que el producto actual
- * @param {string} excluirSlug
- * @returns {Object[]}
- */
-function relacionadosLocales(excluirSlug) {
-    const familia = Object.entries(FALLBACK_CATALOG)
-        .find(([, lista]) => lista.some(p => p.slug === excluirSlug));
-    if (!familia) return [];
-    const clave = familia[0];
-    return FALLBACK_CATALOG[clave].filter(p => p.slug !== excluirSlug).slice(0, 4);
 }
 
 /**

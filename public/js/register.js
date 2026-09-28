@@ -3,6 +3,7 @@
  * Importa utilidades compartidas de auth.js y maneja el formulario de registro
  */
 
+import { sincronizar } from './carrito.js';
 import {
     validarEmail,
     validarTelefono,
@@ -17,7 +18,6 @@ import {
     apiRegister,
     redirigirTrasAuth,
     inicializarAuthComun,
-    sincronizarCarritoTrasAuth
 } from './auth.js';
 
 // ==========================================
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 6. Sincronizar carrito local → API
-        await sincronizarCarritoTrasAuth();
+        await sincronizar();
 
         // 7. Notificar al carrito que cambió el estado de auth
         window.dispatchEvent(new Event('auth-cambio'));

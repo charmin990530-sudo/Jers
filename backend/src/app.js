@@ -5,7 +5,8 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { dirname, resolve, join } from 'path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -253,7 +254,13 @@ if (CSP_REPORT_ONLY && CSP_REPORT_URI) {
 // startServer() nunca llega a ejecutarse, así que la conexión se abre aquí de
 // forma perezosa. connectDB() reutiliza la conexión existente, por lo que en
 // las siguientes peticiones es prácticamente un no-op.
-app.use(async (req, res, next) => {
+//
+// Se aplica SOLO a /api/*. Si Mongo está caído, un archivo estático se sirve
+// igual e inmediato: antes este middleware corría también para el HTML y cada
+// carga de página esperaba los 10 s de serverSelectionTimeoutMS para terminar
+// mostrando... la página. Con Mongo abajo el sitio se ve, aunque el catálogo
+// muestre su estado de error.
+app.use('/api', async (req, res, next) => {
   if (configError) {
     return sendError(res, 503, ErrorCodes.CONFIG_INCOMPLETA, 'La API no está configurada para producción todavía.', {
       details: [{ field: 'config', message: redactConfig(configError.message) }],
@@ -265,7 +272,7 @@ app.use(async (req, res, next) => {
       return sendError(res, 503, ErrorCodes.DATABASE_UNAVAILABLE, 'La base de datos no está disponible en este momento.');
     }
     return next();
-  } catch (error) {
+  } catch {
     return sendError(res, 503, ErrorCodes.DATABASE_UNAVAILABLE, 'La base de datos no está disponible en este momento.');
   }
 });
@@ -278,8 +285,78 @@ app.use('/api/users', routes.users);
 app.use('/api/contact', contactLimiter, routes.contact);
 app.use('/api/admin', routes.admin);
 
-// Middleware 404
-app.use(notFound);
+// ==========================================
+// SITIO ESTÁTICO (mismo origen que la API)
+// ==========================================
+// La API y el sitio se sirven desde el MISMO puerto. Consecuencias:
+//   - el navegador solo habla con un origen, asi que no hay CORS que configurar
+//     ni preflight en cada peticion: la cookie de sesion viaja sin credenciales
+//     cruzadas y SameSite funciona como se espera.
+//   - no existe ya el segundo servidor (frontend-server.js) con su propio puerto,
+//     que era el origen del desfase de puertos entre back y front.
+// `public/` es la carpeta de salida de `scripts/preparar-estatico.mjs`; los
+// originales viven junto al codigo y el build los copia. `npm start` reconstruye
+// antes de arrancar, asi que lo servido nunca queda desfasado del fuente.
+//
+// Se registra DESPUES de las rutas de la API para que ninguna peticion /api/*
+// pueda acabar sirviendo un archivo estatico por error, y el 404 de API se
+// limita a /api/* para que el resto de rutas las atienda la pagina 404 del sitio.
+const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../public');
+const STATIC_DENY = /\.(?:env|log|json|lock)$|^\.|^node_modules\//i;
+const SERVE_STATIC = process.env.SERVE_STATIC !== 'false';
+
+// 404 de la API: JSON, como espera cualquier cliente de API.
+app.use('/api', notFound);
+
+if (SERVE_STATIC) {
+  const staticOptions = {
+    // Los .html/.css/.js se revalidan siempre: si se corrige una pagina y se
+    // reinicia, el navegador no debe quedarse con la version vieja cacheada.
+    setHeaders: (res, filePath) => {
+      if (/\.(?:html|css|js)$/.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      }
+    },
+    dotfiles: 'deny',
+    // Segunda barrera: aunque algo se colara en public/, .env y package.json
+    // no se sirven nunca.
+    fallthrough: true,
+    index: false,
+  };
+
+  app.use(express.static(PUBLIC_DIR, staticOptions));
+
+  // Raiz -> index.html (express.static con index:false no lo hace).
+  app.get('/', (req, res, next) => {
+    res.sendFile(join(PUBLIC_DIR, 'index.html'), err => { if (err) next(); });
+  });
+
+  // HTML abreviado: /carrito -> /carrito.html y /admin/dashboard ->
+  // /admin/dashboard.html. Admite varios segmentos, pero SOLO con caracteres
+  // [a-z0-9_-]: como `..` no puede pasar el filtro, no hay forma de que este
+  // camino suba de directorio aunque se intente.
+  app.get(/^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/i, (req, res, next) => {
+    if (STATIC_DENY.test(req.path)) return next();
+    const relativo = `${req.path.slice(1)}.html`;
+    const destino = join(PUBLIC_DIR, relativo);
+    // Defensa extra: el destino resuelto tiene que seguir dentro de public/.
+    if (!destino.startsWith(PUBLIC_DIR)) return next();
+    res.sendFile(destino, err => { if (err) next(); });
+  });
+
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path.startsWith('/api/')) return next();
+    res.status(404).sendFile(join(PUBLIC_DIR, '404.html'), err => {
+      if (err) {
+        res.status(404).type('text/plain; charset=utf-8')
+          .send('404 - Pagina no encontrada. Regenera public/ con: node scripts/preparar-estatico.mjs');
+      }
+    });
+  });
+} else {
+  app.use(notFound);
+}
 
 // Middleware global de errores
 app.use(errorHandler);
@@ -334,31 +411,64 @@ const syncModelIndexes = async () => {
 };
 
 /**
- * Inicia el servidor conectando primero a MongoDB
+ * Inicia el servidor
+ *
+ * COMO SE COMPORTA SI MONGODB NO ESTA DISPONIBLE
+ * -----------------------------------------------
+ * Por defecto el servidor ARRANCA IGUAL y deja que cada peticion se arregle
+ * sola: el middleware que precede a las rutas llama a `connectDB({allowRetry:
+ * true})` y, si falla, responde 503 con `DATABASE_UNAVAILABLE`. Asi el sitio
+ * sigue sirviendo el HTML y el catalogo muestra su estado de error con boton de
+ * reintentar, en vez de quedarse en blanco.
+ *
+ * Antes el proceso hacia `process.exit(1)` y no escuchaba nunca: con la base de
+ * datos caida no habia ni pagina ni mensaje, solo un refused en el navegador.
+ *
+ * `FAIL_FAST_ON_DB_ERROR=true` recupera el comportamiento antiguo (suitable si
+ * se quiere que el orquestador reinicie el proceso en bucle mientras la base no
+ * vuelve).
  */
 export const startServer = async () => {
   try {
     validateSecurityEnvironment();
-    await connectDB();
-    await syncModelIndexes();
-    httpServer = app.listen(PORT, HOST, () => {
-      console.log(`
-╔════════════════════════════════════════════════════════════╗
-║  🚀 By Jers Backend corriendo en puerto ${PORT}            ║
-║  📦 Entorno: ${NODE_ENV.padEnd(40)} ║
-║  🔗 Frontend: ${FRONTEND_URL.padEnd(40)} ║
-║  🔒 CSP: ${CSP_NONCE_ENABLED ? 'Enabled (nonce)' : 'Standard'}${(' ').repeat(35)} ║
-║  📊 Rate Limit: ${REDIS_ENABLED ? 'Redis' : 'Memory'}${(' ').repeat(38)} ║
-╚════════════════════════════════════════════════════════════╝
-      `);
-    });
-    httpServer.requestTimeout = 15000;
-    httpServer.headersTimeout = 10000;
-    httpServer.keepAliveTimeout = 5000;
   } catch (error) {
-    console.error('Error iniciando servidor', { name: error.name });
+    console.error('Error iniciando servidor', { name: error.name, message: error.message });
     process.exit(1);
   }
+
+  const failFast = process.env.FAIL_FAST_ON_DB_ERROR === 'true';
+  try {
+    await connectDB();
+    await syncModelIndexes();
+  } catch (error) {
+    if (failFast) {
+      console.error('Error iniciando servidor', { name: error.name, message: error.message });
+      process.exit(1);
+    }
+    console.warn(
+      `\n  ⚠ No se pudo conectar con MongoDB al arrancar: ${error.message}\n` +
+      '    El servidor igualmente escuchara peticiones. Cada ruta que necesite la\n' +
+      '    base devolvera 503 DATABASE_UNAVAILABLE y reintentara en la siguiente\n' +
+      '    peticion. Arranca MongoDB y recarga la pagina para recuperarte.\n',
+    );
+  }
+
+  httpServer = app.listen(PORT, HOST, () => {
+    const dbOk = mongoose.connection.readyState === 1;
+    console.log(`
+╔════════════════════════════════════════════════════════════╗
+║  🚀 By Jers corriendo en puerto ${PORT}                     ║
+║  📦 Entorno: ${NODE_ENV.padEnd(40)} ║
+║  🌐 Sitio + API: ${`http://${HOST}:${PORT}`.padEnd(34)} ║
+║  🔒 CSP: ${CSP_NONCE_ENABLED ? 'Enabled (nonce)' : 'Standard'}${(' ').repeat(35)} ║
+║  📊 Rate Limit: ${REDIS_ENABLED ? 'Redis' : 'Memory'}${(' ').repeat(38)} ║
+║  💾 MongoDB: ${dbOk ? 'conectado' : 'SIN CONEXION (503)'} ${(' ').repeat(26)} ║
+╚════════════════════════════════════════════════════════════╝
+      `);
+  });
+  httpServer.requestTimeout = 15000;
+  httpServer.headersTimeout = 10000;
+  httpServer.keepAliveTimeout = 5000;
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

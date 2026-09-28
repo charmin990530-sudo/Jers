@@ -1239,3 +1239,62 @@ body.modal-abierto {
         transition-duration: .01ms !important;
     }
 }
+/* Estados de error del catálogo (js/estados.js): mensaje, detalle y botón. */
+.catalogo-error__mensaje {
+    color: inherit;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.catalogo-error__detalle {
+    font-size: .9rem;
+    margin: 0;
+    opacity: .8;
+}
+
+.catalogo-error__boton {
+    background: var(--color-mauve);
+    border: 0;
+    border-radius: var(--radius-full);
+    color: var(--color-blanco);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .95rem;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.catalogo-error__boton:hover,
+.catalogo-error__boton:focus-visible {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+/* Insignia de producto de demostración: nunca se confunde con el catálogo real. */
+.demo-badge {
+    background: var(--color-dorado);
+    border-radius: var(--radius-sm);
+    color: #3d2f1f;
+    font-size: .7rem;
+    font-weight: 700;
+    left: 8px;
+    letter-spacing: .04em;
+    padding: 2px 8px;
+    position: absolute;
+    text-transform: uppercase;
+    top: 8px;
+    z-index: 2;
+}
+
+/* Aviso general de que la página muestra datos de demostración. */
+.aviso-demo {
+    background: #fff8e8;
+    border: 1px solid var(--color-dorado);
+    border-radius: var(--radius-md);
+    color: #6b5320;
+    font-size: .9rem;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: center;
+}
