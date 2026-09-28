@@ -1,4 +1,5 @@
 import { api, handleApiError, apiErrorFromResponse } from '../../js/apiClient.js';
+import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,
     mostrarErrorCampo,
@@ -8,6 +9,18 @@ import {
 } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
+/**
+ * Categorías que acepta el backend (CATEGORIAS_FIJAS en
+ * backend/src/models/Category.js). Se leen del <datalist> del formulario para no
+ * duplicar la lista: si algún día cambian allí, aquí cambian solas.
+ */
+const leerCategoriasPermitidas = () => {
+    const opciones = document.querySelectorAll('#categoriasPredefinidas option');
+    if (!opciones.length) return [];
+    return [...opciones].map(opcion => opcion.value.toLowerCase());
+};
+let CATEGORIAS_PERMITIDAS = leerCategoriasPermitidas();
+
 document.addEventListener('DOMContentLoaded', async () => {
     iniciarAplicacion();
     await verificarAdminYCargar();
@@ -16,28 +29,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function verificarAdminYCargar() {
-    try {
-        const response = await api.getMe();
-        if (!response.ok) {
-            const status = response.data?.status;
-            if (status === 401 || status === 403) {
-                window.location.href = '../login.html?redirect=admin/categorias.html';
-            } else {
-                handleApiError({ message: response.msg, status }, 'admin-categorias');
-            }
-            return;
-        }
-
-        const user = response.data?.user;
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../index.html';
-            return;
-        }
-        await cargarCategorias();
-    } catch (error) {
-        handleApiError({ message: error.message }, 'admin-categorias');
-        window.location.href = '../login.html?redirect=admin/categorias.html';
-    }
+    // Proteccion centralizada (js/rutas.js). Una sola politica para todo el
+    // panel: sin sesion -> login con esta URL de vuelta; con sesion pero sin
+    // rol de admin -> inicio. Antes cada script repetia el chequeo con rutas
+    // relativas distintas ('../login.html' frente a '/login'), y se colgaba con
+    // '../index.html' en una app que ya no tiene esa estructura.
+    const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-categorias' });
+    if (!ok) return;
+    await cargarCategorias();
 }
 
 async function cargarCategorias() {
@@ -243,6 +242,10 @@ async function confirmarEliminar(categoriaId) {
 }
 
 function inicializarFormulario() {
+    // El <datalist> existe en el HTML, pero se lee de nuevo al iniciar para
+    // tener la lista incluso si el formulario aún no está en el DOM.
+    CATEGORIAS_PERMITIDAS = leerCategoriasPermitidas();
+
     const form = document.getElementById('formCategoria');
     const btnGuardar = document.getElementById('btnGuardarCategoria');
     if (!form || !btnGuardar) return;
@@ -276,6 +279,15 @@ function inicializarFormulario() {
 
         if (!/^[a-z0-9-]+$/.test(data.slug)) {
             mostrarErrorCampo(form.slug, 'El slug solo puede contener minúsculas, números y guiones');
+            return;
+        }
+
+        // El backend solo admite las categorías fijas del catálogo. El formulario
+        // ofrece un <datalist>, que SUGIERE pero no impide escribir otra cosa, así
+        // que sin esta comprobación el admin escribe "Mascarillas" y se lleva un
+        // 400 del servidor. Se valida aquí para que el error salga bajo el campo.
+        if (!CATEGORIAS_PERMITIDAS.includes(String(data.nombre).toLowerCase())) {
+            mostrarErrorCampo(form.nombre, `Elige una de estas categorías: ${CATEGORIAS_PERMITIDAS.join(', ')}`);
             return;
         }
 

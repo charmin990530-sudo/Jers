@@ -75,13 +75,20 @@ if (NODE_ENV !== 'production') {
   frontendOrigins = [...frontendOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5500', 'http://127.0.0.1:5500'];
 }
 export const FRONTEND_URL = frontendUrlObject.toString().replace(/\/$/, '');
-export const FRONTEND_ALLOWED_ORIGINS = [...new Set(frontendOrigins.map(origin => {
+
+// El propio origen de la API siempre se admite, aunque no esté en
+// FRONTEND_ALLOWED_ORIGINS. Este servidor también sirve el sitio, así que una
+// petición que viene de su propia página es same-origin y no hay riesgo de
+// CSRS: excluirla devolvía 403 "Origen no permitido" a TODAS las peticiones que
+// mutan (registro, login, carrito, pedidos y panel) y dejaba la tienda
+// inutilizable al servirse desde el propio backend.
+const FRONTEND_ORIGINS_NORMALIZADOS = frontendOrigins.map(origin => {
   try {
     return new URL(origin).origin;
   } catch {
     throw new Error(`Origen de frontend inválido: ${origin}`);
   }
-}))];
+});
 if (NODE_ENV === 'production' && FRONTEND_ALLOWED_ORIGINS.some(origin => !origin.startsWith('https://'))) {
   throw new Error('FRONTEND_ALLOWED_ORIGINS debe usar HTTPS en producción');
 }
@@ -102,6 +109,12 @@ export const API_ORIGIN = apiOriginObject.origin;
 if (NODE_ENV === 'production' && !API_ORIGIN.startsWith('https://')) {
   throw new Error('API_ORIGIN debe usar HTTPS en producción');
 }
+
+// Ya se puede incluir el origen propio de la API en la lista de admitidos.
+export const FRONTEND_ALLOWED_ORIGINS = [...new Set([
+  ...FRONTEND_ORIGINS_NORMALIZADOS,
+  API_ORIGIN,
+])];
 
 // Rate limiting: ventana de tiempo en ms (15 min = 900000ms)
 export const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000;

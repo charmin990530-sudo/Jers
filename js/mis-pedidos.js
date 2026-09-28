@@ -10,7 +10,8 @@
  */
 
 import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './apiClient.js';
-import { formatearPrecio } from './config.js';
+import { protegerRuta } from './rutas.js';
+import { formatearPrecio, formatearFecha as formatearFechaGlobal } from './config.js';
 import { iniciarAplicacion } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
@@ -32,14 +33,14 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Verifica autenticación y carga pedidos
  */
 async function verificarAuthYCargar() {
+    // Proteccion centralizada (js/rutas.js). Sin sesion, api.js lleva al login
+    // conservando esta URL; no hace falta un "sin sesion" dibujado a mano.
+    const { ok } = await protegerRuta({ pantalla: 'mis-pedidos' });
+    if (!ok) return;
     const response = await getMe();
     if (!response.ok) {
-        if (response.data?.status === 401 || response.msg?.includes('expirada') || response.msg?.includes('No autenticado')) {
-            mostrarSinSesion();
-        } else {
-            handleApiError({ message: response.msg, status: response.data?.status }, 'mis-pedidos');
-            mostrarError('No se pudieron cargar los pedidos');
-        }
+        handleApiError({ message: response.msg, status: response.data?.status }, 'mis-pedidos');
+        mostrarError('No se pudieron cargar los pedidos');
         return;
     }
     await cargarPedidos();
@@ -511,30 +512,10 @@ function formatearMonto(valor) {
     return formatearPrecio(monto);
 }
 
-function formatearFecha(fechaStr) {
-    const fecha = new Date(fechaStr);
-    return fecha.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function formatearFechaCompleta(fechaStr) {
-    const fecha = new Date(fechaStr);
-    return fecha.toLocaleDateString('es-CO', { 
-        weekday: 'long', 
-        day: '2-digit', 
-        month: 'long', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function formatearFechaHora(fechaStr) {
-    const fecha = new Date(fechaStr);
-    return fecha.toLocaleDateString('es-CO', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
+// Las tres funciones locales de fecha se sustituyen por formatearFecha de
+// js/config.js, que valida antes de formatear. Con createdAt nulo o en un
+// formato inesperado, `new Date(x).toLocaleDateString()` pintaba "Invalid Date"
+// en la tabla de pedidos; ahora sale "—".
+const formatearFecha = fecha => formatearFechaGlobal(fecha, 'corta');
+const formatearFechaCompleta = fecha => formatearFechaGlobal(fecha, 'hora');
+const formatearFechaHora = fecha => formatearFechaGlobal(fecha, 'hora');

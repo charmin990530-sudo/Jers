@@ -1,4 +1,6 @@
 import { api, handleApiError } from '../../js/apiClient.js';
+import { formatearFecha } from '../config.js';
+import { protegerRuta } from '../rutas.js';
 import { iniciarAplicacion } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
 
@@ -14,28 +16,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function verificarAdminYCargar() {
-    try {
-        const response = await api.getMe();
-        if (!response.ok) {
-            const status = response.data?.status;
-            if (status === 401 || status === 403) {
-                window.location.href = '../login.html?redirect=admin/usuarios.html';
-            } else {
-                handleApiError({ message: response.msg, status }, 'admin-usuarios');
-            }
-            return;
-        }
-
-        const user = response.data?.user;
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../index.html';
-            return;
-        }
-        await cargarUsuarios();
-    } catch (error) {
-        handleApiError({ message: error.message }, 'admin-usuarios');
-        window.location.href = '../login.html?redirect=admin/usuarios.html';
-    }
+    // Proteccion centralizada (js/rutas.js). Una sola politica para todo el
+    // panel: sin sesion -> login con esta URL de vuelta; con sesion pero sin
+    // rol de admin -> inicio. Antes cada script repetia el chequeo con rutas
+    // relativas distintas ('../login.html' frente a '/login'), y se colgaba con
+    // '../index.html' en una app que ya no tiene esa estructura.
+    const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-usuarios' });
+    if (!ok) return;
+    await cargarUsuarios();
 }
 
 function inicializarControles() {
@@ -126,7 +114,7 @@ function renderUsuarios(usuarios) {
             || 'Sin nombre';
         const iniciales = `${user?.nombre?.[0] || ''}${user?.apellido?.[0] || ''}`.toUpperCase() || 'U';
         const fecha = user?.createdAt
-            ? new Date(user.createdAt).toLocaleDateString('es-CO')
+            ? formatearFecha(user.createdAt)
             : 'N/A';
         const role = user?.role === 'admin' ? 'admin' : 'user';
         const activo = user?.activo !== false;

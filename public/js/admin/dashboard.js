@@ -1,4 +1,5 @@
 import { api, handleApiError } from '../../js/apiClient.js';
+import { protegerRuta } from '../rutas.js';
 import { formatearPrecio } from '../config.js';
 import { iniciarAplicacion } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
@@ -39,32 +40,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function verificarAdminYCargar() {
-    try {
-        const response = await api.getMe();
-        if (!response.ok) {
-            const status = response.data?.status;
-            if (status === 401 || status === 403) {
-                window.location.href = '../login.html?redirect=admin/dashboard.html';
-            } else {
-                handleApiError({ message: response.msg, status }, 'admin-dashboard');
-                mostrarError(response.msg || 'No se pudo verificar la sesión');
-            }
-            return;
-        }
-
-        const user = response.data?.user;
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../index.html';
-            return;
-        }
-
-        marcarCargando();
-
-        await cargarDashboard();
-    } catch (error) {
-        handleApiError({ message: error.message }, 'admin-dashboard');
-        mostrarError('Error al cargar el dashboard');
-    }
+    // Proteccion centralizada (js/rutas.js). Una sola politica para todo el
+    // panel: sin sesion -> login con esta URL de vuelta; con sesion pero sin
+    // rol de admin -> inicio. Antes cada script repetia el chequeo con rutas
+    // relativas distintas ('../login.html' frente a '/login'), y se colgaba con
+    // '../index.html' en una app que ya no tiene esa estructura.
+    const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-dashboard' });
+    if (!ok) return;
+    await cargarDashboard();
 }
 
 async function cargarDashboard() {
@@ -189,11 +172,7 @@ function formatearFecha(fechaStr) {
     if (!fechaStr) return 'N/A';
     const fecha = new Date(fechaStr);
     if (Number.isNaN(fecha.getTime())) return 'N/A';
-    return fecha.toLocaleDateString('es-CO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    return formatearFecha(fecha);
 }
 
 function mostrarError(mensaje) {

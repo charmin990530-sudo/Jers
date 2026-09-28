@@ -53,9 +53,7 @@ const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 // ---------------------------------------------------------
 let items = [];
 let modoInvitado = true;
-let cargando = false;
 let instanciaUnica = false;
-const suscriptores = new Set();
 
 // ---------------------------------------------------------
 // localStorage (invitado)
@@ -92,14 +90,9 @@ const limpiarLocal = () => {
 };
 
 // ---------------------------------------------------------
-// Notificacion a la UI
+// Pintado de la UI
 // ---------------------------------------------------------
-const avisar = () => {
-    pintar();
-    suscriptores.forEach(fn => {
-        try { fn(items); } catch (e) { console.error('[carrito] suscriptor fallo', e); }
-    });
-};
+const avisar = () => pintar();
 
 // ---------------------------------------------------------
 // API
@@ -375,25 +368,13 @@ async function cargar() {
     avisar();
 }
 
-/** Se llama al iniciar sesion en cualquier pagina. */
-export const alIniciarSesion = () => sincronizar();
-/** Se llama al cerrar sesion. */
-export const alCerrarSesion = () => {
-    modoInvitado = true;
-    items = leerLocal();
-    avisar();
-};
-
 // ---------------------------------------------------------
 // API publica
 // ---------------------------------------------------------
-export const obtenerItems = () => items.slice();
-export const esInvitado = () => modoInvitado;
-export const estaCargando = () => cargando;
-export const suscribir = fn => {
-    suscriptores.add(fn);
-    return () => suscriptores.delete(fn);
-};
+// Lacookie de sesion no se puede leer desde JS, asi que la unica forma de
+// saber si hay sesion es preguntar al backend (js/api.js lo hace y cachea el
+// resultado en api.obtenerUsuario).
+export { obtenerUsuario, alCambiarSesion } from './api.js';
 
 /**
  * Inicializa el carrito. Es idempotente: llamarlo dos veces NO duplica los
@@ -405,7 +386,6 @@ export async function iniciarCarrito() {
         return;
     }
     instanciaUnica = true;
-    cargando = true;
 
     document.addEventListener('click', evento => {
         const boton = evento.target.closest('.cardbtn');
@@ -456,5 +436,4 @@ export async function iniciarCarrito() {
     window.addEventListener('auth-cambio', () => { cargar(); });
 
     await cargar();
-    cargando = false;
 }

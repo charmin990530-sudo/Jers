@@ -1,4 +1,5 @@
 import { api, handleApiError } from '../../js/apiClient.js';
+import { protegerRuta } from '../rutas.js';
 import { formatearPrecio } from '../config.js';
 import { iniciarAplicacion, setBtnLoading } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
@@ -50,34 +51,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function verificarAdminYCargar() {
-    try {
-        const response = await api.getMe();
-        if (!response.ok) {
-            const status = response.data?.status;
-            if (status === 401 || status === 403) {
-                window.location.href = '../login.html?redirect=admin/pedidos.html';
-            } else {
-                handleApiError({ message: response.msg, status }, 'admin-pedidos');
-                mostrarError('No se pudo verificar la sesión');
-            }
-            return;
-        }
-
-        const user = response.data?.user;
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../index.html';
-            return;
-        }
-
-        await cargarPedidos();
-        const pedidoId = new URLSearchParams(window.location.search).get('id');
-        if (pedidoId) {
-            await abrirDetallePedido(pedidoId);
-        }
-    } catch (error) {
-        handleApiError({ message: error.message }, 'admin-pedidos');
-        mostrarError('Error al cargar los pedidos');
-    }
+    // Proteccion centralizada (js/rutas.js). Una sola politica para todo el
+    // panel: sin sesion -> login con esta URL de vuelta; con sesion pero sin
+    // rol de admin -> inicio. Antes cada script repetia el chequeo con rutas
+    // relativas distintas ('../login.html' frente a '/login'), y se colgaba con
+    // '../index.html' en una app que ya no tiene esa estructura.
+    const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-pedidos' });
+    if (!ok) return;
+    await cargarPedidos();
 }
 
 function inicializarControles() {
@@ -364,13 +345,7 @@ function formatearFecha(fechaStr) {
     if (!fechaStr) return 'N/A';
     const fecha = new Date(fechaStr);
     if (Number.isNaN(fecha.getTime())) return 'N/A';
-    return fecha.toLocaleString('es-CO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    return formatearFecha(fecha, 'hora');
 }
 
 function mostrarToast(mensaje) {
