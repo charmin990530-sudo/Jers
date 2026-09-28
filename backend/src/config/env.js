@@ -118,6 +118,9 @@ export const CONTACT_RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.CONTACT_RATE
 // Redis configuration for rate limiting (producción)
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 export const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true' && NODE_ENV === 'production';
+// Tope de espera al conectar a Redis. Sin esto el cliente reintenta y un
+// REDIS_URL inalcanzable deja el cold start colgado hasta el timeout de Vercel.
+export const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS) || 5000;
 export const TRUST_PROXY_HOPS = Number.parseInt(process.env.TRUST_PROXY_HOPS || '0', 10);
 if (!Number.isInteger(TRUST_PROXY_HOPS) || TRUST_PROXY_HOPS < 0 || TRUST_PROXY_HOPS > 5) {
   throw new Error('TRUST_PROXY_HOPS debe estar entre 0 y 5');

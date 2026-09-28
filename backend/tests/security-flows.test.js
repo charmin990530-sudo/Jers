@@ -56,7 +56,7 @@ describe('Security and commerce flows', () => {
     await request(app).get('/api/auth/me').set('Cookie', cookie).expect(200);
     await request(app).post('/api/auth/logout').set('Cookie', cookie).expect(200);
     const revoked = await request(app).get('/api/auth/me').set('Cookie', cookie).expect(401);
-    expect(revoked.body.code).toBe('TOKEN_REVOKED');
+    expect(revoked.body.error.code).toBe('TOKEN_REVOKED');
   });
 
   it('revokes existing sessions after password reset', async () => {
@@ -72,7 +72,7 @@ describe('Security and commerce flows', () => {
     const reset = await request(app).post('/api/auth/reset-password').send({ token, password: 'newpassword123', confirmPassword: 'newpassword123' }).expect(200);
     expect(reset.headers['set-cookie']).toBeDefined();
     const revoked = await request(app).get('/api/auth/me').set('Cookie', oldCookie).expect(401);
-    expect(revoked.body.code).toBe('TOKEN_REVOKED');
+    expect(revoked.body.error.code).toBe('TOKEN_REVOKED');
   });
 
   it('valida y persiste contacto, y descarta honeypot', async () => {

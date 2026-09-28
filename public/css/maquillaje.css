@@ -1,0 +1,13 @@
+/* maquillaje.css: identidad visual propia de la página de maquillaje. */
+.maquillaje-page .pagina-header {
+    background: linear-gradient(180deg, #efd1d7, var(--color-fondo));
+}
+
+.maquillaje-page .tabs {
+    margin-bottom: 48px;
+}
+
+.maquillaje-page .marca-nombre::before {
+    color: var(--color-mauve);
+    content: '✦ ';
+}

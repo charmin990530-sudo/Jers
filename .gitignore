@@ -24,3 +24,4 @@ coverage/
 *.sqlite3
 *.dump
 *.bak
+.vercel

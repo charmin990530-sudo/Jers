@@ -87,11 +87,20 @@ async function request(endpoint, options = {}) {
 
         // Si la respuesta no es exitosa (4xx, 5xx)
         if (!response.ok) {
+            // El backend responde siempre { error: { code, message, details? }, requestId }.
+            // Se aplana a data para que el resto del frontend siga leyendo
+            // response.data.code / .message / .details igual que antes.
+            const envelope = data && data.error ? data.error : {};
             return {
                 ok: false,
-                msg: data.message || 'Error en la petición',
+                msg: envelope.message || data?.message || 'Error en la petición',
                 data: {
-                    ...data,
+                    ...envelope,
+                    // `errors` se mantiene como alias de `details` porque varios
+                    // formularios (register, mi-perfil, checkout) recorren
+                    // error.errors para pintar el mensaje campo a campo.
+                    errors: envelope.details || envelope.errors || data?.errors,
+                    requestId: data?.requestId,
                     status: response.status,
                 }
             };
@@ -366,7 +375,7 @@ async function getCart() {
 
 /**
  * Agregar item al carrito
- * @param {object} item - { productId, cantidad }
+ * @param {object} item - { productoId, cantidad }  (el backend valida `productoId` como ObjectId)
  * @returns {Promise<{ok: boolean, msg: string, data: any}>}
  */
 async function addToCart(item) {
@@ -524,6 +533,24 @@ function handleApiError(error = {}, context = 'api') {
     };
 }
 
+/**
+ * Convierte una respuesta fallida de la API en un Error que conserva el payload.
+ *
+ * `new Error(response.msg)` solo conserva el mensaje y descarta `response.data`,
+ * por lo que los `errors[]` de validación que devuelve el backend (Zod, Mongoose)
+ * se pierden y el formulario nunca puede pintarlos campo por campo.
+ *
+ * @param {{ok: boolean, msg: string, data: any}} response - Respuesta de request()
+ * @param {string} [fallbackMessage] - Mensaje si la API no envió ninguno
+ * @returns {Error} Error con .data y .status para handleApiError y los forms
+ */
+function apiErrorFromResponse(response, fallbackMessage = 'Error en la petición') {
+    const error = new Error(response?.msg || fallbackMessage);
+    error.data = response?.data ?? null;
+    error.status = response?.data?.status ?? null;
+    return error;
+}
+
 const api = {
     request,
     get,
@@ -571,6 +598,7 @@ const api = {
     updateUserRole,
     toggleUserActive,
     deleteUser,
+    apiErrorFromResponse,
 };
 
 export {
@@ -621,5 +649,6 @@ export {
     toggleUserActive,
     deleteUser,
     handleApiError,
+    apiErrorFromResponse,
     api,
 };

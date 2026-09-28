@@ -20,6 +20,8 @@
 
 import { Product, Category, Brand, User, Order } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../middleware/apiError.js';
+import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
 
 /**
  * POST /api/admin/productos
@@ -243,7 +245,7 @@ export const getAdminOrder = asyncHandler(async (req, res, next) => {
 
 export const updateAdminOrder = asyncHandler(async (req, res, next) => {
   let order = await Order.findById(req.params.id);
-  if (!order) return next(new AppError('Pedido no encontrado', 404, 'ORDER_NOT_FOUND'));
+  if (!order) return next(new AppError('Pedido no encontrado', 404, ErrorCodes.ORDER_NOT_FOUND));
 
   const previousEstado = order.estado;
   const nextEstado = req.body.estado || previousEstado;
@@ -257,29 +259,67 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     reembolsado: [],
   };
   if (nextEstado !== previousEstado && !transitions[previousEstado]?.includes(nextEstado)) {
-    return next(new AppError('Transición de estado no permitida', 400, 'INVALID_ORDER_TRANSITION'));
+    return next(new AppError('Transición de estado no permitida', 400, ErrorCodes.INVALID_ORDER_TRANSITION));
   }
   if (nextEstado === 'cancelado' && (order.estadoPago === 'pagado' || req.body.estadoPago === 'pagado')) {
-    return next(new AppError('Un pedido pagado debe reembolsarse, no cancelarse', 409, 'PAID_ORDER_REQUIRES_REFUND'));
+    return next(new AppError('Un pedido pagado debe reembolsarse, no cancelarse', 409, ErrorCodes.PAID_ORDER_REQUIRES_REFUND));
   }
 
   if (nextEstado === 'cancelado' && previousEstado !== 'cancelado') {
-    const updated = await Order.findOneAndUpdate(
-      { _id: order._id, estado: previousEstado },
-      {
-        $set: {
-          ...req.body,
-          estado: 'cancelado',
-          canceladoEn: new Date(),
-          motivoCancelacion: 'Cancelado por administración',
-        },
-      },
-      { new: true, runValidators: true },
-    );
-    if (!updated) return next(new AppError('El pedido cambió simultáneamente; intente de nuevo', 409, 'ORDER_STATE_CHANGED'));
-    order = updated;
-    for (const item of order.items) {
-      await Product.updateOne({ _id: item.producto }, { $inc: { stock: item.cantidad, vendidos: -item.cantidad } });
+    // Cancelar desde admin devuelve el stock al inventario. Es una operacion de
+    // saldo, asi que el cambio de estado y el bulkWrite de stock van en la misma
+    // transaccion. El filtro `estado: previousEstado` evita que dos admins
+    // cancelen a la vez y devuelvan el stock dos veces.
+    const transactional = await detectTransactionSupport();
+    try {
+      const outcome = await withTransaction(async ({ session }) => {
+        const updated = await Order.findOneAndUpdate(
+          { _id: order._id, estado: previousEstado },
+          {
+            $set: {
+              ...req.body,
+              estado: 'cancelado',
+              canceladoEn: new Date(),
+              motivoCancelacion: 'Cancelado por administración',
+            },
+          },
+          { new: true, runValidators: true, session },
+        );
+        if (!updated) {
+          throw new AppError('El pedido cambió simultáneamente; intente de nuevo', 409, ErrorCodes.ORDER_STATE_CHANGED);
+        }
+        await Product.bulkWrite(
+          updated.items.map(item => ({
+            updateOne: {
+              filter: { _id: item.producto },
+              update: { $inc: { stock: item.cantidad, vendidos: -item.cantidad } },
+            },
+          })),
+          { session, ordered: false },
+        );
+        return updated;
+      });
+      order = outcome.result;
+    } catch (error) {
+      // Con replica set el abort ya revierto el cambio de estado y el stock.
+      if (!transactional) {
+        const stillOpen = await Order.findOne({ _id: order._id, estado: 'cancelado' }).lean();
+        if (stillOpen) {
+          await Promise.allSettled([
+            Product.bulkWrite(stillOpen.items.map(item => ({
+              updateOne: {
+                filter: { _id: item.producto },
+                update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
+              },
+            })), { ordered: false }),
+            Order.updateOne(
+              { _id: order._id, estado: 'cancelado' },
+              { $set: { estado: previousEstado }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } },
+            ),
+          ]);
+        }
+      }
+      return next(error);
     }
   } else {
     Object.assign(order, req.body);
@@ -290,24 +330,53 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
   await order.populate('usuario', 'nombre apellido email telefono');
   res.status(200).json({ success: true, message: 'Pedido actualizado', order });
 });
+/**
+ * GET /api/admin/dashboard
+ * Estadísticas para panel de administración
+ *
+ * Antes eran 7 viajes de red: 4 countDocuments + 1 find en un Promise.all, y
+ * despues dos agregaciones encadenadas con await (una esperando a la otra). Ahora
+ * las dos agregaciones viajan en UNA sola consulta con $facet y todo el bloque se
+ * lanza en paralelo: 5 viajes, ninguno esperando a otro.
+ *
+ * El total facturado es la suma de `total` de los pedidos PAGADOS, excluyendo los
+ * cancelados y los reembolsados. Es dinero cobrado, no dinero pedido.
+ */
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const [totalUsers, totalProducts, totalOrders, recentOrders] = await Promise.all([
+  const [totalUsers, totalProducts, totalOrders, recentOrders, facets] = await Promise.all([
     User.countDocuments(),
     Product.countDocuments(),
     Order.countDocuments(),
     Order.find().sort({ createdAt: -1 }).limit(5).populate('usuario', 'nombre apellido email').lean(),
+    Order.aggregate([
+      {
+        $facet: {
+          ordersByStatus: [
+            { $group: { _id: '$estado', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ],
+          totalRevenue: [
+            { $match: { estadoPago: 'pagado' } },
+            { $group: { _id: null, total: { $sum: '$total' } } },
+          ],
+          revenueToday: [
+            { $match: { estadoPago: 'pagado' } },
+            {
+              $match: {
+                createdAt: {
+                  $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                  $lt: new Date(new Date().setHours(0, 0, 0, 0) + 24 * 60 * 60 * 1000),
+                },
+              },
+            },
+            { $group: { _id: null, total: { $sum: '$total' } } },
+          ],
+        },
+      },
+    ]),
   ]);
 
-  // Agregación: pedidos por estado
-  const ordersByStatus = await Order.aggregate([
-    { $group: { _id: '$estado', count: { $sum: 1 } } },
-  ]);
-
-  // Agregación: revenue total (solo pagados)
-  const totalRevenue = await Order.aggregate([
-    { $match: { estadoPago: 'pagado' } },
-    { $group: { _id: null, total: { $sum: '$total' } } },
-  ]);
+  const { ordersByStatus = [], totalRevenue = [], revenueToday = [] } = facets[0] ?? {};
 
   res.status(200).json({
     success: true,
@@ -315,7 +384,8 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       totalUsers,
       totalProducts,
       totalOrders,
-      totalRevenue: totalRevenue[0]?.total || 0,
+      totalRevenue: totalRevenue[0]?.total ?? 0,
+      revenueToday: revenueToday[0]?.total ?? 0,
       ordersByStatus: ordersByStatus.reduce((acc, item) => {
         acc[item._id] = item.count;
         return acc;

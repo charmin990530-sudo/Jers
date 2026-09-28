@@ -96,8 +96,9 @@ describe('Cart & Orders API', () => {
         .send({ productoId: fakeId, cantidad: 1 })
         .expect(404);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('PRODUCT_NOT_FOUND');
     });
 
     it('debe fallar si stock insuficiente', async () => {
@@ -107,8 +108,9 @@ describe('Cart & Orders API', () => {
         .send({ productoId: testProduct._id.toString(), cantidad: 50 })
         .expect(400);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('INSUFFICIENT_STOCK');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('INSUFFICIENT_STOCK');
     });
 
     it('debe incrementar cantidad si producto ya está en carrito', async () => {
@@ -237,8 +239,9 @@ describe('POST /api/orders', () => {
         .send({ direccionEnvio: shippingAddress })
         .expect(400);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('EMPTY_CART');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
+      expect(res.body.error.code).toBe('EMPTY_CART');
     });
 
     it('debe fallar sin autenticación', async () => {
@@ -247,7 +250,8 @@ describe('POST /api/orders', () => {
         .send({ direccionEnvio: shippingAddress })
         .expect(401);
 
-      expect(res.body.success).toBe(false);
+      expect(res.body.error).toBeDefined();
+      expect(res.body.success).toBeUndefined();
     });
   });
 

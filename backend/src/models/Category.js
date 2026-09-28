@@ -23,6 +23,25 @@
  */
 import mongoose from 'mongoose';
 
+/**
+ * Categorías permitidas. Es una lista cerrada a propósito: las pestañas de
+ * makeup.html y cabello.html están escritas contra estos nombres, así que
+ * aceptarlas en la base dejaría tabs apuntando a nada.
+ *
+ * Se exporta para que la capa de validación (Zod) use exactamente la misma
+ * lista. Si se validara solo en Mongoose, el usuario recibiría el mensaje
+ * interno de BSON ("`X` is not a valid enum value for path `nombre`")
+ * en vez de un error de campo como el de cualquier otra validación.
+ */
+export const CATEGORIAS_FIJAS = [
+  'rostro',
+  'ojos',
+  'labios',
+  'shampoo',
+  'acondicionador',
+  'tratamientos',
+];
+
 const categorySchema = new mongoose.Schema({
   nombre: {
     type: String,
@@ -30,7 +49,10 @@ const categorySchema = new mongoose.Schema({
     unique: true,
     trim: true,
     // Enum fijo: coincide con tabs del frontend
-    enum: ['rostro', 'ojos', 'labios', 'shampoo', 'acondicionador', 'tratamientos'],
+    enum: {
+      values: CATEGORIAS_FIJAS,
+      message: `Categoría no válida. Las permitidas son: ${CATEGORIAS_FIJAS.join(', ')}`,
+    },
   },
   slug: {
     type: String,

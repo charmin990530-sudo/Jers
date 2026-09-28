@@ -17,6 +17,7 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 import { JWT_SECRET, JWT_ALGORITHM, JWT_COOKIE_NAME, NODE_ENV, JWT_ISSUER, JWT_AUDIENCE } from '../config/env.js';
+import { ErrorCodes, sendError } from './apiError.js';
 
 const JWT_VERIFY_OPTIONS = {
   algorithms: [JWT_ALGORITHM],
@@ -44,22 +45,14 @@ export const authenticate = async (req, res, next) => {
     const token = req.cookies[JWT_COOKIE_NAME];
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'No autenticado. Inicia sesión para continuar.',
-        code: 'UNAUTHENTICATED',
-      });
+      return sendError(res, 401, ErrorCodes.UNAUTHENTICATED, 'No autenticado. Inicia sesión para continuar.');
     }
 
     // 2. Verificar firma y expiración
     const decoded = jwt.verify(token, JWT_SECRET, JWT_VERIFY_OPTIONS);
     const legacyTokenAllowed = NODE_ENV === 'test';
     if (decoded.ver === undefined && !legacyTokenAllowed) {
-      return res.status(401).json({
-        success: false,
-        message: 'La sesión debe renovarse. Inicia sesión nuevamente.',
-        code: 'TOKEN_REVOKED',
-      });
+      return sendError(res, 401, ErrorCodes.TOKEN_REVOKED, 'La sesión debe renovarse. Inicia sesión nuevamente.');
     }
 
     // 3. Buscar usuario (sin password, no se necesita en middleware)
@@ -67,19 +60,11 @@ export const authenticate = async (req, res, next) => {
     
     // 4. Validar existencia y estado activo
     if (!user || !user.activo) {
-      return res.status(401).json({
-        success: false,
-        message: 'Usuario no encontrado o inactivo.',
-        code: 'USER_NOT_FOUND',
-      });
+      return sendError(res, 401, ErrorCodes.USER_NOT_FOUND, 'Usuario no encontrado o inactivo.');
     }
 
     if (decoded.ver !== undefined && decoded.ver !== user.tokenVersion) {
-      return res.status(401).json({
-        success: false,
-        message: 'La sesión fue revocada. Inicia sesión nuevamente.',
-        code: 'TOKEN_REVOKED',
-      });
+      return sendError(res, 401, ErrorCodes.TOKEN_REVOKED, 'La sesión fue revocada. Inicia sesión nuevamente.');
     }
 
     // 5. Adjuntar a request para controllers
@@ -89,11 +74,7 @@ export const authenticate = async (req, res, next) => {
   } catch (error) {
     // Manejo específico de errores JWT
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Sesión expirada o inválida. Inicia sesión nuevamente.',
-        code: 'INVALID_TOKEN',
-      });
+      return sendError(res, 401, ErrorCodes.INVALID_TOKEN, 'Sesión expirada o inválida. Inicia sesión nuevamente.');
     }
     // Otros errores -> errorHandler global
     next(error);
@@ -113,20 +94,12 @@ export const authorize = (...roles) => {
   return (req, res, next) => {
     // Doble check: authenticate debería haber puesto req.user
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'No autenticado.',
-        code: 'UNAUTHENTICATED',
-      });
+      return sendError(res, 401, ErrorCodes.UNAUTHENTICATED, 'No autenticado.');
     }
 
     // Verificar rol
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permisos para realizar esta acción.',
-        code: 'FORBIDDEN',
-      });
+      return sendError(res, 403, ErrorCodes.FORBIDDEN, 'No tienes permisos para realizar esta acción.');
     }
     next();
   };

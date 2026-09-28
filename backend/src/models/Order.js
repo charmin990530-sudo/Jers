@@ -39,6 +39,19 @@
  * - estado: filtrar por estado (admin dashboard)
  */
 import mongoose from 'mongoose';
+import { isMinorAmount } from '../services/money.js';
+
+/**
+ * Exige un importe entero. `min: 0` solo no alcanza: Mongoose acepta 15000.5
+ * porque es un Number valido, y esos centavos sueltos se acumulan hasta el total
+ * que se cobra. Ver services/money.js.
+ */
+const minorAmount = (label) => ({
+  validate: {
+    validator: value => value === undefined || isMinorAmount(value),
+    message: `${label} debe ser un numero entero (la moneda no tiene centavos)`,
+  },
+});
 
 // Subdocumento: Item de orden (snapshot inmutable al momento de comprar)
 const orderItemSchema = new mongoose.Schema({
@@ -49,9 +62,9 @@ const orderItemSchema = new mongoose.Schema({
   },
   nombre: { type: String, required: true },        // Nombre congelado
   imagen: { type: String },                        // Imagen congelada
-  precioUnitario: { type: Number, required: true, min: 0 },
+  precioUnitario: { type: Number, required: true, min: 0, ...minorAmount('El precio unitario') },
   cantidad: { type: Number, required: true, min: 1 },
-  subtotal: { type: Number, required: true, min: 0 }, // precio * cantidad
+  subtotal: { type: Number, required: true, min: 0, ...minorAmount('El subtotal de la linea') },
 }, { _id: true });
 
 // Subdocumento: Dirección de envío embebida (no referencia, para histórico)
@@ -78,10 +91,10 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   items: [orderItemSchema],
-  subtotal: { type: Number, required: true, min: 0 },
-  costoEnvio: { type: Number, default: 0, min: 0 },
-  descuento: { type: Number, default: 0, min: 0 },
-  total: { type: Number, required: true, min: 0 },
+  subtotal: { type: Number, required: true, min: 0, ...minorAmount('El subtotal') },
+  costoEnvio: { type: Number, default: 0, min: 0, ...minorAmount('El costo de envio') },
+  descuento: { type: Number, default: 0, min: 0, ...minorAmount('El descuento') },
+  total: { type: Number, required: true, min: 0, ...minorAmount('El total') },
   estado: {
     type: String,
     enum: [
@@ -118,17 +131,32 @@ const orderSchema = new mongoose.Schema({
   toObject: { virtuals: true },
 });
 
+/**
+ * Genera el numero de pedido: BJ-YYMMDD-RANDOM (ej: BJ-260131-K7F2Q9).
+ *
+ * Se exporta como funcion pura para poder verificarla con fechas concretas
+ * (fin de mes, cambio de ano, ...) sin tener que falsear el reloj global. El
+ * hook la llama con `new Date()`, que es el unico lugar donde aparece el "ahora".
+ *
+ * Los dos digitos de mes y dia se rellenan con ceros a la izquierda, de modo que
+ * el 1 de enero es "260101" y el 31 de enero "260131": ambos tienen la misma
+ * longitud y el numero siempre ocupa 6 digitos de fecha. El sufijo aleatorio de 6
+ * caracteres evita el choque dentro del mismo dia.
+ *
+ * @param {Date} [fecha=new Date()]
+ * @returns {string}
+ */
+export const generarNumeroOrden = (fecha = new Date()) => {
+  const anio = String(fecha.getFullYear()).slice(-2);
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const aleatorio = Math.random().toString(36).substring(2, 8).toUpperCase().padEnd(6, '0').slice(0, 6);
+  return `BJ-${anio}${mes}${dia}-${aleatorio}`;
+};
+
 // Auto-genera número de orden único antes de validar
-// Formato: BJ-YYMMDD-RANDOM (ej: BJ-260922-A1B2C3)
 orderSchema.pre('validate', function (next) {
-  if (!this.numeroOrden) {
-    const fecha = new Date();
-    const año = fecha.getFullYear().toString().slice(-2);
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    this.numeroOrden = `BJ-${año}${mes}${dia}-${random}`;
-  }
+  if (!this.numeroOrden) this.numeroOrden = generarNumeroOrden();
   next();
 });
 
@@ -139,7 +167,28 @@ orderSchema.virtual('puedeCancelar').get(function () {
 
 // Índices para queries comunes
 orderSchema.index({ usuario: 1, createdAt: -1 }); // Mis pedidos (más recientes primero)
-orderSchema.index({ usuario: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
+// Listado del panel de admin: filtra por estado opcionalmente y SIEMPRE ordena por
+// createdAt descendente. Sin este indice Mongo hace un COLLSCAN + sort en memoria
+// de toda la coleccion cada vez que se abre el panel.
+orderSchema.index({ estado: 1, createdAt: -1 });
+// Dashboard: agrega los pedidos pagados. Cubre el $match de totalRevenue.
+// Cubre tambien revenueToday porque createdAt va detras de estadoPago.
+orderSchema.index({ estadoPago: 1, createdAt: -1 });
+// Idempotencia: UNICHE solo entre pedidos que TRAEN clave.
+//
+// `sparse: true` no sirve aquí. En un índice compuesto, sparse omite el
+// documento únicamente si TODOS los campos del índice faltan; como `usuario`
+// siempre está, un pedido sin `Idempotency-Key` se indexaba igual con
+// `idempotencyKey: null` y el SEGUNDO pedido del mismo usuario sin cabecera
+// chocaba con duplicate key (11000) devolviendo un confuso "El recurso ya
+// existe". Un índice partial excluye del índice los documentos sin clave.
+orderSchema.index(
+  { usuario: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $type: 'string' } },
+  },
+);
 orderSchema.index({ estado: 1 });                 // Admin: filtrar por estado
 
 export default mongoose.model('Order', orderSchema);

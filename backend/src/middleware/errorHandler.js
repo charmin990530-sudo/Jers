@@ -1,56 +1,39 @@
 /**
- * errorHandler.js - Manejo Centralizado de Errores
- * 
- * ARQUITECTURA:
- * 1. AppError: Clase base para errores operacionales (esperados)
- * 2. notFound: Middleware 404 para rutas no definidas
- * 3. errorHandler: Middleware global (ÚLTIMO en app.use)
- * 4. asyncHandler: Wrapper para controllers async (evita try/catch)
- * 
- * CÓDIGOS DE ERROR ESTÁNDAR:
- * - VALIDATION_ERROR: 400 (Zod/Mongoose validation)
- * - INVALID_ID: 400 (ObjectId malformado)
- * - DUPLICATE_FIELD: 400 (unique constraint)
- * - UNAUTHENTICATED: 401 (sin token)
- * - INVALID_TOKEN: 401 (token malformed)
- * - TOKEN_EXPIRED: 401 (token expired)
- * - FORBIDDEN: 403 (sin permisos)
- * - NOT_FOUND: 404 (recurso no existe)
- * - INTERNAL_ERROR: 500 (inesperado)
- * - RATE_LIMIT_EXCEEDED: 429 (rate limit)
+ * errorHandler.js - Manejo centralizado de errores
+ *
+ * ARQUITECTURA
+ * 1. AppError: clase de error operativo (esperado, con status y codigo).
+ * 2. notFound: 404 para rutas no definidas.
+ * 3. errorHandler: middleware global, ULTIMO de la cadena.
+ * 4. asyncHandler: envuelve controladores async.
+ *
+ * El cuerpo de la respuesta lo construye SIEMPRE `sendError` (ver apiError.js),
+ * de modo que ningun camino puede inventarse su propia forma:
+ *
+ *   { "error": { "code": "...", "message": "...", "details": [...] }, "requestId": "..." }
+ *
+ * REGLA DE SEGURIDAD
+ * ------------------
+ * Un error NO marcado como `isOperational` es un bug o un fallo de dependencia.
+ * Su mensaje nunca viaja al cliente: se registra en el log del servidor y se
+ * responde con un texto generico. Solo los AppError (validacion, no encontrado,
+ * conflicto) exponen su mensaje.
  */
 
-// Clase base para errores controlados (operacionales)
-// isOperational = true -> error esperado, mensaje seguro para cliente
-export class AppError extends Error {
-  constructor(message, statusCode, code = 'ERROR') {
-    super(message);
-    this.statusCode = statusCode;    // HTTP status
-    this.code = code;                // Código interno para frontend
-    this.isOperational = true;       // Diferencia de bugs reales
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+import { NODE_ENV } from '../config/env.js';
+import { AppError, ErrorCodes, sendError } from './apiError.js';
 
-/**
- * Middleware 404: Se ejecuta si ninguna ruta coincide
- * Debe ir DESPUÉS de todas las rutas definidas
- */
+export { AppError };
+
+/** Middleware 404: se ejecuta si ninguna ruta coincide. Va DESPUES de las rutas. */
 export const notFound = (req, res, next) => {
-  const error = new AppError('Recurso no encontrado', 404, 'NOT_FOUND');
-  error.requestId = req.requestId;
-  next(error);
+  next(new AppError('Recurso no encontrado', 404, ErrorCodes.NOT_FOUND));
 };
 
 /**
- * Middleware Global de Errores: ÚLTIMO en la cadena
- * Captura TODOS los errores no manejados y formatea respuesta consistente
- * 
- * ORDEN DE EJECUCIÓN:
- * 1. Log en desarrollo
- * 2. Maneja errores conocidos (Validation, Cast, Duplicate, JWT)
- * 3. Respuesta genérica para errores desconocidos
- * 4. Nunca expone stack traces en la respuesta
+ * Oculta secretos que puedan aparecer dentro de un mensaje de error antes de
+ * escribirlo en el log o devolverlo. Cubre tokens en query strings y pares
+ * clave:valor tipo Authorization/Cookie/JWT.
  */
 const redact = value => String(value ?? '')
   .replace(/([?&](?:token|code|email|password|secret|access_token|refresh_token)=)[^&\s]*/gi, '$1[REDACTED]')
@@ -58,95 +41,76 @@ const redact = value => String(value ?? '')
 
 const requestPath = req => String(req.originalUrl || '').split('?')[0];
 
-export const errorHandler = (err, req, res, next) => {
-  // Defaults si no vienen de AppError
-  err.statusCode = err.statusCode || 500;
-  err.code = err.code || 'INTERNAL_ERROR';
+/** Convierte los errores de validacion de Mongoose al formato details[]. */
+const mongooseDetails = err =>
+  Object.values(err.errors).map(e => ({ field: e.path, message: e.message }));
 
-  // Log detallado solo en desarrollo
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', {
+export const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  const status = Number.isInteger(err.statusCode) ? err.statusCode : 500;
+  const code = typeof err.code === 'string' ? err.code : ErrorCodes.INTERNAL_ERROR;
+
+  // Un JSON malformado lo produce express.json() con status 400 pero sin `code`
+  // de negocio. Sin este caso el cliente recibia 400 + INTERNAL_ERROR + "Error
+  // interno del servidor", una combinacion que no significa nada.
+  if (err.type === 'entity.parse.failed' || (status === 400 && err instanceof SyntaxError)) {
+    return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'El cuerpo de la peticion no es JSON valido');
+  }
+  if (err.type === 'entity.too.large') {
+    return sendError(res, 413, ErrorCodes.PAYLOAD_TOO_LARGE, 'El cuerpo de la peticion es demasiado grande');
+  }
+
+  const operational = err.isOperational === true;
+  const message = operational ? redact(err.message) : 'Error interno del servidor';
+
+  if (!operational || status >= 500) {
+    console.error('Error no controlado', {
       requestId: req.requestId,
       message: redact(err.message),
       errorName: err.name,
-      code: err.code,
-      statusCode: err.statusCode,
+      code,
+      statusCode: status,
+      path: requestPath(req),
+      method: req.method,
+    });
+  } else if (NODE_ENV === 'development') {
+    console.error('Error controlado', {
+      requestId: req.requestId,
+      code,
+      message,
       path: requestPath(req),
       method: req.method,
     });
   }
 
-  // ---------- ERRORES CONOCIDOS CON RESPUESTA ESPECÍFICA ----------
-
-  // Mongoose ValidationError: campos requeridos, min/max, enum, etc.
+  // Validacion de Mongoose: el unico error de dependencia cuyo detalle SI es
+  // seguro y util para el cliente, porque describe campos del documento.
   if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map(e => e.message);
-    return res.status(400).json({
-      success: false,
-      message: 'Error de validación',
-      errors: messages,
-      code: 'VALIDATION_ERROR',
+    return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Error de validacion', {
+      details: mongooseDetails(err),
     });
   }
-
-  // CastError: ObjectId inválido (ej: "abc" en lugar de ObjectId)
   if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Identificador inválido',
-      code: 'INVALID_ID',
-    });
+    return sendError(res, 400, ErrorCodes.INVALID_ID, 'Identificador invalido');
   }
-
-  // Duplicate key (MongoError 11000): unique constraint violated
   if (err.code === 11000) {
-    return res.status(400).json({
-      success: false,
-      message: 'El recurso ya existe',
-      code: 'DUPLICATE_FIELD',
-    });
+    return sendError(res, 400, ErrorCodes.DUPLICATE_FIELD, 'El recurso ya existe');
   }
-
-  // JWT Errors
   if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token inválido',
-      code: 'INVALID_TOKEN',
-    });
+    return sendError(res, 401, ErrorCodes.INVALID_TOKEN, 'Token invalido');
   }
-
   if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expirado',
-      code: 'TOKEN_EXPIRED',
-    });
+    return sendError(res, 401, ErrorCodes.TOKEN_EXPIRED, 'Token expirado');
   }
 
-  // ---------- RESPUESTA GENÉRICA ----------
-  const response = {
-    success: false,
-    message: err.isOperational ? redact(err.message) : 'Error interno del servidor',
-    code: err.code,
-    requestId: req.requestId,
-  };
-
-  res.status(err.statusCode).json(response);
+  return sendError(res, status, code, message, { details: err.details });
 };
 
 /**
- * asyncHandler - Wrapper para controllers async
- * EVITA try/catch repetitivo en cada controller
- * 
- * USO:
- * export const getProducts = asyncHandler(async (req, res) => {
- *   const products = await Product.find();
- *   res.json({ success: true, products });
- * });
- * 
- * Si la promise rechaza, pasa al errorHandler automáticamente
+ * envuelve controladores async para que un rechazo llegue al errorHandler.
+ * Los controladores no necesitan try/catch alrededor de cada operacion.
  */
-export const asyncHandler = (fn) => (req, res, next) => {
+export const asyncHandler = fn => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };

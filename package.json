@@ -1,0 +1,31 @@
+{
+  "name": "by-jers-store",
+  "version": "1.0.0",
+  "description": "By Jers - tienda de maquillaje y cuidado capilar (frontend + API)",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:api": "node backend/src/app.js",
+    "dev:web": "node frontend-server.js",
+    "dev": "node backend/src/app.js & node frontend-server.js",
+    "seed": "node backend/src/seeds/seed.js",
+    "test": "cd backend && node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "nodemailer": "^10.0.10",
+    "redis": "^4.7.1",
+    "zod": "^3.23.8"
+  }
+}
