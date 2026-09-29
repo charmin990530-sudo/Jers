@@ -55,6 +55,9 @@ async function inicializarPestanas() {
     // Actualiza hash URL sin recargar (para deep linking)
     window.history.replaceState(null, '', `#${slug}`);
 
+    // Etiqueta para mensajes de carga
+    const etiqueta = CATEGORIAS_CABELLO[slug] || 'productos';
+
     // Estado de carga
     renderCargando(contenedor, `Cargando ${etiqueta}...`);
 

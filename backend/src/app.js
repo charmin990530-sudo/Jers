@@ -2,6 +2,7 @@
  * app.js - Punto de entrada principal del backend
  * Configura Express, middlewares globales, rutas y arranca el servidor
  */
+import './instrument.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
@@ -12,7 +13,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createClient } from 'redis';
-import * as Sentry from '@sentry/node';
+import { Sentry } from './instrument.js';
 import { connectDB } from './config/db.js';
 import { validateSecurityEnvironment } from './config/env.js';
 import { 
@@ -51,15 +52,7 @@ const app = express();
 app.disable('x-powered-by');
 if (TRUST_PROXY_HOPS > 0) app.set('trust proxy', TRUST_PROXY_HOPS);
 
-if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: NODE_ENV,
-    tracesSampleRate: 0.1,
-  });
-  app.use(Sentry.Handlers.requestHandler());
-  app.use(Sentry.Handlers.tracingHandler());
-}
+// Sentry se inicializa en instrument.js (importado arriba)
 
 // En un entorno serverless, un throw a nivel de módulo tumba TODAS las
 // peticiones con un 500 opaco. Por eso la validación se captura y se reporta
@@ -398,8 +391,9 @@ if (SERVE_STATIC) {
   app.use(notFound);
 }
 
+// Sentry error handler (debe ir después de las rutas, antes del errorHandler propio)
 if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
-  app.use(Sentry.Handlers.errorHandler());
+  app.use(Sentry.setupExpressErrorHandler(app));
 }
 
 // Middleware global de errores

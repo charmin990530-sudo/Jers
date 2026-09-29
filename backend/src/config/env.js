@@ -89,12 +89,7 @@ const FRONTEND_ORIGINS_NORMALIZADOS = frontendOrigins.map(origin => {
     throw new Error(`Origen de frontend inválido: ${origin}`);
   }
 });
-if (NODE_ENV === 'production' && FRONTEND_ALLOWED_ORIGINS.some(origin => !origin.startsWith('https://'))) {
-  throw new Error('FRONTEND_ALLOWED_ORIGINS debe usar HTTPS en producción');
-}
-if (NODE_ENV === 'production' && !FRONTEND_ALLOWED_ORIGINS.includes(frontendUrlObject.origin)) {
-  throw new Error('FRONTEND_URL debe estar incluido en FRONTEND_ALLOWED_ORIGINS');
-}
+
 const configuredApiOrigin = process.env.API_ORIGIN || `http://localhost:${PORT}`;
 let apiOriginObject;
 try {
@@ -106,15 +101,23 @@ try {
   throw new Error('API_ORIGIN debe ser una URL HTTP(S) sin credenciales');
 }
 export const API_ORIGIN = apiOriginObject.origin;
-if (NODE_ENV === 'production' && !API_ORIGIN.startsWith('https://')) {
-  throw new Error('API_ORIGIN debe usar HTTPS en producción');
-}
 
 // Ya se puede incluir el origen propio de la API en la lista de admitidos.
 export const FRONTEND_ALLOWED_ORIGINS = [...new Set([
   ...FRONTEND_ORIGINS_NORMALIZADOS,
   API_ORIGIN,
 ])];
+
+// Validaciones de producción sobre la lista final.
+if (NODE_ENV === 'production' && FRONTEND_ALLOWED_ORIGINS.some(origin => !origin.startsWith('https://'))) {
+  throw new Error('FRONTEND_ALLOWED_ORIGINS debe usar HTTPS en producción');
+}
+if (NODE_ENV === 'production' && !FRONTEND_ALLOWED_ORIGINS.includes(frontendUrlObject.origin)) {
+  throw new Error('FRONTEND_URL debe estar incluido en FRONTEND_ALLOWED_ORIGINS');
+}
+if (NODE_ENV === 'production' && !API_ORIGIN.startsWith('https://')) {
+  throw new Error('API_ORIGIN debe usar HTTPS en producción');
+}
 
 // Rate limiting: ventana de tiempo en ms (15 min = 900000ms)
 export const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000;
