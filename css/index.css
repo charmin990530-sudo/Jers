@@ -12,6 +12,7 @@
   position: relative;
   z-index: 20;
   overflow: hidden;
+  max-width: 100%;
   background: linear-gradient(90deg, var(--color-mauve), #a8566e 50%, var(--color-mauve));
   padding-block: 9px;
   padding-inline: env(safe-area-inset-left);

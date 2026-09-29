@@ -57,6 +57,10 @@
 html {
     scroll-behavior: smooth;
 
+    /* Impide el scroll horizontal que generan las cintas animadas y los
+       carruseles, cuyo contenido se extiende a propósito fuera del viewport. */
+    overflow-x: hidden;
+
     /* Compensa el encabezado fijo para que los enlaces con ancla no queden debajo. */
     scroll-padding-top: 90px;
 }
