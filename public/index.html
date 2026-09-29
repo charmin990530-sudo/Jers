@@ -44,21 +44,14 @@
       }
     }
     </script>
+    <script src="js/loader-boot.js"></script>
 </head>
 
 <body class="index-page">
 
-    <!-- Splash screen: la marca "Jers" se arma mientras carga la página -->
-    <div id="page-loader" class="page-loader" role="status" aria-label="Cargando By Jers">
-        <div class="loader-marca">
-            <span class="loader-inicial" style="--i: 0">J</span>
-            <span class="loader-inicial" style="--i: 1">e</span>
-            <span class="loader-inicial" style="--i: 2">r</span>
-            <span class="loader-inicial" style="--i: 3">s</span>
-            <span class="loader-texto">By Jers</span>
-            <span class="loader-barra"><span class="loader-progreso"></span></span>
-        </div>
-    </div>
+    <!-- Splash screen: la marca "Jers" se arma mientras carga la página.
+         El marcado lo inyecta js/loader-boot.js (cargado en el <head>) para
+         que aparezca desde el primer instante, sin esperar a los módulos. -->
 
     <!-- Marquesina de promociones reales (arriba de todo) -->
     <div class="promo-carrusel-wrapper" hidden>
