@@ -1,4 +1,89 @@
 /* index.css: estilos exclusivos de la portada. */
+
+/* Splash screen con logo animado */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  background: var(--color-fondo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.page-loader.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.page-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader-logo {
+  text-align: center;
+  animation: loaderPulse 1.5s ease-in-out infinite;
+}
+
+.loader-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  animation: loaderBounce 1s ease-in-out infinite;
+}
+
+.loader-barra {
+  width: 200px;
+  height: 4px;
+  background: var(--color-rosa);
+  border-radius: 2px;
+  margin: 20px auto 0;
+  overflow: hidden;
+}
+
+.loader-progreso {
+  height: 100%;
+  background: var(--color-mauve);
+  width: 0%;
+  animation: loaderProgress 2s ease-in-out infinite;
+}
+
+.loader-texto {
+  margin-top: 15px;
+  font-family: var(--fuente-titulos);
+  font-size: 1.2rem;
+  color: var(--color-mauve);
+  letter-spacing: 0.1em;
+}
+
+@keyframes loaderPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes loaderBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes loaderProgress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-logo,
+  .loader-img,
+  .loader-progreso {
+    animation: none;
+  }
+}
+
 .hero {
   background: radial-gradient(circle at top right, rgb(214 150 167 / 18%), transparent 30%), linear-gradient(180deg, #fdf8f6, var(--color-fondo));
   overflow: hidden;
