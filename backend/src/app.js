@@ -217,13 +217,23 @@ const createRateLimiter = (windowMs, max, message, code, store = undefined, skip
   return rateLimit(config);
 };
 
+// El limitador protege la API, no los archivos estaticos. Antes se contaba
+// cada peticion: solo cargar la portada hacia 41 peticiones (8 de API y 33 de
+// CSS, JS, imagenes y video), asi que tras 3 visitas la web respondia 429 y se
+// quedaba sin productos. Los estaticos los sirve Express con cache de
+// immutable, no necesitan limite.
+const noEsEstatico = req => {
+  if (req.path === '/api/health') return false;
+  return !req.path.startsWith('/api');
+};
+
 const limiter = createRateLimiter(
   RATE_LIMIT_WINDOW_MS,
   RATE_LIMIT_MAX_REQUESTS,
   'Demasiadas solicitudes. Intenta de nuevo más tarde.',
   ErrorCodes.RATE_LIMIT_EXCEEDED,
   redisGeneralStore,
-  req => req.path === '/api/health'
+  noEsEstatico
 );
 
 app.use(limiter);

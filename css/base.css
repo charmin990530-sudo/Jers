@@ -331,7 +331,15 @@ body {
 
 /* El contenido va por encima de la textura de fondo (z-index 0) y de los
    emojis (z-index 1), que son fijos y decorativos. */
-body > :not(.fondo-textura):not(.fondo-emoji):not(.page-loader) {
+/* El fondo de la pagina (video) y los emojis caen por detras del contenido.
+   Solo se suben las capas de contenido reales: cabcera, main y footer.
+   IMPORTANTE: no se aplica position a .carrito-fondo, .whatsapp-flotante,
+   .chatbot-boton, .chatbot-panel ni .carrito-panel, porque son position: fixed
+   y una regla de position aqui los volveria relative, dejando de flotar
+   mientras el usuario hace scroll. */
+.header,
+main,
+footer {
     position: relative;
     z-index: 2;
 }
@@ -733,6 +741,19 @@ h3 {
     font-size: 1.2rem;
 }
 
+/* Area tactil real de 32px, sin agrandar el glifo. Antes el boton de cerrar
+   del carrito era de 16x23px, dificil de acertar. */
+.carrito-cerrar {
+    align-items: center;
+    border-radius: 50%;
+    display: flex;
+    height: 32px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+}
+
 .carrito-lista {
     flex: 1;
     list-style: none;
@@ -967,12 +988,23 @@ body.modal-abierto {
 }
 
 .whatsapp-burbuja-cerrar {
+    align-items: center;
     background: none;
     border: 0;
+    /* Area tactil de 28px reales: el glifo es pequeno, pero el blanco pulsable
+       no lo es. Antes el <button> era de 11x15px y era casi imposible de
+       acertar en el telefono. */
+    border-radius: 50%;
     cursor: pointer;
+    display: flex;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
     position: absolute;
-    right: 10px;
-    top: 8px;
+    right: 6px;
+    top: 6px;
+    width: 28px;
 }
 
 .whatsapp-boton {
@@ -1019,6 +1051,9 @@ body.modal-abierto {
     position: fixed;
     right: max(88px, calc(env(safe-area-inset-right, 0px) + 72px));
     width: 52px;
+    /* Por encima del fondo de video (0) y de los emojis (1), y por debajo del
+       panel del chatbot (220) para que el panel lo cubra al abrirse. */
+    z-index: 200;
 }
 
 .chatbot-panel {
@@ -1140,8 +1175,43 @@ body.modal-abierto {
 .site-footer {
     background: #222;
     color: #fff;
-    padding: 20px;
+    padding: 28px 20px;
     text-align: center;
+}
+
+/* Enlaces legales en linea. Sin flex se solapaban entre si, porque los <a>
+   inline comparten linea y el contenedor no reparte el espacio. */
+.footer-enlaces {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    justify-content: center;
+    margin: 0 auto 18px;
+    max-width: 720px;
+}
+
+.footer-enlaces a {
+    color: rgb(255 255 255 / 78%);
+    font-size: .85rem;
+    padding: 4px 2px;
+    text-decoration: none;
+    transition: color .25s ease;
+}
+
+.footer-enlaces a:hover,
+.footer-enlaces a:focus-visible {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* Area tactil minima de 44px en pantallas tactiles, sin engordar el texto. */
+@media (pointer: coarse) {
+    .footer-enlaces a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
 }
 
 .site-footer .redes-sociales {
