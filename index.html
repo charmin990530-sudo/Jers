@@ -48,6 +48,23 @@
 
 <body class="index-page">
 
+    <!-- Splash screen: la marca "Jers" se arma mientras carga la página -->
+    <div id="page-loader" class="page-loader" role="status" aria-label="Cargando By Jers">
+        <div class="loader-marca">
+            <span class="loader-inicial" style="--i: 0">J</span>
+            <span class="loader-inicial" style="--i: 1">e</span>
+            <span class="loader-inicial" style="--i: 2">r</span>
+            <span class="loader-inicial" style="--i: 3">s</span>
+            <span class="loader-texto">By Jers</span>
+            <span class="loader-barra"><span class="loader-progreso"></span></span>
+        </div>
+    </div>
+
+    <!-- Marquesina de promociones reales (arriba de todo) -->
+    <div class="promo-carrusel-wrapper" hidden>
+        <div id="promo-carrusel" class="promo-carrusel"></div>
+    </div>
+
     <header class="header">
         <nav class="menu">
             <img src="img/logo/logo.webp" alt="Logo By Jers" class="menulogo" width="300" height="300">
@@ -89,9 +106,6 @@
         <section id="inicio" class="hero">
 
             <div class="hero-overlay"></div>
-
-            <!-- Carrusel de promociones rotativas -->
-            <div id="promo-rotativa" class="promo-rotativa" aria-live="polite"></div>
 
             <div class="hero-contenido">
 

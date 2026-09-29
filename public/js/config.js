@@ -47,10 +47,16 @@ const obtenerApiBaseUrl = () => {
     }
     // 3) Origen actual. Funciona igual en desarrollo y en produccion.
     if (typeof window !== 'undefined' && window.location?.origin) {
-        return `${window.location.origin}/api`;
+        const origin = window.location.origin;
+        // Si el frontend se sirve desde un puerto distinto al backend,
+        // la API vive en el puerto 3001 (ver backend/.env).
+        if (origin.includes(':5500') || origin.includes(':5173') || origin.includes(':3000')) {
+            return 'http://localhost:3001/api';
+        }
+        return `${origin}/api`;
     }
     // Ultimo recurso (scripts fuera del navegador, pruebas en Node).
-    return 'http://localhost:3000/api';
+    return 'http://localhost:3001/api';
 };
 
 export const API_BASE_URL = obtenerApiBaseUrl();

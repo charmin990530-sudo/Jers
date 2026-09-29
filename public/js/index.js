@@ -18,11 +18,13 @@
  * mano, y sus tarjetas llevan una insignia "Demo".
  */
 
-import { getFeaturedProducts, getPromoProducts, handleApiError } from './apiClient.js';
+import { getFeaturedProducts, getPromoProducts, getProducts, getBrands, handleApiError } from './apiClient.js';
 import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { formatearPrecio } from './config.js';
 import { renderCargando, resolverCatalogo, demoActivado } from './estados.js';
+import { rotarPromos } from './promos-rotativas.js';
+import { inicializarMedios } from './media.js';
 
 let productosMostrados = new Set();
 
@@ -44,14 +46,53 @@ function deduplicarProductos(productos) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   iniciarAplicacion();
+  rotarPromos();
+  inicializarMedios();
 
   // Se lanzan en paralelo: cada sección resuelve su propio estado.
-  await Promise.all([cargarDestacados(), cargarPromociones()]);
+  await Promise.all([cargarDestacados(), cargarPromociones(), cargarEstadisticas(), cargarBannerPromo()]);
 
   document.querySelector('.herobtn')?.addEventListener('click', () => {
     document.getElementById('categorias')?.scrollIntoView({ behavior: 'smooth' });
   });
 });
+
+/** Carga cifras reales del hero: total de productos y marcas. */
+async function cargarEstadisticas() {
+  const contadorProductos = document.querySelector('.hero-estadisticas h3');
+  const contadorMarcas = document.querySelectorAll('.hero-estadisticas h3')[1];
+
+  try {
+    const [productosRes, marcasRes] = await Promise.all([
+      getProducts({ limit: 1 }),
+      getBrands(),
+    ]);
+
+    if (productosRes.ok && productosRes.data?.total) {
+      contadorProductos.textContent = `+${productosRes.data.total}`;
+    }
+    if (marcasRes.ok && Array.isArray(marcasRes.data)) {
+      contadorMarcas.textContent = `+${marcasRes.data.length}`;
+    }
+  } catch {
+    // Si falla, se mantienen los valores por defecto
+  }
+}
+
+/** Muestra el banner promocional solo si hay productos en promoción. */
+async function cargarBannerPromo() {
+  const banner = document.querySelector('.promo-seccion');
+  if (!banner) return;
+
+  try {
+    const res = await getPromoProducts();
+    if (!res.ok || !res.data?.products?.length) {
+      banner.style.display = 'none';
+    }
+  } catch {
+    banner.style.display = 'none';
+  }
+}
 
 /** Carga y renderiza productos destacados. */
 async function cargarDestacados() {

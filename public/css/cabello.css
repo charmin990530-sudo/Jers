@@ -1,6 +1,25 @@
 /* cabello.css: identidad visual propia de la página de cuidado capilar. */
 .cabello-page .pagina-header {
     background: linear-gradient(180deg, #dce8d7, var(--color-fondo));
+    padding: 40px 20px;
+}
+
+.cabello-page .tabs {
+    margin-bottom: 30px;
+    gap: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.cabello-page .tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.cabello-page .tab-btn {
+    padding: 8px 18px;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 .cabello-page .tab-btn.tab-activo {
@@ -11,4 +30,54 @@
 .cabello-page .marca-nombre::before {
     color: #75966c;
     content: '✦ ';
+}
+
+/* Tarjetas más compactas en cuidado capilar */
+.cabello-page .tarjetas {
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.cabello-page .card {
+    border-radius: 12px;
+    padding-bottom: 12px;
+}
+
+.cabello-page .cardimage {
+    margin-bottom: 8px;
+}
+
+.cabello-page .cardname {
+    font-size: 0.95rem;
+    padding: 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cabello-page .cardprecio {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+.cabello-page .cardbtn {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+}
+
+/* Transición entre pestañas */
+.cabello-page .catalogo-contenido {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cabello-page .catalogo-contenido.cargando {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cabello-page .catalogo-contenido {
+        transition: none;
+    }
 }

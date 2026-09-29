@@ -48,48 +48,57 @@ async function inicializarPestanas() {
 
   // Función para mostrar una categoría
   const mostrarCategoria = async (slug) => {
-    // Actualiza UI de pestañas
-    botones.forEach(boton => {
-      boton.classList.toggle('tab-activo', boton.dataset.categoria === slug);
-    });
+    try {
+      // Actualiza UI de pestañas
+      botones.forEach(boton => {
+        boton.classList.toggle('tab-activo', boton.dataset.categoria === slug);
+      });
 
-    // Actualiza hash URL sin recargar (para deep linking)
-    window.history.replaceState(null, '', `#${slug}`);
+      // Actualiza hash URL sin recargar (para deep linking)
+      window.history.replaceState(null, '', `#${slug}`);
 
-    // Estado de carga
-    renderCargando(contenedor, `Cargando ${etiqueta}...`);
+      // Etiqueta para mensajes de carga
+      const etiqueta = CATEGORIAS_MAQUILLAJE[slug] || 'productos';
 
-    // La cache solo guarda respuestas reales de la API. Antes aqui se guardaba
-    // tambien el catalogo de demostracion, con lo que un fallo transitorio
-    // quedaba "pegado" en la cache y seidia mostrando productos falsos ya
-    // entrada la sesion, sin posibilidad de reintentar.
-    if (catalogoCache[slug]) {
-      renderizarCatalogoDesdeAPI(catalogoCache[slug], contenedor);
-      return;
+      // La cache solo guarda respuestas reales de la API. Antes aqui se guardaba
+      // tambien el catalogo de demostracion, con lo que un fallo transitorio
+      // quedaba "pegado" en la cache y seydia mostrando productos falsos ya
+      // entrada la sesion, sin posibilidad de reintentar.
+      if (catalogoCache[slug]) {
+        renderizarCatalogoDesdeAPI(catalogoCache[slug], contenedor);
+        return;
+      }
+
+      // Estado de carga
+      renderCargando(contenedor, `Cargando ${etiqueta}...`);
+
+      // Petición a API: GET /api/products/categoria/:slug
+      const response = await getProductsByCategory(slug, { limit: 50 });
+
+      if (!response.ok) {
+        // Fallo real: se registra para diagnostico y se muestra el estado de error
+        // con boton de reintentar. NO se inventan productos.
+        handleApiError({ message: response.msg, status: response.data?.status }, 'maquillaje');
+        renderError(contenedor, response.msg || 'No pudimos cargar los productos.', () => mostrarCategoria(slug));
+        return;
+      }
+
+      const products = resolverCatalogo(contenedor, response, {
+        claves: ['products'],
+        vacio: 'No hay productos en esta categoria todavia.',
+        alReintentar: () => mostrarCategoria(slug),
+        alRecibir: lista => {
+          catalogoCache[slug] = lista;
+          renderizarCatalogoDesdeAPI(lista, contenedor);
+          return lista;
+        },
+      });
+      if (products.length) catalogoCache[slug] = products;
+    } catch (error) {
+      // Nunca una pantalla vacía: si algo falla, se muestra el estado de error
+      console.error('[maquillaje] Error inesperado:', error);
+      renderError(contenedor, 'Ocurrió un error inesperado. Intenta de nuevo.', () => mostrarCategoria(slug));
     }
-
-    // Petición a API: GET /api/products/categoria/:slug
-    const response = await getProductsByCategory(slug, { limit: 50 });
-
-    if (!response.ok) {
-      // Fallo real: se registra para diagnostico y se muestra el estado de error
-      // con boton de reintentar. NO se inventan productos.
-      handleApiError({ message: response.msg, status: response.data?.status }, 'maquillaje');
-      renderError(contenedor, response.msg || 'No pudimos cargar los productos.', () => mostrarCategoria(slug));
-      return;
-    }
-
-    const products = resolverCatalogo(contenedor, response, {
-      claves: ['products'],
-      vacio: 'No hay productos en esta categoria todavia.',
-      alReintentar: () => mostrarCategoria(slug),
-      alRecibir: lista => {
-        catalogoCache[slug] = lista;
-        renderizarCatalogoDesdeAPI(lista, contenedor);
-        return lista;
-      },
-    });
-    if (products.length) catalogoCache[slug] = products;
   };
 
   // Event listeners para botones de pestañas
