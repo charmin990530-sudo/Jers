@@ -75,6 +75,21 @@ async function cargarEstadisticas() {
   }
 }
 
+/** Muestra el banner promocional solo si hay productos en promoción. */
+async function cargarBannerPromo() {
+  const banner = document.querySelector('.promo-seccion');
+  if (!banner) return;
+
+  try {
+    const res = await getPromoProducts();
+    if (!res.ok || !res.data?.products?.length) {
+      banner.style.display = 'none';
+    }
+  } catch {
+    banner.style.display = 'none';
+  }
+}
+
 /** Carga y renderiza productos destacados. */
 async function cargarDestacados() {
   const contenedor = document.getElementById('destacadosGrid');
