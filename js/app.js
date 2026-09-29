@@ -465,8 +465,9 @@ export function renderizarPromociones(
 // además se reexporta, que es lo que necesitan las páginas que usan app.js.
 import { iniciarCarrito } from './carrito.js';
 import { formatearPrecio } from './config.js';
+import { inicializarLoader } from './loader.js';
 
-export { iniciarCarrito, formatearPrecio };
+export { iniciarCarrito, formatearPrecio, inicializarLoader };
 
 // ==================================================================
 // FORMULARIO DE CONTACTO
@@ -968,6 +969,7 @@ export async function cerrarSesion() {
  */
 export function iniciarAplicacion() {
 
+    iniciarLoader();
     iniciarMenuMovil();
     resaltarPaginaActual();
     iniciarCarrito().catch(error => {

@@ -25,7 +25,6 @@ import { formatearPrecio } from './config.js';
 import { renderCargando, resolverCatalogo, demoActivado } from './estados.js';
 import { rotarPromos } from './promos-rotativas.js';
 import { inicializarMedios } from './media.js';
-import { inicializarLoader } from './loader.js';
 
 let productosMostrados = new Set();
 
@@ -46,7 +45,6 @@ function deduplicarProductos(productos) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  inicializarLoader();
   iniciarAplicacion();
   rotarPromos();
   inicializarMedios();

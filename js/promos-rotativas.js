@@ -1,47 +1,75 @@
 /**
- * promos-rotativas.js - Carrusel de promociones en hero
- * Rota automáticamente mensajes de promociones cada 4 segundos
+ * promos-rotativas.js - Marquesina de promociones real, de derecha a izquierda
+ *
+ * Los textos se generan con datos de /api/products/promociones (nombre y
+ * descuento real). Si la API falla, la cinta se oculta en lugar de mostrar
+ * ofertas inventadas.
  */
 
-const PROMOS = [
-  { texto: '🔥 Hasta 25% OFF en maquillaje seleccionado', destino: '#promoGrid' },
-  { texto: '🚚 Envío gratis en pedidos +$200.000', destino: '#categorias' },
-  { texto: '✨ Nueva colección 2026 disponible', destino: '#destacadosGrid' },
-  { texto: '💄 2x1 en labiales esta semana', destino: 'maquillaje.html#labios' },
-  { texto: '🌟 Envío gratis en primera compra', destino: '#categorias' },
-];
+import { getPromoProducts, handleApiError } from './apiClient.js';
+import { formatearPrecio } from './config.js';
+import { escapeHTML } from './sanitize.js';
 
-const rotarPromos = () => {
-  const contenedor = document.querySelector('#promo-rotativa');
-  if (!contenedor) return;
-
-  let indice = 0;
-
-  const mostrarPromo = () => {
-    const promo = PROMOS[indice];
-    contenedor.innerHTML = `
-      <a href="${promo.destino}" class="promo-link">
-        ${promo.texto}
-      </a>
-    `;
-    indice = (indice + 1) % PROMOS.length;
-  };
-
-  mostrarPromo();
-
-  const intervalo = setInterval(mostrarPromo, 4000);
-
-  // Pausar con hover/focus
-  contenedor.addEventListener('mouseenter', () => clearInterval(intervalo));
-  contenedor.addEventListener('mouseleave', () => {
-    clearInterval(intervalo);
-    rotarPromos();
-  });
-
-  // Respetar prefers-reduced-motion
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    clearInterval(intervalo);
-  }
+const calcularDescuento = (precio, precioAnterior) => {
+  if (!precioAnterior || precioAnterior <= precio) return 0;
+  return Math.round(((precioAnterior - precio) / precioAnterior) * 100);
 };
 
-export { rotarPromos };
+/** Construye los mensajes de la cinta a partir de productos reales. */
+const construirPromos = (productos) => {
+  const promos = [];
+
+  const conPrecio = productos.find((p) => calcularDescuento(p.precio, p.precioAnterior) > 0);
+  const descuentoMaximo = productos.reduce(
+    (max, p) => Math.max(max, calcularDescuento(p.precio, p.precioAnterior)),
+    0
+  );
+
+  if (conPrecio && descuentoMaximo > 0) {
+    promos.push({ texto: `Hasta ${descuentoMaximo}% OFF en productos seleccionados`, destino: '#promoGrid' });
+  }
+
+  for (const producto of productos) {
+    const descuento = calcularDescuento(producto.precio, producto.precioAnterior);
+    if (descuento <= 0) continue;
+
+    promos.push({
+      texto: `${producto.nombre} ${descuento}% OFF — ${formatearPrecio(producto.precio)}`,
+      destino: `producto.html?slug=${encodeURIComponent(producto.slug)}`,
+    });
+  }
+
+  if (productos.length > 0) {
+    promos.push({ texto: `${productos.length} productos en descuento ahora`, destino: '#promoGrid' });
+  }
+
+  return promos;
+};
+
+export const rotarPromos = async () => {
+  const contenedor = document.querySelector('#promo-carrusel');
+  const cinta = document.querySelector('.promo-carrusel-wrapper');
+  if (!contenedor || !cinta) return;
+
+  try {
+    const respuesta = await getPromoProducts();
+    const productos = respuesta?.data?.products ?? respuesta?.products ?? [];
+    const promos = construirPromos(productos);
+
+    if (promos.length === 0) {
+      cinta.hidden = true;
+      return;
+    }
+
+    // Se duplica la lista para que el bucle de la animación sea continuo.
+    const items = [...promos, ...promos].map((p) => `
+      <a href="${escapeHTML(p.destino)}" class="promo-carrusel-item">${escapeHTML(p.texto)}</a>
+    `).join('');
+
+    contenedor.innerHTML = items;
+    cinta.hidden = false;
+  } catch (error) {
+    handleApiError(error, 'carrusel de promociones');
+    cinta.hidden = true;
+  }
+};
