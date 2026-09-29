@@ -57,12 +57,145 @@
 html {
     scroll-behavior: smooth;
 
+    /* Color base de la pagina. El body es transparente para que se vea la
+       capa de video de fondo, pero el html mantiene el tono si el navegador
+       dibuja el area del "overscroll" (al arrastrar mas alla del contenido). */
+    background: var(--color-fondo);
+
     /* Impide el scroll horizontal que generan las cintas animadas y los
-       carruseles, cuyo contenido se extiende a propósito fuera del viewport. */
+       carruseles, cuyo contenido se extiende a proposito fuera del viewport. */
     overflow-x: hidden;
 
     /* Compensa el encabezado fijo para que los enlaces con ancla no queden debajo. */
     scroll-padding-top: 90px;
+}
+
+/* ==========================================================================
+   Fondo de la pagina: video fijo + velo crema
+   Inyectado por js/fondo-textura.js. Va detras de todo el contenido, asi que
+   acompaña el scroll en todas las secciones sin repetirse en cada bloque.
+   ========================================================================== */
+.fondo-textura {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(160deg, #fdf8f6 0%, #f6e4e2 45%, #eededb 100%);
+}
+
+.fondo-textura-poster,
+.fondo-textura-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.fondo-textura-poster {
+  opacity: 1;
+  transition: opacity .6s ease;
+  transform: scale(1.03);
+}
+
+.fondo-textura-video {
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.fondo-textura-video--visible {
+  opacity: 1;
+}
+
+.fondo-textura--vivo .fondo-textura-poster {
+  opacity: 0;
+}
+
+/* Deriva muy lenta, para que el fondo nunca se sienta congelado. */
+.fondo-textura--vivo .fondo-textura-video {
+  animation: fondo-deriva 34s ease-in-out infinite alternate;
+}
+
+@keyframes fondo-deriva {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to   { transform: scale(1.14) translate3d(0, -2%, 0); }
+}
+
+/* Velo crema: mantiene el contraste de los textos sobre el video. */
+.fondo-textura-velo {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(251 243 238 / 82%) 0%, rgb(251 243 238 / 74%) 40%, rgb(251 243 238 / 80%) 100%),
+    radial-gradient(90% 60% at 50% 0%, rgb(255 255 255 / 45%) 0%, transparent 70%);
+}
+
+/* ==========================================================================
+   Emojis de maquillaje cayendo del hero hacia abajo
+   Decorativos: aria-hidden y sin capturar clics, para no estorbar al usuario.
+   ========================================================================== */
+.fondo-emoji {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fondo-emoji-item {
+  position: absolute;
+  top: -8vh;
+  left: var(--x, 50%);
+  font-size: calc(1.15rem * var(--tam, 1));
+  line-height: 1;
+  opacity: var(--op, .4);
+  filter: saturate(.85);
+  animation: emoji-caer var(--dur, 14s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+
+@keyframes emoji-caer {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25%  { transform: translate3d(14px, 26vh, 0) rotate(calc(var(--giro, 20deg) * .5)); }
+  50%  { transform: translate3d(-12px, 52vh, 0) rotate(var(--giro, 20deg)); }
+  75%  { transform: translate3d(10px, 78vh, 0) rotate(calc(var(--giro, 20deg) * .3)); }
+  100% { transform: translate3d(0, 108vh, 0) rotate(0deg); }
+}
+
+/* En pantallas grandes se sube la densidad con el atributo que escribe
+   fondo-textura.js, sin llegar a tapar el contenido. */
+.fondo-emoji[data-denso='alto'] .fondo-emoji-item {
+  opacity: calc(var(--op, .4) * .8);
+}
+
+/* En movil hay menos espacio y el texto manda: los emojis se vuelven pequenos
+   y mas tenues, para que se lean como detalle y no compitan con la letra. */
+@media (max-width: 900px) {
+  .fondo-emoji-item {
+    font-size: calc(.85rem * var(--tam, 1));
+    opacity: calc(var(--op, .4) * .5);
+  }
+}
+
+@media (max-width: 480px) {
+  .fondo-emoji-item {
+    font-size: calc(.7rem * var(--tam, 1));
+    opacity: calc(var(--op, .4) * .38);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fondo-textura--vivo .fondo-textura-video,
+  .fondo-emoji-item {
+    animation: none;
+  }
+
+  .fondo-emoji-item {
+    opacity: 0;
+  }
 }
 
 /* ==========================================================================
@@ -177,7 +310,9 @@ html {
 }
 
 body {
-    background: var(--color-fondo);
+    /* El fondo de la página es la capa .fondo-textura (video + velo crema).
+       El body queda transparente para que esa capa se vea detras. */
+    background: transparent;
     color: var(--color-texto);
     font-family: var(--fuente-texto);
     line-height: 1.6;
@@ -192,6 +327,13 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
+}
+
+/* El contenido va por encima de la textura de fondo (z-index 0) y de los
+   emojis (z-index 1), que son fijos y decorativos. */
+body > :not(.fondo-textura):not(.fondo-emoji):not(.page-loader) {
+    position: relative;
+    z-index: 2;
 }
 
 main {
@@ -226,7 +368,8 @@ h3 {
 
 /* Menú principal compartido. */
 .header {
-    background: var(--color-blanco);
+    background: rgb(255 255 255 / 72%);
+    backdrop-filter: blur(14px);
     box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
     position: sticky;
     top: 0;

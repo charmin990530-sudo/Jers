@@ -26,7 +26,7 @@ const PAGINAS = [
 ];
 
 // Carpetas que se copian completas.
-const CARPETAS = ['css', 'js', 'img', 'data', 'admin'];
+const CARPETAS = ['css', 'js', 'img', 'data', 'admin', 'video'];
 
 const copiar = (desde, hasta) => {
   const stat = fs.statSync(desde);

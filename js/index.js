@@ -24,7 +24,6 @@ import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { formatearPrecio } from './config.js';
 import { renderCargando, resolverCatalogo, demoActivado } from './estados.js';
 import { rotarPromos } from './promos-rotativas.js';
-import { inicializarMedios } from './media.js';
 
 let productosMostrados = new Set();
 
@@ -47,14 +46,9 @@ function deduplicarProductos(productos) {
 document.addEventListener('DOMContentLoaded', async () => {
   iniciarAplicacion();
   rotarPromos();
-  inicializarMedios();
 
   // Se lanzan en paralelo: cada sección resuelve su propio estado.
   await Promise.all([cargarDestacados(), cargarPromociones(), cargarEstadisticas(), cargarBannerPromo()]);
-
-  document.querySelector('.herobtn')?.addEventListener('click', () => {
-    document.getElementById('categorias')?.scrollIntoView({ behavior: 'smooth' });
-  });
 });
 
 /** Carga cifras reales del hero: total de productos y marcas. */
