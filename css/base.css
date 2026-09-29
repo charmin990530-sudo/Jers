@@ -328,9 +328,23 @@ h3 {
     transform: translateY(-6px);
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .card:hover {
+        transform: none;
+    }
+    
+    .whatsapp-burbuja {
+        transition: none;
+    }
+    
+    .pulso {
+        animation: none;
+    }
+}
+
 .cardimage {
     background: var(--color-rosa);
-    height: 220px;
+    aspect-ratio: 1 / 1;
     margin-bottom: 15px;
     object-fit: cover;
     width: 100%;
