@@ -309,16 +309,16 @@ h3 {
 /* Tarjetas reutilizadas por ofertas y catálogos. */
 .tarjetas {
     display: grid;
-    gap: 30px;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .card {
     background: var(--color-blanco);
-    border-radius: 20px;
+    border-radius: 14px;
     box-shadow: 0 4px 15px rgb(0 0 0 / 6%);
     overflow: hidden;
-    padding-bottom: 25px;
+    padding-bottom: 14px;
     position: relative;
     text-align: center;
     transition: transform .3s ease, box-shadow .3s ease;
@@ -326,7 +326,7 @@ h3 {
 
 .card:hover {
     box-shadow: 0 10px 25px rgb(0 0 0 / 10%);
-    transform: translateY(-6px);
+    transform: translateY(-4px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -346,9 +346,23 @@ h3 {
 .cardimage {
     background: var(--color-rosa);
     aspect-ratio: 1 / 1;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     object-fit: cover;
     width: 100%;
+}
+
+/* Segunda imagen para hover/focus */
+.cardimage-segunda {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity .3s ease;
+}
+
+.card:hover .cardimage-segunda,
+.card:focus-within .cardimage-segunda {
+    opacity: 1;
 }
 
 .producto-placeholder {

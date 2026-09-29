@@ -6,6 +6,44 @@
   position: relative;
 }
 
+/* Carrusel de promociones rotativas */
+.promo-rotativa {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgb(255 255 255 / 95%);
+  border-radius: 30px;
+  padding: 10px 24px;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 10%);
+  backdrop-filter: blur(10px);
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+}
+
+.promo-link {
+  color: var(--color-mauve);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.promo-link:hover {
+  color: var(--color-rosa);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-link {
+    transition: none;
+  }
+}
+
 .hero::before {
   content: '';
   position: absolute;
