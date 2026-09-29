@@ -1,9 +1,7 @@
 /* index.css: estilos exclusivos de la portada. */
 
 .hero {
-  background: radial-gradient(circle at top right, rgb(214 150 167 / 18%), transparent 30%), linear-gradient(180deg, #fdf8f6, var(--color-fondo));
   overflow: hidden;
-  padding: 100px 20px;
   position: relative;
 }
 
@@ -68,40 +66,71 @@
   }
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgb(251 243 238 / 92%) 0%, rgb(251 243 238 / 75%) 50%, rgb(251 243 238 / 55%) 100%);
-  pointer-events: none;
-  z-index: 1;
+/* --------------------------------------------------------------------------
+   Hero. No lleva fondo propio: el video global (js/fondo-textura.js) se ve
+   a traves de el, y .hero-overlay solo refuerza el contraste del texto.
+   -------------------------------------------------------------------------- */
+.hero {
+  min-height: min(88vh, 720px);
+  display: flex;
+  align-items: center;
+  padding-block: clamp(56px, 9vw, 104px);
 }
 
 .hero-contenido {
   position: relative;
   z-index: 2;
-}
-
-/* Video de fondo del hero */
-.hero-video-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.hero-video-bg video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.4;
+  max-width: 1250px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5vw, 40px);
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: clamp(32px, 6vw, 72px);
+  align-items: center;
 }
 
-.hero-video-bg::after {
+/* --------------------------------------------------------------------------
+   Imagen principal del hero
+   -------------------------------------------------------------------------- */
+.hero-imagen {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: 460px;
+  animation: aparecer 1.2s ease;
+}
+
+.hero-imagen-marco {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  box-shadow: 0 30px 70px rgb(74 53 53 / 18%);
+  /* Empuja la foto un poco hacia la derecha: el video se asoma por detrás. */
+  transform: translateX(6%);
+}
+
+.hero-imagen-marco::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgb(251 243 238 / 92%) 0%, rgb(251 243 238 / 75%) 50%, rgb(251 243 238 / 55%) 100%);
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.hero-imagen-marco img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.hero-texto {
+  animation: aparecer .8s ease;
+  max-width: 640px;
 }
 
 /* Barra de progreso de carga */
@@ -135,19 +164,6 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-.hero-contenido {
-  align-items: center;
-  display: grid;
-  gap: 80px;
-  grid-template-columns: 1.05fr .95fr;
-  margin: auto;
-  max-width: 1250px;
-}
-
-.hero-texto {
-  animation: aparecer .8s ease;
 }
 
 .hero-etiqueta {
@@ -224,37 +240,22 @@
   font-size: .85rem;
 }
 
-.hero-imagen {
-  animation: aparecer 1.2s ease;
-  position: relative;
-}
-
-.hero-imagen img {
-  aspect-ratio: 3 / 2;
-  border-radius: 35px;
-  box-shadow: 0 30px 70px rgb(0 0 0 / 12%);
-  height: auto;
-  max-width: 520px;
-  transition: .45s ease;
-  width: 100%;
-}
-
-.hero-imagen img:hover {
-  transform: translateY(-8px) scale(1.02);
-}
-
+/* Ancla de confianza: flota en la esquina inferior de la foto del hero. */
 .hero-card {
   align-items: center;
   animation: flotar 4s ease-in-out infinite;
-  background: white;
+  backdrop-filter: blur(10px);
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid rgb(255 255 255 / 70%);
   border-radius: 20px;
-  bottom: -55px;
   box-shadow: 0 15px 40px rgb(0 0 0 / 12%);
   display: flex;
   gap: 15px;
-  left: 50px;
-  padding: 18px 22px;
+  padding: 16px 22px;
   position: absolute;
+  left: 0;
+  bottom: -34px;
+  z-index: 2;
 }
 
 .hero-card-icono {
@@ -541,6 +542,15 @@
   }
 }
 
+/* Igual que `flotar`, pero conservando el centrado horizontal que necesita la
+   tarjeta en movil. Si se reutilizara `flotar`, el transform sobrescribiria el
+   translateX(-50%) y la tarjeta se saldria del borde. */
+@keyframes flotar-centrado {
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
 @media (max-width: 900px) {
   .hero {
     padding: 70px 20px;
@@ -624,12 +634,6 @@
     border-radius: 22px;
   }
 
-  /* La tarjeta flotante se apila bajo la imagen en vez de desaparecer: antes,
-     en el teléfono el banner de promoción se quedaba sin texto ni botón. */
-  .hero-card {
-    display: none;
-  }
-
   .promo-banner {
     border-radius: 16px;
     height: 230px;
@@ -667,5 +671,119 @@
 
   .categorias-grid {
     grid-template-columns: 1fr;
+  }
+}
+/* ==========================================================================
+   Movil: el hero se compacta para que la foto y el boton de compra queden
+   dentro de la primera pantalla, sin obligar a tanto scroll.
+   ========================================================================== */
+@media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+    padding-block: 28px 44px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.85rem, 8.4vw, 2.6rem);
+    line-height: 1.12;
+  }
+
+  .hero-descripcion {
+    font-size: .95rem;
+    line-height: 1.55;
+  }
+
+  .hero-botones {
+    gap: 12px;
+  }
+
+  .herobtn,
+  .hero-secundario {
+    /* 44px reales de area tactil, sin escalonar el tamano de la fuente. */
+    min-height: 44px;
+    padding: 12px 22px;
+  }
+
+  .hero-estadisticas {
+    gap: 18px;
+    justify-content: center;
+  }
+
+  .hero-estadisticas h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Foto apaisada: ocupa menos alto y deja ver el ancla flotante. */
+  .hero-imagen {
+    max-width: 100%;
+    width: min(100%, 420px);
+  }
+
+  .hero-imagen-marco {
+    aspect-ratio: 4 / 4.4;
+    border-radius: 24px;
+    transform: none;
+  }
+
+  .hero-card {
+    animation: flotar-centrado 4s ease-in-out infinite;
+    left: 50%;
+    bottom: -26px;
+    transform: translateX(-50%);
+    width: min(100% - 32px, 360px);
+    padding: 13px 16px;
+    gap: 12px;
+  }
+
+  .hero-card-icono {
+    height: 44px;
+    width: 44px;
+    font-size: 1.1rem;
+    flex: 0 0 44px;
+  }
+
+  .hero-card h4 {
+    font-size: .95rem;
+  }
+
+  .hero-card p {
+    font-size: .82rem;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding-block: 22px 40px;
+  }
+
+  .hero-etiqueta {
+    font-size: .72rem;
+    padding: 6px 13px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.6rem, 8vw, 2rem);
+  }
+
+  .hero-descripcion {
+    font-size: .88rem;
+  }
+
+  .herobtn,
+  .hero-secundario {
+    width: 100%;
+  }
+
+  .hero-estadisticas {
+    gap: 14px;
+  }
+
+  .hero-estadisticas h3 {
+    font-size: 1.1rem;
+  }
+
+  .hero-estadisticas span {
+    font-size: .7rem;
   }
 }

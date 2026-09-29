@@ -5,6 +5,13 @@
     overflow-x: hidden;
 }
 
+/* Esta pantalla es oscura a propósito y ya tiene su propia animacion de
+   entrada, asi que no hereda el fondo de video ni los emojis decorativos. */
+.bienvenida-page .fondo-textura,
+.bienvenida-page .fondo-emoji {
+    display: none;
+}
+
 .bienvenida {
     min-height: 100vh;
     min-height: 100dvh;

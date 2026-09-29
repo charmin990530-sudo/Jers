@@ -45,6 +45,7 @@
     }
     </script>
     <script src="js/loader-boot.js"></script>
+    <script src="js/fondo-textura.js"></script>
 </head>
 
 <body class="index-page">
@@ -96,13 +97,13 @@
      Hero principal de la tienda
 ========================================== -->
 
-        <section id="inicio" class="hero">
+        <section id="inicio" class="hero" data-medio="hero">
 
+            <!-- Velo extra del hero: el fondo de video global (js/fondo-textura.js)
+                 acompaña toda la pagina y aqui solo se refuerza el texto. -->
             <div class="hero-overlay"></div>
 
             <div class="hero-contenido">
-
-                <!-- Información -->
 
                 <div class="hero-texto">
 
@@ -116,74 +117,47 @@
                     </h1>
 
                     <p class="hero-descripcion">
-
                         Encuentra maquillaje y productos capilares originales
                         con asesoría personalizada para cada tipo de piel,
                         estilo y ocasión.
-
                     </p>
 
                     <div class="hero-botones">
-
-                        <button class="herobtn">
-                            Comprar ahora
-                        </button>
-
-                        <a href="#categorias" class="hero-secundario">
-                            Explorar categorías
-                        </a>
-
+                        <a href="#categorias" class="herobtn">Comprar ahora</a>
+                        <a href="#categorias" class="hero-secundario">Explorar categorias</a>
                     </div>
 
                     <div class="hero-estadisticas">
-
                         <div>
                             <h3>+300</h3>
                             <span>Productos</span>
                         </div>
-
                         <div>
                             <h3>+20</h3>
                             <span>Marcas</span>
                         </div>
-
                         <div>
                             <h3>100%</h3>
                             <span>Originales</span>
                         </div>
-
                     </div>
 
                 </div>
 
-                <!-- Imagen -->
-
-                <!-- ===============================
-     Imagen principal
-================================ -->
-
+                <!-- Imagen principal del hero, con el ancla de confianza flotando. -->
                 <div class="hero-imagen">
-
-                    <img src="img/hero/soficora.webp" alt="Modelo By Jers" width="1200" height="800" fetchpriority="high">
-
-                    <!-- Tarjeta flotante -->
-
-                    <div class="hero-card">
-
-                        <span class="hero-card-icono">
-                            ⭐
-                        </span>
-
-                        <div>
-
-                            <h4>Productos originales</h4>
-
-                            <p>Más de 20 marcas disponibles.</p>
-
-                        </div>
-
+                    <div class="hero-imagen-marco">
+                        <img src="img/hero/soficora.webp" alt="Modelo usando productos de maquillaje By Jers" width="1200" height="800" fetchpriority="high" decoding="async">
                     </div>
 
+                    <!-- Ancla de confianza, flotando sobre la imagen. -->
+                    <div class="hero-card">
+                        <span class="hero-card-icono">⭐</span>
+                        <div>
+                            <h4>Productos originales</h4>
+                            <p>Más de 20 marcas disponibles.</p>
+                        </div>
+                    </div>
                 </div>
 
             </div>
