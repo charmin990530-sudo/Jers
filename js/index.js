@@ -18,7 +18,7 @@
  * mano, y sus tarjetas llevan una insignia "Demo".
  */
 
-import { getFeaturedProducts, getPromoProducts, handleApiError } from './apiClient.js';
+import { getFeaturedProducts, getPromoProducts, getProducts, getBrands, handleApiError } from './apiClient.js';
 import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { formatearPrecio } from './config.js';
@@ -46,12 +46,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   iniciarAplicacion();
 
   // Se lanzan en paralelo: cada sección resuelve su propio estado.
-  await Promise.all([cargarDestacados(), cargarPromociones()]);
+  await Promise.all([cargarDestacados(), cargarPromociones(), cargarEstadisticas()]);
 
   document.querySelector('.herobtn')?.addEventListener('click', () => {
     document.getElementById('categorias')?.scrollIntoView({ behavior: 'smooth' });
   });
 });
+
+/** Carga cifras reales del hero: total de productos y marcas. */
+async function cargarEstadisticas() {
+  const contadorProductos = document.querySelector('.hero-estadisticas h3');
+  const contadorMarcas = document.querySelectorAll('.hero-estadisticas h3')[1];
+
+  try {
+    const [productosRes, marcasRes] = await Promise.all([
+      getProducts({ limit: 1 }),
+      getBrands(),
+    ]);
+
+    if (productosRes.ok && productosRes.data?.total) {
+      contadorProductos.textContent = `+${productosRes.data.total}`;
+    }
+    if (marcasRes.ok && Array.isArray(marcasRes.data)) {
+      contadorMarcas.textContent = `+${marcasRes.data.length}`;
+    }
+  } catch {
+    // Si falla, se mantienen los valores por defecto
+  }
+}
 
 /** Carga y renderiza productos destacados. */
 async function cargarDestacados() {
