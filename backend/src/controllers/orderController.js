@@ -35,6 +35,10 @@ import { ErrorCodes } from '../middleware/apiError.js';
 import { WHATSAPP_NUMBER } from '../config/env.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
 import {
+  sendOrderConfirmationEmail,
+  sendNewOrderNotificationEmail,
+} from '../services/emailService.js';
+import {
   multiplyMinorAmount,
   sumMinorAmounts,
   computeOrderTotal,
@@ -256,6 +260,47 @@ Orden: ${order.numeroOrden}
   // URL WhatsApp con mensaje pre-llenado
   // Usa variable de entorno WHATSAPP_NUMBER
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+
+  // ==============================================================
+  // AVISOS POR CORREO
+  // ==============================================================
+  // El cobro se cierra por WhatsApp, asi que este es el UNICO canal automatico
+  // que confirma la compra. Sin el, un cliente que cierra la pestaña del chat
+  // deja el pedido en `pendiente` con el stock ya descontado y sin que nadie lo
+  // sepa. Se avisa a las dos partes: al cliente (confirmacion) y al negocio
+  // (pedido nuevo), que es quien debe perseguir el pago.
+  //
+  // Va DESPUES de la transaccion y sin `await`: el pedido ya esta confirmado y
+  // en la base de datos, y un SMTP caido no debe tumbar el checkout ni dejar al
+  // cliente sin ver el numero de pedido. `sendEmail` es ademas un no-op cuando
+  // no hay SMTP_HOST configurado, de modo que en desarrollo y en tests no hace
+  // nada. Los importes son los mismos que se guardaron, no se recalcula nada.
+  const cliente = req.user;
+  const datosCorreo = {
+    numeroOrden: order.numeroOrden,
+    nombre: [cliente?.nombre, cliente?.apellido].filter(Boolean).join(' '),
+    email: cliente?.email,
+    telefono: cliente?.telefono,
+    items: validItems,
+    subtotal,
+    costoEnvio,
+    total,
+    direccionEnvio,
+    notas,
+  };
+
+  Promise.allSettled([
+    cliente?.email
+      ? sendOrderConfirmationEmail({ ...datosCorreo, to: cliente.email })
+      : Promise.resolve({ sent: false }),
+    sendNewOrderNotificationEmail(datosCorreo),
+  ]).then(results => {
+    results.forEach((resultado, indice) => {
+      if (resultado.status === 'rejected') {
+        console.error(`No se pudo enviar el correo de pedido ${order.numeroOrden} (aviso ${indice + 1}):`, resultado.reason?.message || resultado.reason);
+      }
+    });
+  });
 
   res.status(201).json({
     success: true,
