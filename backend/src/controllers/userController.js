@@ -6,7 +6,7 @@
  * GET    /api/users/:id          -> getUser (detalle)
  * PATCH  /api/users/:id/role     -> updateUserRole (cambiar user/admin)
  * PATCH  /api/users/:id/toggle-active -> toggleUserActive (activar/desactivar)
- * DELETE /api/users/:id          -> deleteUser (hard delete)
+ * DELETE /api/users/:id          -> deleteUser (soft delete: activa = false)
  * 
  * NOTA: Estos endpoints son SOLO para admins.
  * Usuarios normales gestionan su perfil en /api/auth/profile
@@ -172,8 +172,23 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
 
 /**
  * DELETE /api/users/:id
- * Elimina usuario (hard delete)
- * Protección: admin no puede eliminarse a sí mismo
+ * Desactiva la cuenta (soft delete: `activo = false`), NO borra el documento.
+ *
+ * El comentario de aquí decía "hard delete", igual que la cabecera del archivo,
+ * y el código lleva tiempo haciendo soft delete. La contradicción era peligrosa:
+ * un pedido de cambio leido al pie de un "DELETE /hard delete" puede llevar a
+ * borrar de verdad el documento de un usuario, y con el sus pedidos, su carrito
+ * y sus datos personales, sin reversa posible. La respuesta ya decia
+ * "Usuario desactivado", que es lo que de verdad ocurre.
+ *
+ * ¿Por qué soft delete y no borrado real? Los pedidos guardan `direccionEnvio`
+ * como copia y `usuario` como referencia: borrar el usuario deja pedidos
+ * huérfanos y rompe la trazabilidad de una venta. Si alguna vez hace falta un
+ * borrado real, con derecho de supresion del titular (Ley 1581/2012), tiene que
+ * ser un endpoint aparte, con su propia confirmacion y sin colarse por aqui.
+ *
+ * Protección: el admin no puede desactivarse a sí mismo ni dejar la tienda sin
+ * ningún administrador activo.
  */
 export const deleteUser = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
   const user = await User.findById(req.params.id);
