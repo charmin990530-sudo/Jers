@@ -15,11 +15,13 @@
  */
 
 import request from 'supertest';
+import mongoose from 'mongoose';
 import { app } from '../src/app.js';
 import { Product, Category, Brand, Order, Cart } from '../src/models/index.js';
 import { detectTransactionSupport } from '../src/services/transaction.js';
 import { generarNumeroOrden } from '../src/models/Order.js';
 import { SHIPPING_RULES } from '../src/controllers/orderController.js';
+import { inicioDiaNegocio, rangoDiaNegocio } from '../src/controllers/adminController.js';
 
 const DIR = {
   alias: 'Casa', nombreCompleto: 'Cliente Prueba', telefono: '3001234567',
@@ -459,6 +461,84 @@ describe('numeracion y fechas de fin de mes', () => {
     // sume los dos pedidos.
     expect(res.body.stats.revenueToday).toBe(0);
     expect(res.body.stats.totalRevenue).toBe(20000);
+  });
+});
+
+describe('dia de negocio: America/Bogota, no la zona del servidor', () => {
+  // El bug era `new Date().setHours(0,0,0,0)`, que usa la zona del PROCESO. En
+  // Vercel el proceso corre en UTC, asi que el dia del negocio empezaba a las
+  // 19:00 hora Colombia. Estos tests son deterministas: no dependen de la zona
+  // en la que se ejecute el runner.
+
+  const basePedidoPagado = (importe = 10000) => ({
+    usuario: cliente.id,
+    items: [{ producto: new mongoose.Types.ObjectId(), nombre: 'Producto', precioUnitario: importe, cantidad: 1, subtotal: importe }],
+    subtotal: importe,
+    costoEnvio: 0,
+    total: importe,
+    direccionEnvio: { alias: 'Casa', nombreCompleto: 'Ana', telefono: '3001234567', direccion: 'Calle 1', ciudad: 'Medellín', departamento: 'Antioquia' },
+    estadoPago: 'pagado',
+  });
+
+  it('la medianoche de Bogota cae a las 05:00 UTC', () => {
+    // 2026-09-30 00:00 en Bogota (UTC-5) = 2026-09-30 05:00 UTC.
+    const inicio = inicioDiaNegocio(new Date('2026-09-30T12:00:00.000Z'));
+    expect(inicio.toISOString()).toBe('2026-09-30T05:00:00.000Z');
+  });
+
+  it('a las 02:00 UTC ya es el dia siguiente en Bogota', () => {
+    // 2026-10-01 02:00 UTC = 2026-10-01 21:00 en Bogota: sigue siendo 30.
+    // Con setHours en UTC, este instante habria iniciado el dia 01 a las 00:00
+    // UTC, cinco horas antes de que el negocio considerara que habia cambiado.
+    const instante = new Date('2026-10-01T02:00:00.000Z');
+    expect(inicioDiaNegocio(instante).toISOString()).toBe('2026-09-30T05:00:00.000Z');
+  });
+
+  it('a las 05:00 UTC ya es el dia siguiente en Bogota', () => {
+    // 2026-10-01 05:00 UTC = 2026-10-01 00:00 en Bogota: aqui si cambia el dia.
+    const instante = new Date('2026-10-01T05:00:00.000Z');
+    expect(inicioDiaNegocio(instante).toISOString()).toBe('2026-10-01T05:00:00.000Z');
+  });
+
+  it('el rango del dia dura exactamente 24 horas', () => {
+    const { $gte, $lt } = rangoDiaNegocio(new Date('2026-09-30T12:00:00.000Z'));
+    expect($lt.getTime() - $gte.getTime()).toBe(24 * 60 * 60 * 1000);
+  });
+
+  it('un pedido un minuto antes de la medianoche de Bogota NO cuenta como ingreso del dia', async () => {
+    // Se inserta con `create` y `createdAt` explicito en lugar de hacer
+    // `updateOne`: los `timestamps: true` de Mongoose pisan `createdAt` a la
+    // hora actual en cualquier update, y el test mediria "ahora" en los dos
+    // casos. `create` si respeta el valor enviado.
+    const casiAntes = new Date(rangoDiaNegocio().$gte.getTime() - 60 * 1000);
+    await Order.create({ ...basePedidoPagado(10000), createdAt: casiAntes });
+
+    const res = await admin.get('/api/admin/dashboard');
+    expect(res.status).toBe(200);
+    // Entra en el acumulado historico...
+    expect(res.body.stats.totalRevenue).toBe(10000);
+    // ...pero no en el ingreso del dia.
+    expect(res.body.stats.revenueToday).toBe(0);
+  });
+
+  it('un pedido un minuto despues de la medianoche de Bogota SI cuenta como ingreso del dia', async () => {
+    const casiDespues = new Date(rangoDiaNegocio().$gte.getTime() + 60 * 1000);
+    await Order.create({ ...basePedidoPagado(10000), createdAt: casiDespues });
+
+    const res = await admin.get('/api/admin/dashboard');
+    expect(res.status).toBe(200);
+    expect(res.body.stats.revenueToday).toBe(10000);
+  });
+
+  it('un pedido de hace 40 horas NO cuenta como ingreso del dia', async () => {
+    await Order.create({
+      ...basePedidoPagado(10000),
+      createdAt: new Date(Date.now() - 40 * 60 * 60 * 1000),
+    });
+
+    const res = await admin.get('/api/admin/dashboard');
+    expect(res.body.stats.totalRevenue).toBe(10000);
+    expect(res.body.stats.revenueToday).toBe(0);
   });
 });
 
