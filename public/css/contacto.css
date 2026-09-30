@@ -34,7 +34,7 @@
 .campo input,
 .campo textarea,
 .campo select {
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 10px;
     font: 1rem var(--fuente-texto);
     padding: 11px;
@@ -50,7 +50,10 @@
 .campo textarea:focus,
 .campo select:focus {
     border-color: var(--color-mauve);
-    outline: none;
+    /* Aqui no habia ni box-shadow: el outline nativo se eliminaba sin poner nada
+       en su lugar, asi que no habia indicador de foco alguno. */
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
 }
 
 .formulario-mensaje {

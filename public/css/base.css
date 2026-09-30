@@ -20,6 +20,17 @@
     --color-graphite: #3d3333;
     --color-gray-light: #e6ded8;
     --color-gray-medium: #8a7a78;
+    /*
+      Borde de los controles de formulario. Antes cada hoja usaba un color
+      distinto, todos por debajo de 3:1: `--color-cream` daba 1.12:1 sobre blanco
+      y, en `admin/productos.css` los campos de ingredientes, 1.00:1 (borde crema
+      sobre fondo crema: literalmente invisible). `#ead6d3` daba 1.39:1. Con
+      baja vision el formulario no se podia usar (WCAG 1.4.11).
+
+      Este valor da 3.57:1 sobre blanco y 3.19:1 sobre el crema del sitio y sobre
+      los fondos de panel, o sea que cumple 3:1 en cualquiera de los fondos donde
+      se usa. */
+    --color-borde: #948481;
     --color-rose-gold: #d4af87;
 
     /* Escala de espaciado */
@@ -529,7 +540,7 @@ h3 {
 
 .tab-btn {
     background: var(--color-blanco);
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 30px;
     color: var(--color-texto);
     cursor: pointer;
@@ -1153,7 +1164,7 @@ body.modal-abierto {
 
 .chatbot-chip {
     background: #fff;
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 15px;
     color: var(--color-texto);
     cursor: pointer;
@@ -1169,7 +1180,7 @@ body.modal-abierto {
 }
 
 .chatbot-input {
-    border: 2px solid #eee;
+    border: 2px solid var(--color-borde);
     border-radius: 20px;
     flex: 1;
     font: .85rem var(--fuente-texto);
@@ -1178,7 +1189,8 @@ body.modal-abierto {
 
 .chatbot-input:focus {
     border-color: var(--color-rosa);
-    outline: none;
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
 }
 
 .chatbot-enviar {
@@ -1223,6 +1235,41 @@ body.modal-abierto {
 .footer-enlaces a:focus-visible {
     color: #fff;
     text-decoration: underline;
+}
+
+/* ==========================================
+   FOCO VISIBLE (WCAG 2.4.7 / 1.4.11)
+   ==========================================
+   Red de seguridad global. Varias hojas de componentes eliminaban el `outline`
+   nativo y lo sustituian por un `box-shadow` con 15% de alfa, que sobre blanco
+   queda en 1.16:1: muy por debajo del 3:1 que exigen 1.4.11 y 2.4.11. Con esto,
+   ningun control de ninguna pagina puede quedarse sin indicador de foco aunque
+   su hoja lo quite.
+
+   Se usa `:focus-visible` y no `:focus` para no dibujar el anillo al pulsar con
+   el raton, manteniendo el indicador donde hace falta: navegacion por teclado.
+
+   `--color-graphite` (#3d3333) da 13.26:1 sobre blanco y 12.10:1 sobre el crema
+   del fondo del sitio, muy por encima del minimo. */
+:focus-visible {
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
+}
+
+/* Excepcion para los controles que ya declaran su propio anillo, en las hojas de
+   auth/perfil/direcciones/admin: se respeta el que puesto para no duplicar. */
+.campo input:focus-visible,
+.campo select:focus-visible,
+.campo textarea:focus-visible,
+.form-grupo input:focus-visible,
+.admin-form input:focus-visible,
+.admin-form select:focus-visible,
+.admin-form textarea:focus-visible,
+.filtro-grupo input:focus-visible,
+.filtro-grupo select:focus-visible,
+.chatbot-input:focus-visible {
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
 }
 
 /* Area tactil minima de 44px en pantallas tactiles, sin engordar el texto. */
