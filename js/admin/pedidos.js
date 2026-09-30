@@ -1,6 +1,6 @@
 import { api, handleApiError } from '../../js/apiClient.js';
 import { protegerRuta } from '../rutas.js';
-import { formatearPrecio } from '../config.js';
+import { formatearPrecio, formatearFecha } from '../config.js';
 import { iniciarAplicacion, setBtnLoading } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
@@ -158,7 +158,7 @@ function renderPedidos(orders) {
             <tr>
                 <td><strong>${escapeHTML(order?.numeroOrden || 'N/A')}</strong></td>
                 <td>${escapeHTML(obtenerNombreCliente(order?.usuario))}</td>
-                <td>${escapeHTML(formatearFecha(order?.createdAt))}</td>
+                <td>${escapeHTML(formatearFecha(order?.createdAt, 'hora'))}</td>
                 <td><span class="estado-badge estado-${escapeHTML(estado)}">${escapeHTML(etiquetasEstado[order?.estado] || 'Desconocido')}</span></td>
                 <td><span class="estado-badge estado-${escapeHTML(pago)}">${escapeHTML(etiquetasPago[order?.estadoPago] || 'Desconocido')}</span></td>
                 <td>${escapeHTML(formatearMoneda(order?.total))}</td>
@@ -247,7 +247,7 @@ function renderDetallePedido(order) {
                 <p><strong>Teléfono:</strong> ${escapeHTML(order?.usuario?.telefono || 'N/A')}</p>
             </div>
             <div>
-                <p><strong>Fecha:</strong> ${escapeHTML(formatearFecha(order?.createdAt))}</p>
+                <p><strong>Fecha:</strong> ${escapeHTML(formatearFecha(order?.createdAt, 'hora'))}</p>
                 <p><strong>Método de pago:</strong> ${escapeHTML(metodoPago)}</p>
                 <p><strong>Estado:</strong> ${escapeHTML(estado)} / ${escapeHTML(pago)}</p>
             </div>
@@ -341,12 +341,14 @@ function formatearMoneda(valor) {
     return formatearPrecio(valor);
 }
 
-function formatearFecha(fechaStr) {
-    if (!fechaStr) return 'N/A';
-    const fecha = new Date(fechaStr);
-    if (Number.isNaN(fecha.getTime())) return 'N/A';
-    return formatearFecha(fecha, 'hora');
-}
+// `formatearFecha` viene de `js/config.js` (importada arriba). Antes había una
+// función local idéntica que se llamaba a SÍ MISMA en su última línea, de modo
+// que entraba en recursión infinita: como `fecha` ya era un `Date` (truthy) y
+// `new Date(fecha)` es válido, nunca se salía por la guarda. El `RangeError` lo
+// capturaba el `catch` de `cargarPedidos` y la tabla de pedidos se quedaba
+// siempre en "No se pudieron cargar los pedidos", aun con la API funcionando.
+// Los call sites pasan 'hora' explícito para conservar el formato que buscaba
+// la función original.
 
 function mostrarToast(mensaje) {
     const toast = document.createElement('div');
