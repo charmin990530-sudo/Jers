@@ -133,14 +133,34 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
     return next(new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND'));
   }
 
-  if (user._id.toString() === req.userId.toString() && user.activo) {
+  // Alternar es el comportamiento por defecto (cuerpo vacio), pero si el cliente
+  // envia `activo` se respeta su valor. El esquema Zod (validation.js, schema
+  // `toggleUserActive`) acepta el campo a proposito para eso; antes se validaba y
+  // luego se ignoraba, de modo que un cliente que mandara {activo: false} sobre
+  // un usuario ya inactivo lo ACTIVABA, al contrario de lo que habia pedido.
+  const activar = typeof req.body.activo === 'boolean' ? req.body.activo : !user.activo;
+
+  if (activar === user.activo) {
+    // Peticion idempotente: ya estaba en ese estado. No cuenta como cambio.
+    return res.status(200).json({
+      success: true,
+      message: `Usuario ya estaba ${activar ? 'activado' : 'desactivado'}`,
+      user: { id: user._id, email: user.email, activo: user.activo },
+    });
+  }
+
+  // Un usuario no puede desactivarse a si mismo, y no puede quedar el sistema
+  // sin ningun administrador activo. Se comprueba el valor de destino, no el
+  // estado actual, para que las dos guardas sirvan tambien cuando el cliente
+  // fija `activo` en vez de alternar.
+  if (!activar && user._id.toString() === req.userId.toString()) {
     return next(new AppError('No puedes desactivar tu propia cuenta de administrador', 400, 'SELF_DEACTIVATE'));
   }
-  if (user.role === 'admin' && user.activo && await activeAdminCount(user._id) === 0) {
+  if (!activar && user.role === 'admin' && user.activo && await activeAdminCount(user._id) === 0) {
     return next(new AppError('Debe existir al menos un administrador activo', 400, 'LAST_ADMIN'));
   }
 
-  user.activo = !user.activo;
+  user.activo = activar;
   await user.save();
 
   res.status(200).json({
