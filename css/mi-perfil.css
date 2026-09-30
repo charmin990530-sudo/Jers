@@ -13,7 +13,7 @@
 
 .perfil-tab {
     background: var(--color-blanco);
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 30px;
     color: var(--color-texto);
     cursor: pointer;
@@ -84,9 +84,11 @@
 }
 
 .form-grupo input:focus {
-    outline: none;
     border-color: var(--color-mauve);
-    box-shadow: 0 0 0 3px rgb(201 123 130 / 15%);
+    box-shadow: 0 0 0 3px var(--color-mauve);
+    /* 1.16:1 con el alfa del 15%: el campo enfocado no se distinguia. */
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
 }
 
 .form-grupo input[aria-invalid="true"] {
