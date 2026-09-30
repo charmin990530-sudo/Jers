@@ -166,6 +166,17 @@ function renderizarProducto(producto, contenedor) {
     const stock = stockConocido ? Number(producto.stock) || 0 : null;
     const enStock = stockConocido ? stock > 0 : true;
 
+    // Tope del selector de cantidad. Cuando el catálogo local no trae stock (el
+    // caso de la demo, js/fallbackCatalog.js) `stock` vale null, y
+    // Math.min(99, null) es 0 por coercion, luego Math.max(1, 0) daba 1: el
+    // cliente quedaba limitado a una unidad aunque hubiera existencias, y el
+    // texto de abajo imprimia literalmente "Máximo null unidades". Sin dato de
+    // stock no se puede acotar, asi que se usa el tope generico.
+    const maxCantidad = stockConocido ? Math.max(1, Math.min(99, stock)) : 99;
+    const textoMaximo = stockConocido
+        ? `Máximo ${stock} ${stock === 1 ? 'unidad disponible' : 'unidades disponibles'}`
+        : 'Máximo 99 unidades por pedido';
+
     // Genera thumbnails de galería
     const thumbnails = imagenes.length > 1 
         ? imagenes.map((img, idx) => `
@@ -231,13 +242,13 @@ function renderizarProducto(producto, contenedor) {
                     <div class="producto-cantidad__control">
                         <button type="button" id="productoCantidadMenos" aria-label="Quitar una unidad">&minus;</button>
                         <input type="number" id="productoCantidad" name="cantidad"
-                               value="1" min="1" max="${Math.max(1, Math.min(99, stock))}"
+                               value="1" min="1" max="${maxCantidad}"
                                step="1" inputmode="numeric"
                                aria-describedby="productoCantidadMax">
                         <button type="button" id="productoCantidadMas" aria-label="Añadir una unidad">+</button>
                     </div>
                     <p class="producto-cantidad__ayuda" id="productoCantidadMax">
-                        Máximo ${stock} ${stock === 1 ? 'unidad disponible' : 'unidades disponibles'}
+                        ${escapeHTML(textoMaximo)}
                     </p>
                 </div>
             ` : ''}
@@ -295,7 +306,9 @@ function renderizarProducto(producto, contenedor) {
     // Stepper de cantidad: no habia selector, asi que "Comprar ahora" siempre
     // compraba 1 unidad aunque el usuario quisiera varias.
     const inputCantidad = document.getElementById('productoCantidad');
-    const maxCantidad = Math.max(1, Math.min(99, stock));
+    // Se reutiliza el `maxCantidad` calculado al pintar la tarjeta. Aqui havia
+    // otra vez `Math.max(1, Math.min(99, stock))`, que sombreaba al anterior y
+    // volvia a convertir un `stock` null en un tope de 1.
     const ajustar = delta => {
         if (!inputCantidad) return;
         const actual = Number(inputCantidad.value) || 1;

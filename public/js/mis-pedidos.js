@@ -151,7 +151,7 @@ function renderizarPedidos(pedidos) {
                 </div>
                 <div class="pedido-total">
                     <span class="total-label">Total</span>
-                    <span class="total-valor">$${escapeHTML(formatearMonto(pedido?.total))}</span>
+                    <span class="total-valor">${escapeHTML(formatearMonto(pedido?.total))}</span>
                 </div>
             </div>
 
@@ -299,7 +299,7 @@ function renderizarModalDetalle(pedido, contenedor) {
                     </p>
                 </div>
                 <div class="detalle-total">
-                    $${escapeHTML(formatearMonto(pedido?.total))}
+                    ${escapeHTML(formatearMonto(pedido?.total))}
                 </div>
             </div>
 
@@ -315,7 +315,7 @@ function renderizarModalDetalle(pedido, contenedor) {
                                 <strong>${escapeHTML(item?.nombre || 'Producto')}</strong>
                                 <span class="item-cantidad">×${escapeHTML(item?.cantidad ?? 0)}</span>
                             </div>
-                            <span class="item-subtotal">$${escapeHTML(formatearMonto(item?.subtotal))}</span>
+                            <span class="item-subtotal">${escapeHTML(formatearMonto(item?.subtotal))}</span>
                         </div>
                     `;
                 }).join('')}
@@ -325,21 +325,21 @@ function renderizarModalDetalle(pedido, contenedor) {
             <div class="detalle-resumen">
                 <div class="resumen-fila">
                     <span>Subtotal</span>
-                    <span>$${escapeHTML(formatearMonto(pedido?.subtotal))}</span>
+                    <span>${escapeHTML(formatearMonto(pedido?.subtotal))}</span>
                 </div>
                 <div class="resumen-fila">
                     <span>Envío</span>
-                    <span>${Number(pedido?.costoEnvio) === 0 ? 'Gratis' : `$${escapeHTML(formatearMonto(pedido?.costoEnvio))}`}</span>
+                    <span>${Number(pedido?.costoEnvio) === 0 ? 'Gratis' : `${escapeHTML(formatearMonto(pedido?.costoEnvio))}`}</span>
                 </div>
                 ${Number(pedido?.descuento) > 0 ? `
                     <div class="resumen-fila descuento">
                         <span>Descuento</span>
-                        <span>-$${escapeHTML(formatearMonto(pedido?.descuento))}</span>
+                        <span>-${escapeHTML(formatearMonto(pedido?.descuento))}</span>
                     </div>
                 ` : ''}
                 <div class="resumen-fila total">
                     <span>Total</span>
-                    <span>$${escapeHTML(formatearMonto(pedido?.total))}</span>
+                    <span>${escapeHTML(formatearMonto(pedido?.total))}</span>
                 </div>
             </div>
 
