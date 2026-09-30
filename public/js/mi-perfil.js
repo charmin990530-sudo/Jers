@@ -95,29 +95,51 @@ function actualizarAvatarInicial(user) {
  * Inicializa tabs de navegación
  */
 function inicializarTabs() {
-    const tabs = document.querySelectorAll('.perfil-tab');
-    const panels = document.querySelectorAll('.perfil-panel');
+    const tabs = Array.from(document.querySelectorAll('.perfil-tab'));
+    const paneles = Array.from(document.querySelectorAll('.perfil-panel'));
+    if (!tabs.length) return;
+
+    const activar = (tab) => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach(t => {
+            const activo = t === tab;
+            t.classList.toggle('activo', activo);
+            t.setAttribute('aria-selected', activo ? 'true' : 'false');
+            // tabindex rotatorio: solo la pestana activa entra en el orden de
+            // tabulacion, como pide el patron WAI-ARIA de Tabs. Antes los tres
+            // botones quedaban en el orden normal y el teclado no tenia forma de
+            // recorrer las secciones.
+            t.setAttribute('tabindex', activo ? '0' : '-1');
+        });
+
+        paneles.forEach(panel => {
+            if (panel.id === `tab-${target}`) {
+                panel.hidden = false;
+                panel.classList.add('activo');
+            } else {
+                panel.hidden = true;
+                panel.classList.remove('activo');
+            }
+        });
+    };
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const target = tab.dataset.tab;
+        tab.addEventListener('click', () => activar(tab));
 
-            tabs.forEach(t => {
-                t.classList.remove('activo');
-                t.setAttribute('aria-selected', 'false');
-            });
-            tab.classList.add('activo');
-            tab.setAttribute('aria-selected', 'true');
-
-            panels.forEach(panel => {
-                if (panel.id === `tab-${target}`) {
-                    panel.hidden = false;
-                    panel.classList.add('activo');
-                } else {
-                    panel.hidden = true;
-                    panel.classList.remove('activo');
-                }
-            });
+        // Flechas, Home y End: sin esto el patron de tabs no es navegable con
+        // teclado, que es justamente para quien lo necesita (WCAG 2.1.1).
+        tab.addEventListener('keydown', e => {
+            const indice = tabs.indexOf(tab);
+            let destino = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') destino = (indice + 1) % tabs.length;
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') destino = (indice - 1 + tabs.length) % tabs.length;
+            else if (e.key === 'Home') destino = 0;
+            else if (e.key === 'End') destino = tabs.length - 1;
+            if (destino === null) return;
+            e.preventDefault();
+            tabs[destino].focus();
+            activar(tabs[destino]);
         });
     });
 }

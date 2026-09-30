@@ -423,17 +423,17 @@ function renderizarDetalles(producto) {
         <div class="producto-detalles-tabs">
             <div class="tabs-tabs" role="tablist">
                 ${tieneDescripcion ? `
-                    <button class="tab-tab activo" role="tab" aria-selected="true" data-tab="descripcion">
+                    <button class="tab-tab activo" id="tabboton-descripcion" role="tab" aria-selected="true" aria-controls="tab-descripcion" tabindex="0" data-tab="descripcion">
                         Descripción
                     </button>
                 ` : ''}
                 ${tieneIngredientes ? `
-                    <button class="tab-tab" role="tab" aria-selected="false" data-tab="ingredientes">
+                    <button class="tab-tab" id="tabboton-ingredientes" role="tab" aria-selected="false" aria-controls="tab-ingredientes" tabindex="-1" data-tab="ingredientes">
                         Ingredientes
                     </button>
                 ` : ''}
                 ${tieneUso ? `
-                    <button class="tab-tab" role="tab" aria-selected="false" data-tab="uso">
+                    <button class="tab-tab" id="tabboton-uso" role="tab" aria-selected="false" aria-controls="tab-uso" tabindex="-1" data-tab="uso">
                         Modo de uso
                     </button>
                 ` : ''}
@@ -441,12 +441,12 @@ function renderizarDetalles(producto) {
 
             <div class="tab-panels">
                 ${tieneDescripcion ? `
-                    <div class="tab-panel activo" role="tabpanel" id="tab-descripcion">
+                    <div class="tab-panel activo" role="tabpanel" id="tab-descripcion" aria-labelledby="tabboton-descripcion" tabindex="0">
                         <p>${escapeHTML(producto.descripcion)}</p>
                     </div>
                 ` : ''}
                 ${tieneIngredientes ? `
-                    <div class="tab-panel" role="tabpanel" id="tab-ingredientes" hidden>
+                    <div class="tab-panel" role="tabpanel" id="tab-ingredientes" aria-labelledby="tabboton-ingredientes" tabindex="0" hidden>
                         <ul class="ingredientes-lista">
                             ${producto.ingredientes.map(ing => `
                                 <li>
@@ -458,7 +458,7 @@ function renderizarDetalles(producto) {
                     </div>
                 ` : ''}
                 ${tieneUso ? `
-                    <div class="tab-panel" role="tabpanel" id="tab-uso" hidden>
+                    <div class="tab-panel" role="tabpanel" id="tab-uso" aria-labelledby="tabboton-uso" tabindex="0" hidden>
                         <p>${escapeHTML(producto.uso)}</p>
                     </div>
                 ` : ''}
@@ -478,29 +478,50 @@ function renderizarDetalles(producto) {
  * Inicializa tabs de detalles (Descripción, Ingredientes, Uso)
  */
 function inicializarTabsDetalles() {
-    const tabs = document.querySelectorAll('.tab-tab');
-    const panels = document.querySelectorAll('.tab-panel');
+    const tabs = Array.from(document.querySelectorAll('.tab-tab'));
+    const paneles = Array.from(document.querySelectorAll('.tab-panel'));
+    if (!tabs.length) return;
+
+    const activar = tab => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach(t => {
+            const activo = t === tab;
+            t.classList.toggle('activo', activo);
+            t.setAttribute('aria-selected', activo ? 'true' : 'false');
+            // tabindex rotatorio: solo la pestana activa es tabulable (patron
+            // WAI-ARIA de Tabs).
+            t.setAttribute('tabindex', activo ? '0' : '-1');
+        });
+
+        paneles.forEach(panel => {
+            if (panel.id === `tab-${target}`) {
+                panel.hidden = false;
+                panel.classList.add('activo');
+            } else {
+                panel.hidden = true;
+                panel.classList.remove('activo');
+            }
+        });
+    };
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const target = tab.dataset.tab;
+        tab.addEventListener('click', () => activar(tab));
 
-            tabs.forEach(t => {
-                t.classList.remove('activo');
-                t.setAttribute('aria-selected', 'false');
-            });
-            tab.classList.add('activo');
-            tab.setAttribute('aria-selected', 'true');
-
-            panels.forEach(panel => {
-                if (panel.id === `tab-${target}`) {
-                    panel.hidden = false;
-                    panel.classList.add('activo');
-                } else {
-                    panel.hidden = true;
-                    panel.classList.remove('activo');
-                }
-            });
+        // Flechas, Home y End: sin esto las pestañas de Descripción,
+        // Ingredientes y Modo de uso no son recorribles con teclado (WCAG 2.1.1),
+        // que es justo quien las necesita.
+        tab.addEventListener('keydown', e => {
+            const indice = tabs.indexOf(tab);
+            let destino = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') destino = (indice + 1) % tabs.length;
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') destino = (indice - 1 + tabs.length) % tabs.length;
+            else if (e.key === 'Home') destino = 0;
+            else if (e.key === 'End') destino = tabs.length - 1;
+            if (destino === null) return;
+            e.preventDefault();
+            tabs[destino].focus();
+            activar(tabs[destino]);
         });
     });
 }
