@@ -156,14 +156,43 @@ function pintar() {
     }).join('');
 }
 
+// El panel se oculta visualmente con `right: -420px`, pero eso NO lo saca del
+// arbol de accesibilidad ni del orden de tabulacion: sus botones ("Cerrar
+// carrito", "Finalizar pedido") seguian siendo alcanzables con el teclado estando
+// fuera de pantalla, y el lector de pantalla los recorria en todas las paginas.
+// Por eso el HTML lo marca `aria-hidden="true" inert` y aqui se quita al abrir.
+// `inert` es lo que de verdad saca los descendientes del foco en los navegadores
+// que lo soportan; `aria-hidden` cubre el resto.
+const panelCarrito = () => document.getElementById('carritoPanel') || document.querySelector('.carrito-panel');
+const botonCarrito = () => document.querySelector('.carrito-icono');
+let ultimoFocoEnCarrito = null;
+
+const marcarAbierto = abierto => {
+    const panel = panelCarrito();
+    if (panel) {
+        panel.classList.toggle('abierto', abierto);
+        panel.toggleAttribute('inert', !abierto);
+        panel.setAttribute('aria-hidden', abierto ? 'false' : 'true');
+    }
+    document.querySelector('.carrito-fondo')?.classList.toggle('visible', abierto);
+    botonCarrito()?.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+};
+
 const abrirPanel = () => {
-    document.querySelector('.carrito-panel')?.classList.add('abierto');
-    document.querySelector('.carrito-fondo')?.classList.add('visible');
+    ultimoFocoEnCarrito = document.activeElement;
+    marcarAbierto(true);
+    // El foco entra en el panel: si no, el Tab seguiria moviendose por el
+    // contenido de fondo mientras el panel esta encima.
+    panelCarrito()?.querySelector('.carrito-cerrar')?.focus();
 };
 
 const cerrarPanel = () => {
-    document.querySelector('.carrito-panel')?.classList.remove('abierto');
-    document.querySelector('.carrito-fondo')?.classList.remove('visible');
+    if (!panelCarrito()?.classList.contains('abierto')) return;
+    marcarAbierto(false);
+    // Se devuelve el foco al boton que abrio el panel, para no perder al usuario
+    // de teclado en un punto cualquiera del documento.
+    (ultimoFocoEnCarrito || botonCarrito())?.focus?.();
+    ultimoFocoEnCarrito = null;
 };
 
 // ---------------------------------------------------------
@@ -424,6 +453,34 @@ export async function iniciarCarrito() {
     document.querySelector('.carrito-icono')?.addEventListener('click', abrirPanel);
     document.querySelector('.carrito-cerrar')?.addEventListener('click', cerrarPanel);
     document.querySelector('.carrito-fondo')?.addEventListener('click', cerrarPanel);
+
+    // Escape cierra el panel. Sin esto, un usuario de teclado lo abria y no
+    // tenia forma de cerrarlo: el boton de cerrar quedaba debajo del panel
+    // abierto y no habia ni atajo ni trampa de foco.
+    document.addEventListener('keydown', evento => {
+        if (evento.key === 'Escape' && panelCarrito()?.classList.contains('abierto')) {
+            cerrarPanel();
+        }
+    });
+
+    // Al pulsar Tab dentro del panel abierto, el foco no debe salirse hacia el
+    // contenido de fondo. `inert` ya lo impide en los navegadores que lo
+    // soportan; esto cubre el resto conteniéndolo dentro del panel.
+    panelCarrito()?.addEventListener('keydown', evento => {
+        if (evento.key !== 'Tab') return;
+        const focoables = panelCarrito()?.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focoables?.length) return;
+        const primero = focoables[0];
+        const ultimo = focoables[focoables.length - 1];
+        if (evento.shiftKey && document.activeElement === primero) {
+            evento.preventDefault();
+            ultimo.focus();
+        } else if (!evento.shiftKey && document.activeElement === ultimo) {
+            evento.preventDefault();
+            primero.focus();
+        }
+    });
 
     document.querySelector('.finalizar-pedido')?.addEventListener('click', () => {
         if (items.length === 0) {

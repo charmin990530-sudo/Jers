@@ -41,7 +41,7 @@
                 <li class="menuitem"><a href="contacto.html">Contacto</a></li>
             </ul>
 
-            <button class="carrito-icono" aria-label="Abrir carrito" type="button">
+            <button class="carrito-icono" aria-label="Abrir carrito" aria-expanded="false" aria-controls="carritoPanel" type="button">
                 🛍️ <span class="carrito-contador">0</span>
             </button>
         </nav>
@@ -91,9 +91,9 @@
 
     </main>
 
-    <div class="carrito-panel">
+    <div class="carrito-panel" id="carritoPanel" role="dialog" aria-modal="true" aria-labelledby="carritoTitulo" aria-hidden="true" inert>
         <div class="carrito-cabecera">
-            <h2>Tu carrito</h2>
+            <h2 id="carritoTitulo">Tu carrito</h2>
             <button class="carrito-cerrar" aria-label="Cerrar carrito" type="button">✕</button>
         </div>
 

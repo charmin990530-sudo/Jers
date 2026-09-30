@@ -12,6 +12,10 @@ import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
 let paginaActual = 1;
 let totalPaginas = 1;
+// Contador de la ultima peticion de "cargar producto para editar". Cada apertura
+// del modal incrementa esta secuencia y solo la que tenga el numero mas alto
+// pinta el formulario (ver cargarProductoParaEditar).
+let secuenciaEdicion = 0;
 let categoriasCache = [];
 let marcasCache = [];
 let productosCache = [];
@@ -387,15 +391,29 @@ function abrirModalProducto(productoId = null) {
 }
 
 async function cargarProductoParaEditar(productoId) {
+    // Token de secuencia: la llamada es async y no se espera, asi que si el
+    // admin pulsa "Editar" en el producto A y enseguida en el B, la respuesta
+    // de A puede llegar DESPUES que la de B y rellenar el formulario con los
+    // datos de A mientras `productoId` guardado es el de B. Al guardar se
+    // mandaba entonces PATCH del producto B con el contenido de A, corrompiendo
+    // el catalogo (precios, nombres, imagenes) sin que nada lo indicara.
+    // Cada invocacion toma un numero y, tras cada espera, se descarta si ya no
+    // es la ultima.
+    const miSecuencia = ++secuenciaEdicion;
+    const esActual = () => miSecuencia === secuenciaEdicion;
     try {
         let producto = productosCache.find(item => item?._id === productoId);
         if (!producto) {
             const response = await api.getAdminProducts({ page: 1, limit: 50 });
+            // Tras la espera: si el admin abrio otro producto, este resultado ya
+            // no interesa y no debe pintar nada.
+            if (!esActual()) return;
             if (!response.ok) {
                 throw new Error(response.msg || 'No se pudo cargar el producto');
             }
             producto = (response.data?.products || []).find(item => item?._id === productoId);
         }
+        if (!esActual()) return;
         if (!producto) {
             throw new Error('Producto no encontrado');
         }
@@ -433,6 +451,24 @@ async function cargarProductoParaEditar(productoId) {
                             <option value="bottom" ${imagen?.posicion === 'bottom' ? 'selected' : ''}>Abajo</option>
                             <option value="left" ${imagen?.posicion === 'left' ? 'selected' : ''}>Izquierda</option>
                             <option value="right" ${imagen?.posicion === 'right' ? 'selected' : ''}>Derecha</option>
+                            ${// Posiciones relativas (izquierda/derecha + arriba/abajo).
+                              // El modelo y el validador (Product.js y schemas.imagePosition)
+                              // aceptan tambien valores como "30% 75%", que es como se
+                              // encuadran las fotos de producto. El select solo ofrecia las
+                              // 5 fijas, asi que al abrir y guardar un producto con una
+                              // posicion relativa ninguna opcion coincidia y se guardaba
+                              // "center": el encuadre se perdia en silencio. La ultima
+                              // opcion conserva el valor original si no esta en la lista,
+                              // de modo que no se puede perder.
+                              ''}
+                            <option value="left top" ${imagen?.posicion === 'left top' ? 'selected' : ''}>Superior izquierda</option>
+                            <option value="right top" ${imagen?.posicion === 'right top' ? 'selected' : ''}>Superior derecha</option>
+                            <option value="left bottom" ${imagen?.posicion === 'left bottom' ? 'selected' : ''}>Inferior izquierda</option>
+                            <option value="right bottom" ${imagen?.posicion === 'right bottom' ? 'selected' : ''}>Inferior derecha</option>
+                            ${!['center', 'top', 'bottom', 'left', 'right', 'left top', 'right top', 'left bottom', 'right bottom']
+                                .includes(imagen?.posicion) && imagen?.posicion
+                                ? `<option value="${escapeHTML(imagen.posicion)}" selected>${escapeHTML(imagen.posicion)} (personalizada)</option>`
+                                : ''}
                         </select>
                         <label class="checkbox-inline">
                             <input type="checkbox" name="imagenes[${escapeHTML(index)}][esPrincipal]" ${imagen?.esPrincipal ? 'checked' : ''}> Principal
@@ -465,6 +501,10 @@ async function cargarProductoParaEditar(productoId) {
             }
         }
     } catch (error) {
+        // Si el admin ya abrio otro producto mientras esperaba, este fallo es del
+        // producto anterior y no debe mostrarse: ensuciaria el formulario del que
+        // el admin quiere de verdad.
+        if (!esActual()) return;
         handleApiError({ message: error.message }, 'cargar-producto-editar');
     }
 }
