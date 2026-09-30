@@ -1,6 +1,6 @@
 import { api, handleApiError } from '../../js/apiClient.js';
 import { protegerRuta } from '../rutas.js';
-import { formatearPrecio } from '../config.js';
+import { formatearPrecio, formatearFecha } from '../config.js';
 import { iniciarAplicacion } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
 
@@ -168,12 +168,13 @@ function formatearMoneda(valor) {
     return formatearPrecio(valor);
 }
 
-function formatearFecha(fechaStr) {
-    if (!fechaStr) return 'N/A';
-    const fecha = new Date(fechaStr);
-    if (Number.isNaN(fecha.getTime())) return 'N/A';
-    return formatearFecha(fecha);
-}
+// `formatearFecha` viene de `js/config.js` (importada arriba). Antes había una
+// función local idéntica que se llamaba a SÍ MISMA en su última línea, de modo
+// que entraba en recursión infinita: como `fecha` ya era un `Date` (truthy) y
+// `new Date(fecha)` es válido, nunca se salía por la guarda. El `RangeError` lo
+// capturaba el `catch` de `cargarDashboard` y el panel se quedaba siempre en
+// "Error al cargar el dashboard", aun con la API funcionando. El call site
+// línea 142 no pasa estilo, así que conserva el default 'corta' de config.js.
 
 function mostrarError(mensaje) {
     const container = document.querySelector('.container');
