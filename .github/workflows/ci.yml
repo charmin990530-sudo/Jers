@@ -32,6 +32,27 @@ jobs:
           NODE_ENV: test
           JWT_SECRET: test-secret-key-for-ci-pipeline-only-not-for-production-use-1234567890
 
+      # El runner de GitHub Actions corre en UTC, que es tambien la zona de
+      # Vercel, asi que esta pasada ya cubre el caso real de produccion.
+      #
+      # La segunda pasada fija TZ=America/Bogota a proposito. El bug del "ingreso
+      # del dia" (adminController) solo se manifestaba cuando la zona del
+      # PROCESO era distinta de la del negocio: en un runner en hora Colombia el
+      # codigo erroneo y el correcto dan el mismo resultado, y el test pasaba sin
+      # detectar nada. Cubrir las dos zonas hace que esa clase de error no vuelva
+      # a pasar desapercibida.
+      - name: Run tests in Colombia timezone
+        run: npm test
+        env:
+          NODE_ENV: test
+          TZ: America/Bogota
+          JWT_SECRET: test-secret-key-for-ci-pipeline-only-not-for-production-use-1234567890
+
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=high
+          npm audit --audit-level=high --prefix backend
+
       - name: Build static files
         run: npm run build:static
         env:

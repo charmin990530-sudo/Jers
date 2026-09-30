@@ -158,6 +158,55 @@ export const deleteBrand = asyncHandler(async (req, res, next) => {
  */
 const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/**
+ * Zona horaria en la que se cuentan los dias del negocio. Colombia.
+ */
+export const ZONA_NEGOCIO = 'America/Bogota';
+
+/**
+ * Desplazamiento de Colombia respecto a UTC, en minutos. Es fijo todo el ano:
+ * Colombia no aplica horario de verano. Se declara como constante para poder
+ * convertir la medianoche local a su instante UTC, pero la FECHA del dia se lee
+ * con `Intl` para que no dependa de un offset supuesto a mano.
+ */
+const DESPLAZAMIENTO_MINUTOS = -300;
+
+/**
+ * Instante UTC en el que empieza el dia de negocio (medianoche en Bogota).
+ *
+ * POR QUE NO `new Date().setHours(0, 0, 0, 0)`
+ * -------------------------------------------
+ * `setHours` opera en la zona horaria del PROCESO. En Vercel el proceso corre en
+ * UTC, no en Colombia, de modo que el "dia" del negocio empezaba a las 19:00
+ * hora Colombia y las cifras de ingresos del dia cambiaban 5 horas antes de que
+ * el negocio considered que habia cambiado el dia. Con una tienda colombiana eso
+ * son decisiones tomadas sobre datos erroneos durante toda la tarde.
+ *
+ * Colombia no cambia de offset (no hay horario de verano), asi que el dia
+ * dura siempre 24 horas y el fin se puede obtener sumando 24 h al inicio.
+ *
+ * @param {Date} [ahora]
+ * @returns {Date} Instante UTC de la medianoche de Bogota del dia de `ahora`.
+ */
+export const inicioDiaNegocio = (ahora = new Date()) => {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_NEGOCIO,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(ahora);
+  const valor = tipo => Number(partes.find(p => p.type === tipo).value);
+  return new Date(
+    Date.UTC(valor('year'), valor('month') - 1, valor('day')) - DESPLAZAMIENTO_MINUTOS * 60 * 1000,
+  );
+};
+
+/** Rango `[desde, hasta)` del dia de negocio, en UTC y listo para `$match`. */
+export const rangoDiaNegocio = (ahora = new Date()) => {
+  const desde = inicioDiaNegocio(ahora);
+  return { $gte: desde, $lt: new Date(desde.getTime() + 24 * 60 * 60 * 1000) };
+};
+
 const buildAdminProductFilter = (query) => {
   const filter = {};
   if (query.activo !== undefined) filter.activo = query.activo;
@@ -361,14 +410,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
           ],
           revenueToday: [
             { $match: { estadoPago: 'pagado' } },
-            {
-              $match: {
-                createdAt: {
-                  $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                  $lt: new Date(new Date().setHours(0, 0, 0, 0) + 24 * 60 * 60 * 1000),
-                },
-              },
-            },
+            { $match: { createdAt: rangoDiaNegocio() } },
             { $group: { _id: null, total: { $sum: '$total' } } },
           ],
         },
