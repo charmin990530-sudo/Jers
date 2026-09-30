@@ -92,8 +92,12 @@
 .campo select:focus,
 .campo textarea:focus {
     border-color: var(--color-mauve);
-    box-shadow: 0 0 0 3px rgb(201 123 130 / 15%);
-    outline: none;
+    box-shadow: 0 0 0 3px var(--color-mauve);
+    /* El anillo de antes usaba rgb(201 123 130 / 15%), que sobre blanco queda en
+       1.16:1: por debajo del minimo de 3:1 de WCAG 1.4.11/2.4.11, o sea que el
+       campo enfocado no se distinguia. */
+    outline: 2px solid var(--color-graphite);
+    outline-offset: 2px;
 }
 
 .campo input::placeholder {

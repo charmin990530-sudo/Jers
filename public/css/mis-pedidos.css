@@ -13,7 +13,7 @@
 
 .filtro-btn {
     background: var(--color-blanco);
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 20px;
     color: var(--color-texto);
     cursor: pointer;
@@ -191,7 +191,7 @@
 .pag-btn {
     width: 44px;
     height: 44px;
-    border: 1px solid #ead6d3;
+    border: 1px solid var(--color-borde);
     border-radius: 50%;
     background: var(--color-blanco);
     color: var(--color-texto);
