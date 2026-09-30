@@ -31,6 +31,10 @@ const addressSelect = document.getElementById('saved-address');
 const submitButton = document.getElementById('checkout-submit');
 const whatsappLink = document.getElementById('whatsapp-link');
 
+// Direcciones del usuario ya cargadas, para no volver a pedir el perfil cada vez
+// que se cambia la direccion seleccionada.
+let direccionesUsuario = [];
+
 const createIdempotencyKey = () =>
     globalThis.crypto?.randomUUID?.() || `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -127,14 +131,16 @@ const main = async () => {
     }
 
     renderCart(cart);
-    loadAddresses(user?.direcciones || []);
+    direccionesUsuario = user?.direcciones || [];
+    loadAddresses(direccionesUsuario);
 };
 
-addressSelect?.addEventListener('change', async () => {
+addressSelect?.addEventListener('change', () => {
     if (!addressSelect.value) return;
-    const me = await api.getMe();
-    if (!me.ok) return;
-    const address = me.data?.user?.direcciones?.find(item => item._id === addressSelect.value);
+    // No se vuelve a pedir el perfil: las direcciones ya vienen en el usuario que
+    // devolvio `protegerRuta()` y se guardaron en `direccionesUsuario` al cargar.
+    // Antes esta llamada a api.getMe() salia en cada cambio de selector.
+    const address = direccionesUsuario.find(item => item._id === addressSelect.value);
     fillAddress(address);
 });
 
@@ -180,9 +186,17 @@ form?.addEventListener('submit', async event => {
             whatsappLink.href = whatsappUrl;
             whatsappLink.hidden = false;
         }
+
+        // El pedido ya está hecho y el carrito vacío: el botón NO vuelve a
+        // habilitarse. Antes el `finally` lo rehabilitaba siempre, así que un
+        // segundo clic mandaba una clave nueva (ya renovada) y el backend
+        // respondía EMPTY_CART, y ese error BORRABA el mensaje de éxito con el
+        // número de pedido: el cliente veía "El carrito está vacío" después de
+        // haber cerrado la compra.
+        return;
     } catch (error) {
         setMessage(error.message || 'No se pudo crear el pedido.');
-    } finally {
+        // Solo si falló se permite reintentar: es un estado recuperable.
         submitButton.disabled = false;
     }
 });
