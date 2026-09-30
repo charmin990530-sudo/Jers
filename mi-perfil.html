@@ -55,13 +55,13 @@
         <section class="container">
             <!-- Tabs de navegación -->
             <div class="perfil-tabs" role="tablist" aria-label="Secciones del perfil">
-                <button class="perfil-tab activo" role="tab" aria-selected="true" data-tab="datos">Datos personales</button>
-                <button class="perfil-tab" role="tab" aria-selected="false" data-tab="password">Cambiar contraseña</button>
-                <button class="perfil-tab" role="tab" aria-selected="false" data-tab="avatar">Foto de perfil</button>
+                <button class="perfil-tab activo" id="tabboton-datos" role="tab" aria-selected="true" aria-controls="tab-datos" tabindex="0" data-tab="datos">Datos personales</button>
+                <button class="perfil-tab" id="tabboton-password" role="tab" aria-selected="false" aria-controls="tab-password" tabindex="-1" data-tab="password">Cambiar contraseña</button>
+                <button class="perfil-tab" id="tabboton-avatar" role="tab" aria-selected="false" aria-controls="tab-avatar" tabindex="-1" data-tab="avatar">Foto de perfil</button>
             </div>
 
             <!-- Panel: Datos Personales -->
-            <div class="perfil-panel activo" role="tabpanel" id="tab-datos" aria-labelledby="tab-datos">
+            <div class="perfil-panel activo" role="tabpanel" id="tab-datos" aria-labelledby="tabboton-datos" tabindex="0">
                 <form id="formDatos" class="perfil-form" method="post" novalidate>
                     <div class="form-grid">
                         <div class="form-grupo">
@@ -102,7 +102,7 @@
             </div>
 
             <!-- Panel: Cambiar Contraseña -->
-            <div class="perfil-panel" role="tabpanel" id="tab-password" aria-labelledby="tab-password" hidden>
+            <div class="perfil-panel" role="tabpanel" id="tab-password" aria-labelledby="tabboton-password" tabindex="0" hidden>
                 <form id="formPassword" class="perfil-form" method="post" novalidate>
                     <div class="form-grupo password-wrapper">
                         <label for="currentPassword">Contraseña actual *</label>
@@ -156,7 +156,7 @@
             </div>
 
             <!-- Panel: Foto de Perfil -->
-            <div class="perfil-panel" role="tabpanel" id="tab-avatar" aria-labelledby="tab-avatar" hidden>
+            <div class="perfil-panel" role="tabpanel" id="tab-avatar" aria-labelledby="tabboton-avatar" tabindex="0" hidden>
                 <div class="avatar-seccion">
                     <div class="avatar-actual">
                         <div class="avatar-preview" id="avatarPreview" role="img" aria-label="Tu foto de perfil actual">
