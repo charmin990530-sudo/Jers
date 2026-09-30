@@ -97,10 +97,30 @@ export function passwordsCoinciden(pass1, pass2) {
  * @param {string} mensaje
  */
 export function mostrarErrorCampo(input, mensaje) {
+    if (!input) return;
     input.setAttribute('aria-invalid', 'true');
-    const errorSpan = input.parentElement.querySelector('.campo-error');
+
+    // El mensaje se busca subiendo hasta el contenedor del CAMPO, no en el
+    // padre inmediato. Con `parentElement` fallaba en todos los campos de
+    // contraseña: el input vive dentro de un `.password-wrapper` (para el botón
+    // de mostrar/ocultar) y el `<span class="campo-error">` es HERMANO de ese
+    // wrapper, hijo del `.campo`. El mensaje se descartaba en silencio, asi que
+    // "Las contraseñas no coinciden" NO aparecía nunca: el usuario pulsaba
+    // Continuar, el foco saltaba al campo y noulledaba nada, con el formulario
+    // aparentemente bloqueado y sin explicación.
+    const contenedor = input.closest('.campo, .form-grupo, .checkbox-campo, fieldset, .mb-3') || input.parentElement;
+    const errorSpan = contenedor?.querySelector('.campo-error');
     if (errorSpan) {
         errorSpan.textContent = mensaje;
+        // Se enlaza el mensaje al control: sin `aria-describedby` el lector de
+        // pantalla anuncia el error (el span es `aria-live`) pero al navegar
+        // campo a campo el usuario no sabe a cual pertenece. WCAG 3.3.1.
+        if (!errorSpan.id) errorSpan.id = `error-${input.id || 'campo'}`;
+        const yaAnunciado = (input.getAttribute('aria-describedby') || '').split(/\s+/).includes(errorSpan.id);
+        if (!yaAnunciado) {
+            const previo = input.getAttribute('aria-describedby');
+            input.setAttribute('aria-describedby', previo ? `${previo} ${errorSpan.id}` : errorSpan.id);
+        }
     }
 }
 
