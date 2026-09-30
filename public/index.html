@@ -337,10 +337,8 @@
 
     <footer class="site-footer">
         <div class="footer-enlaces">
-            <a href="terminos.html">Términos</a>
-            <a href="privacidad.html">Privacidad</a>
-            <a href="envios.html">Envíos</a>
-            <a href="devoluciones.html">Devoluciones</a>
+            <a href="#" data-modal="terminos">Términos</a>
+            <a href="#" data-modal="privacidad">Privacidad</a>
         </div>
         <div class="redes-sociales">
             <a href="https://facebook.com/tu-tienda" aria-label="Facebook">
@@ -364,6 +362,43 @@
         </div>
         <p>© 2026 Jers.</p>
     </footer>
+
+    <!-- Avisos legales: los abre el pie con data-modal. El texto es el mismo que
+         usa register.html; falta sustituirlo por uno redactado por abogado. -->
+    <div class="modal" id="modalTerminos" role="dialog" aria-labelledby="modalTerminosTitulo" aria-modal="true" hidden>
+        <div class="modal-contenido">
+            <button class="modal-cerrar" aria-label="Cerrar">✕</button>
+            <h2 id="modalTerminosTitulo">Términos y Condiciones</h2>
+            <div class="modal-texto">
+                <p><strong>Última actualización:</strong> Septiembre 2026</p>
+                <p>Al comprar en By Jers, aceptas:</p>
+                <ul>
+                    <li>Proporcionar información veraz y actualizada</li>
+                    <li>Mantener la confidencialidad de tu contraseña</li>
+                    <li>Usar el sitio solo para fines legítimos</li>
+                    <li>No compartir tu cuenta con terceros</li>
+                </ul>
+                <p>Nos reservamos el derecho de suspender cuentas que violen estos términos.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modalPrivacidad" role="dialog" aria-labelledby="modalPrivacidadTitulo" aria-modal="true" hidden>
+        <div class="modal-contenido">
+            <button class="modal-cerrar" aria-label="Cerrar">✕</button>
+            <h2 id="modalPrivacidadTitulo">Política de Privacidad</h2>
+            <div class="modal-texto">
+                <p><strong>Última actualización:</strong> Septiembre 2026</p>
+                <p>Tu información personal se usa para:</p>
+                <ul>
+                    <li>Procesar tus pedidos y envíos</li>
+                    <li>Mejorar tu experiencia de compra</li>
+                    <li>Enviar comunicaciones relevantes (con tu consentimiento)</li>
+                </ul>
+                <p>No vendemos tus datos a terceros. Puedes solicitar eliminación de tu cuenta en cualquier momento.</p>
+            </div>
+        </div>
+    </div>
 
     <!-- index.js importa desde app.js solo la lógica que usa Inicio. -->
     <script type="module" src="js/index.js"></script>

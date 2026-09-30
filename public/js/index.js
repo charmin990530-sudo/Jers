@@ -24,6 +24,7 @@ import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { formatearPrecio } from './config.js';
 import { renderCargando, resolverCatalogo, demoActivado } from './estados.js';
 import { rotarPromos } from './promos-rotativas.js';
+import { inicializarModales } from './auth.js';
 
 let productosMostrados = new Set();
 
@@ -45,6 +46,12 @@ function deduplicarProductos(productos) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   iniciarAplicacion();
+  // Los enlaces legales del pie abren modales (data-modal). El manejador vive en
+  // auth.js y usa delegación sobre `document`, así que basta con inicializarlo
+  // una vez en esta página: antes los enlaces apuntaban a terminos.html,
+  // privacidad.html, envios.html y devoluciones.html, y esos cuatro archivos NO
+  // existen, así que los cuatro devolvían 404.
+  inicializarModales();
   rotarPromos();
 
   // Se lanzan en paralelo: cada sección resuelve su propio estado.
