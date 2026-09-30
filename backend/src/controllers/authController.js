@@ -29,6 +29,7 @@ import { User } from '../models/index.js';
 import { JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER, JWT_AUDIENCE, JWT_EXPIRES_IN, SESSION_EXPIRES_IN, REMEMBER_ME_EXPIRES_IN, getDurationMs, JWT_COOKIE_NAME, COOKIE_SECURE, COOKIE_SAME_SITE, FRONTEND_URL } from '../config/env.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../middleware/apiError.js';
 
 /**
  * Crea JWT firmado con userId
@@ -373,7 +374,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
   const { token, password, confirmPassword } = req.body;
 
   if (password !== confirmPassword) {
-    return next(new AppError('Las contraseñas no coinciden', 400, 'PASSWORDS_MISMATCH'));
+    return next(new AppError('Las contraseñas no coinciden', 400, ErrorCodes.PASSWORDS_MISMATCH));
   }
 
   // Hashear token recibido para comparar con el guardado
@@ -391,7 +392,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
   );
 
   if (!user) {
-    return next(new AppError('Token inválido o expirado', 400, 'INVALID_RESET_TOKEN'));
+    return next(new AppError('Token inválido o expirado', 400, ErrorCodes.INVALID_RESET_TOKEN));
   }
 
   // Actualizar password y limpiar token

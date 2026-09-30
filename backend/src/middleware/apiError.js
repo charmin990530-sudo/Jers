@@ -51,7 +51,15 @@ export const ErrorCodes = Object.freeze({
   INVALID_PATH: 'INVALID_PATH',
   INVALID_ROLE: 'INVALID_ROLE',
   INVALID_IDEMPOTENCY_KEY: 'INVALID_IDEMPOTENCY_KEY',
-  PASSWORDS_MISMATCH: 'INVALID_RESET_TOKEN',
+  // Antes esta clave valia 'INVALID_RESET_TOKEN', o sea que el codigo para
+  // "las contrasenas no coinciden" era indistinguible del de "el token de reset
+  // caducado", y `ErrorCodes.INVALID_RESET_TOKEN` no existia como clave (era
+  // undefined). Ademas authController emitia la cadena literal
+  // 'PASSWORDS_MISMATCH', que no aparecia en ningun sitio del contrato. Ahora
+  // cada clave vale lo mismo que se llama, que es lo que permite ramificar por
+  // `code` sin mirar la tabla.
+  PASSWORDS_MISMATCH: 'PASSWORDS_MISMATCH',
+  INVALID_RESET_TOKEN: 'INVALID_RESET_TOKEN',
   // 401 / 403
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   INVALID_TOKEN: 'INVALID_TOKEN',
@@ -68,7 +76,9 @@ export const ErrorCodes = Object.freeze({
   CATEGORY_NOT_FOUND: 'CATEGORY_NOT_FOUND',
   BRAND_NOT_FOUND: 'BRAND_NOT_FOUND',
   ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
-  USER_NOT_FOUND_404: 'USER_NOT_FOUND',
+  // Antes existia `USER_NOT_FOUND_404` apuntando al mismo valor que
+  // `USER_NOT_FOUND`, dos nombres para el mismo codigo. El de 404 era el que
+  // usaba userController; se deja un unico nombre.
   CART_NOT_FOUND: 'CART_NOT_FOUND',
   ITEM_NOT_FOUND: 'ITEM_NOT_FOUND',
   ADDRESS_NOT_FOUND: 'ADDRESS_NOT_FOUND',

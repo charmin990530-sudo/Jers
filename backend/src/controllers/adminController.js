@@ -54,8 +54,17 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
 
 /**
  * DELETE /api/admin/productos/:id
- * Elimina producto (hard delete)
- * Considerar soft delete (activo: false) en lugar de eliminar
+ * Desactiva el producto (soft delete: `activo = false`), NO borra el documento.
+ *
+ * El comentario de aquí decía "hard delete" y añadía "considerar soft delete",
+ * cuando el código ya hacía soft delete y la respuesta decía "Producto
+ * desactivado". Se aclara la contradicción: no hay borrado real, y no debe
+ * añadirse sin decidir antes qué pasa con los pedidos y carritos que lo
+ * referencian (`Order.items.producto` y `Cart.items.producto` apuntan por
+ * ObjectId; borrar el documento deja esas referencias colgando).
+ *
+ * Un producto desactivado desaparece del catálogo público (todos los listados
+ * filtran por `activo: true`) pero se conserva para el historial de pedidos.
  */
 export const deleteProduct = asyncHandler(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
