@@ -502,7 +502,10 @@ export function iniciarFormularioContacto() {
         setBtnLoading(boton, true);
         try {
             const { api } = await import('./apiClient.js');
-            const response = await api.post('/contact', { nombre, telefono, email: correo, mensaje: texto, website });
+            // Se usa el helper `createContact` y no una llamada suelta: el objeto
+            // `api` no tiene método `post`, así que `api.post(...)` lanzaba
+            // TypeError y el formulario de contacto quedaba inoperante.
+            const response = await api.createContact({ nombre, telefono, email: correo, mensaje: texto, website });
             if (!response.ok) throw new Error(response.msg || 'No se pudo enviar el mensaje');
             mostrarMensajeGlobal(formulario, response.data?.message || '¡Gracias! Te contactaremos pronto.', 'exito');
             formulario.reset();

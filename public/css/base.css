@@ -941,6 +941,26 @@ h3 {
     padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
 }
 
+/* Cuerpo de texto corrido dentro de un modal (términos, privacidad, avisos).
+   Vive aquí, y no en auth.css, porque `base.css` es la hoja que define el
+   componente `.modal` para todo el sitio: cualquier página que abra un modal
+   desde un script suyo (p.ej. los enlaces legales del pie en index.html) carga
+   base.css pero no auth.css, y se quedaba sin estilo. */
+.modal-texto {
+    color: var(--color-texto);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.modal-texto ul {
+    margin: 12px 0;
+    padding-left: 20px;
+}
+
+.modal-texto li {
+    margin-bottom: 8px;
+}
+
 body.modal-abierto {
     overflow: hidden;
 }
