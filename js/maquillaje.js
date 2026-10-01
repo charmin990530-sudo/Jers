@@ -9,7 +9,7 @@
  */
 
 import { getProductsByCategory, handleApiError } from './api.js';
-import { renderCargando, renderError, resolverCatalogo, demoActivado } from './estados.js';
+import { renderCargando, renderError, resolverCatalogo } from './estados.js';
 import { renderizarCatalogo, obtenerImagenProducto, iniciarAplicacion } from './app.js';
 
 // Mapeo de slugs de categoría a nombres legibles para la UI
