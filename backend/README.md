@@ -19,6 +19,11 @@ npm install
 cp backend/.env.example backend/.env         # rellena JWT_SECRET
 # PORT=3000 por defecto. Si el puerto está ocupado, cambialo aquí: es el único
 # sitio donde hay un puerto escrito.
+#
+# IMPORTANTE: el sitio y la API los sirve ESTE proceso, así que `PORT` tiene que
+# ser el mismo puerto desde el que abres el navegador. `js/config.js` saca la URL
+# de la API de `window.location.origin` y no escribe ningún puerto, de modo que
+# si cambias PORT a 3005, la web tiene que abrirse en http://localhost:3005.
 
 # 4) Datos iniciales
 npm run seed                                # 6 categorías, 6 marcas, 16 productos, admin y cliente
