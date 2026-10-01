@@ -208,9 +208,20 @@ export async function request(endpoint, options = {}) {
         if (respuesta.ok) {
             return { ok: true, msg: 'Operación exitosa', data: null };
         }
+        // Si la respuesta no es JSON, casi siempre es que se está pidiendo la
+        // API a un servidor que no la tiene. El caso real: abrir el sitio con
+        // Live Server o cualquier servidor de estáticos en un puerto que no es
+        // el del backend, con lo que `/api/...` devuelve el 404 del servidor de
+        // archivos. Antes el mensaje era "no se pudo leer la respuesta", que no
+        // dice nada de por qué. Se dice la causa y el remedio, porque este
+        // error se ha perdido bastante tiempo.
         return {
             ok: false,
-            msg: 'La tienda devolvió una respuesta que no se pudo leer.',
+            msg: `La API no devolvió JSON (HTTP ${respuesta.status}) al pedir ${API_BASE_URL}. `
+                + 'Si estás abriendo el sitio con un servidor de estáticos (Live Server, '
+                + 'python -m http.server) en un puerto distinto al del backend, la API no está '
+                + 'ahí. Ábrelo en el mismo puerto que el backend: npm start y después '
+                + 'http://localhost:3000.',
             data: { code: 'INVALID_RESPONSE', status: respuesta.status },
         };
     }
