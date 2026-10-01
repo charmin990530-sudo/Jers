@@ -47,22 +47,6 @@ async function verificarAuthYCargar() {
 }
 
 /**
- * Muestra mensaje para usuarios sin sesión
- */
-function mostrarSinSesion() {
-    const contenedor = document.getElementById('pedidosContenido');
-    contenedor.innerHTML = `
-        <div class="pedidos-vacio">
-            <div class="vacio-icon">📦</div>
-            <h3>Inicia sesión para ver tus pedidos</h3>
-            <p>Tu historial de compras aparecerá aquí después de iniciar sesión.</p>
-            <a href="login.html" class="btn-primario">Iniciar sesión</a>
-        </div>
-    `;
-    document.getElementById('paginacion').hidden = true;
-}
-
-/**
  * Carga pedidos desde API
  * @param {number} page - Página a cargar
  */

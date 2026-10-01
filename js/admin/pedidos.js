@@ -368,14 +368,3 @@ function mostrarToast(mensaje) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-
-function mostrarError(mensaje) {
-    const container = document.querySelector('.container');
-    if (!container || container.querySelector('.admin-error-global')) return;
-    container.insertAdjacentHTML('afterbegin', `
-        <div class="admin-error-global">
-            <p>${escapeHTML(mensaje)}</p>
-            <a href="../login.html" class="btn-primario">Iniciar sesión</a>
-        </div>
-    `);
-}
