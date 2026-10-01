@@ -207,7 +207,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await apiRegister(data);
 
         if (!response.ok) {
-            console.error('Error register:', response);
+            // Igual que en js/login.js: no se vuelca la respuesta porque `data`
+            // incluye los `details` de validacion, que en el registro llevan el
+            // nombre, el correo y el telefono de quien se esta inscribiendo.
+            console.error('[auth] Registro rechazado:', response.data?.code || 'SIN_CODIGO', response.data?.status ?? 'sin-estado');
 
             if (response.data?.errors && Array.isArray(response.data.errors)) {
                 // Errores de validación Zod (400)
