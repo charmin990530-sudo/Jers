@@ -6,6 +6,7 @@ backend/.env.*
 !backend/.env.example
 node_modules/
 **/node_modules/
+public/
 cookies.txt
 *.log
 coverage/
