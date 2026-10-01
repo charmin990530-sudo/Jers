@@ -143,6 +143,12 @@
     line-height: 1.2;
 }
 
+/* h1 de reserva que pinta producto.html antes de que js/producto.js inyecte el
+   nombre real. Sin esto ocuparia solo la primera de las dos columnas del grid. */
+.producto-titulo-reserva {
+    grid-column: 1 / -1;
+}
+
 @media (max-width: 600px) {
     .producto-nombre {
         font-size: 1.8rem;
