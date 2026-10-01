@@ -172,20 +172,8 @@ productos.forEach(producto => {
     producto.slug = generarSlug(producto.nombre);
 });
 
-export const FALLBACK_FEATURED = productos.filter(producto => producto.destacado);
-export const FALLBACK_PROMOS = productos.filter(producto => producto.enPromocion);
-
 /** Busca un producto del catálogo local por su slug. */
 export function buscarFallbackPorSlug(slug) {
     if (!slug) return null;
     return productos.find(producto => producto.slug === slug) ?? null;
 }
-
-export const FALLBACK_CATALOG = {
-    rostro: productos.filter(producto => /Base|Corrector/.test(producto.nombre)),
-    ojos: productos.filter(producto => /Sombras|Delineador/.test(producto.nombre)),
-    labios: productos.filter(producto => /Labial|Gloss/.test(producto.nombre)),
-    shampoo: productos.filter(producto => /Shampoo/.test(producto.nombre)),
-    acondicionador: productos.filter(producto => /Acondicionador/.test(producto.nombre)),
-    tratamientos: productos.filter(producto => /Tratamiento|Ampolletas/.test(producto.nombre)),
-};
