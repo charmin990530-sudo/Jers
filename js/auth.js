@@ -3,7 +3,7 @@
  * Exporta utilidades reutilizables: validación, manejo de errores, llamada a API, toast
  */
 
-import { request as apiRequest, getMe as apiGetMeReal, login as apiLoginReal, register as apiRegisterReal, logout as apiLogoutReal } from './api.js';
+import { request as apiRequest, login as apiLoginReal, register as apiRegisterReal } from './api.js';
 
 // NOTA: este archivo ya NO implementa `request()`. Antes tenia una copia
 // identica a la de apiClient.js con su propio manejo del sobre de error, del
@@ -20,10 +20,6 @@ import { request as apiRequest, getMe as apiGetMeReal, login as apiLoginReal, re
 
 export { sincronizar as sincronizarCarritoTrasAuth } from './carrito.js';
 
-/**
- * Verifica si el usuario está autenticado llamando a /api/auth/me
- * @returns {Promise<{autenticado: boolean, user?: Object}>}
- */
 // ==========================================
 // UTILIDADES DE VALIDACIÓN LADO CLIENTE
 // ==========================================
@@ -212,22 +208,10 @@ export async function apiRegister(data) {
     return apiRegisterReal(data);
 }
 
-/**
- * Obtener usuario actual: GET /api/auth/me
- * @returns {Promise<{ok: boolean, msg: string, data: any}>}
- */
-/**
- * Logout: POST /api/auth/logout
- * @returns {Promise<{ok: boolean, msg: string, data: any}>}
- */
 // ==========================================
 // REDIRECCIÓN INTELIGENTE POST-LOGIN
 // ==========================================
 
-/**
- * Guarda URL de retorno antes de ir a login
- * Se llama desde páginas protegidas cuando no hay sesión
- */
 /**
  * Obtiene y limpia URL de retorno
  * @returns {string} URL a redirigir (default: index.html)
