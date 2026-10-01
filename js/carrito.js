@@ -41,7 +41,7 @@
  * siempre; ahora no puede volver a envenenar el carrito.
  */
 
-import { getCart, addToCart, updateCartItem, removeFromCart, clearCart, getMe } from './apiClient.js';
+import { getCart, addToCart, updateCartItem, removeFromCart, clearCart, getMe } from './api.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 import { formatearPrecio } from './config.js';
 

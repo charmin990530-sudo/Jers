@@ -6,7 +6,7 @@
  * ofertas inventadas.
  */
 
-import { getPromoProducts, handleApiError } from './apiClient.js';
+import { getPromoProducts, handleApiError } from './api.js';
 import { formatearPrecio } from './config.js';
 import { escapeHTML } from './sanitize.js';
 

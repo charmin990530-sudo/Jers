@@ -1,4 +1,4 @@
-import { api, handleApiError, apiErrorFromResponse } from '../../js/apiClient.js';
+import { api, handleApiError, apiErrorFromResponse } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,

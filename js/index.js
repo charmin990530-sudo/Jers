@@ -18,7 +18,7 @@
  * mano, y sus tarjetas llevan una insignia "Demo".
  */
 
-import { getFeaturedProducts, getPromoProducts, getProducts, getBrands, handleApiError } from './apiClient.js';
+import { getFeaturedProducts, getPromoProducts, getProducts, getBrands, handleApiError } from './api.js';
 import { renderizarPromociones, crearImagenProducto, obtenerImagenProducto, iniciarAplicacion, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import { formatearPrecio } from './config.js';
