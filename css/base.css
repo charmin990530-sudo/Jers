@@ -320,6 +320,40 @@ html {
   }
 }
 
+/* ---------------------------------------------------------
+   ENLACE DE SALTO AL CONTENIDO
+   ---------------------------------------------------------
+   En las 21 páginas. Sin él, quien navega con teclado tiene que pasar por el
+   menú completo, la marquesina de promociones y el pie en cada cambio de
+   pantalla, y nunca llega al contenido: el primer elemento enfocable de
+   todas las páginas era un enlace del menú.
+
+   hidden de verdad (no solo visual) para que no aparezca en el recorrido del
+   Tab, y se revela con el foco, que es cuando sirve. */
+.skip-link {
+    background: var(--color-texto);
+    border-radius: 0 0 var(--radius-sm) 0;
+    color: var(--color-blanco);
+    font-weight: 600;
+    left: 0;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    position: fixed;
+    text-decoration: none;
+    top: 0;
+    /* Fuera de pantalla sin dejar de ser enfocable: moverlo en vez de
+       display:none es lo que permite que el Tab lo alcance. */
+    transform: translateY(-120%);
+    transition: transform 0.15s ease;
+    z-index: 9999;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    outline: 3px solid var(--color-texto);
+    outline-offset: 2px;
+    transform: translateY(0);
+}
+
 body {
     /* El fondo de la página es la capa .fondo-textura (video + velo crema).
        El body queda transparente para que esa capa se vea detras. */
