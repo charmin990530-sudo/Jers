@@ -24,20 +24,19 @@
 
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/producto.css">
+    <!--
+      NO se declara aquí un JSON-LD `Product` estático. Antes lo había, con
+      `name: "By Jers Producto"` (idéntico en todas las fichas), SIN
+      `offers.price` y con `availability: InStock` siempre. Eso es structured
+      data engañoso: `Offer` sin `price` es inválido para los rich results de
+      producto, y declarar disponible un producto agotado expone a una acción
+      manual de Google.
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      "name": "By Jers Producto",
-      "brand": { "@type": "Brand", "name": "By Jers" },
-      "offers": {
-        "@type": "Offer",
-        "priceCurrency": "COP",
-        "availability": "https://schema.org/InStock"
-      }
-    }
-    </script>
+      Ahora lo genera `js/producto.js` a partir del producto real, una vez la API
+      responde, en actualizarDatosEstructurados(). Si el producto está agotado se
+      marca OutOfStock, y si no hay datos no se emite nada en vez de emitir datos
+      falsos.
+    -->
     <script src="js/loader-boot.js"></script>
     <script src="js/fondo-textura.js" defer></script>
 </head>

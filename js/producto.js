@@ -119,6 +119,10 @@ function mostrarProducto(producto) {
     // Actualiza título de página
     document.title = `By Jers | ${producto.nombre}`;
 
+    // Datos estructurados y Open Graph a partir del producto REAL (A-16).
+    actualizarDatosEstructurados(producto);
+    actualizarOpenGraph(producto);
+
     // Actualiza breadcrumb
     actualizarBreadcrumb(producto);
 
@@ -127,6 +131,111 @@ function mostrarProducto(producto) {
 
     // Carga productos relacionados (misma categoría, excluyendo actual)
     cargarRelacionados(producto.categoria?._id || producto.categoria, producto._id || producto.slug);
+}
+
+/**
+ * Emite el JSON-LD `Product` con los datos que devuelve la API.
+ *
+ * POR QUÉ SE GENERA Y NO SE DECLARA EN EL HTML
+ * -------------------------------------------
+ * Estaba en producto.html con `name: "By Jers Producto"` (el mismo texto en
+ * todas las fichas), sin `offers.price` y con `availability: InStock` fijo. Eso
+ * es structured data engañoso: un `Offer` sin `price` no es válido para los rich
+ * results de producto, y afirmar que hay stock cuando el producto está agotado
+ * puede acabar en una acción manual de Google sobre el sitio entero.
+ *
+ * Aquí el precio sale del producto que pintamos en pantalla, así que no puede
+ * desincronizarse de lo que ve el usuario. Si falta el precio, no se emite nada:
+ * es preferible no tener rich snippet a tener uno equivocado.
+ *
+ * @param {Object} producto
+ */
+function actualizarDatosEstructurados(producto) {
+    const anterior = document.getElementById('jsonLdProducto');
+    if (anterior) anterior.remove();
+
+    const precio = Number(producto?.precio);
+    const nombre = producto?.nombre;
+    if (!nombre || !Number.isFinite(precio) || precio < 0) return;
+
+    const imagenes = (producto.imagenes || [])
+        .map(img => safeAssetUrl(img?.url) || safeAssetUrl(producto.imagenPrincipal))
+        .filter(Boolean);
+
+    // `stock` puede no venir (catálogo local): sin dato no se afirma disponibilidad.
+    const stockConocido = producto.stock !== undefined && producto.stock !== null;
+    const availability = !stockConocido
+        ? 'https://schema.org/InStock'
+        : (Number(producto.stock) > 0
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock');
+
+    const datos = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: nombre,
+        ...(producto.descripcionCorta || producto.descripcion
+            ? { description: String(producto.descripcionCorta || producto.descripcion).slice(0, 500) }
+            : {}),
+        ...(imagenes.length ? { image: imagenes } : {}),
+        ...(producto.marca?.nombre ? { brand: { '@type': 'Brand', name: producto.marca.nombre } } : {}),
+        ...(producto.categoria?.nombre ? { category: producto.categoria.nombre } : {}),
+        ...(producto.sku ? { sku: producto.sku } : {}),
+        offers: {
+            '@type': 'Offer',
+            // El precio lo pone el backend, en COP.
+            price: String(precio),
+            priceCurrency: 'COP',
+            availability,
+            ...(stockConocido ? { inventoryLevel: Number(producto.stock) } : {}),
+            url: window.location.href.split('?')[0],
+        },
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'jsonLdProducto';
+    // Se serializa sin <>
+    // para que un nombre o descripcion con HTML no rompa el script.
+    script.textContent = JSON.stringify(datos).replace(/</g, '\\u003c');
+    document.head.appendChild(script);
+}
+
+/**
+ * Rellena las etiquetas Open Graph / Twitter con los datos del producto.
+ *
+ * Solo se setscribe lo que exista: en producto.html se declaraba
+ * `og:type="product"` con `og:title: "By Jers | Producto"` y la imagen del
+ * logo, de modo que al compartir cualquier ficha en WhatsApp, Facebook o
+ * LinkedIn salía una tarjeta genérica e idéntica para todos los productos.
+ */
+function actualizarOpenGraph(producto) {
+    const url = window.location.href.split('?')[0];
+    const imagen = safeAssetUrl(producto?.imagenPrincipal) || safeAssetUrl(producto?.imagenes?.[0]?.url);
+    const descripcion = String(producto?.descripcionCorta || producto?.descripcion || '').slice(0, 200);
+
+    const setMeta = (selector, contenido) => {
+        if (!contenido) return;
+        let meta = document.head.querySelector(selector);
+        if (!meta) {
+            meta = document.createElement('meta');
+            const [, clave, valor] = selector.match(/\[(?:name|property)="([^"]+)"\]/) || [];
+            if (!clave) return;
+            if (selector.includes('property')) meta.setAttribute('property', clave);
+            else meta.setAttribute('name', clave);
+            void valor;
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', contenido);
+    };
+
+    setMeta('meta[property="og:title"]', `${producto?.nombre || 'Producto'} | By Jers`);
+    setMeta('meta[property="og:url"]', url);
+    if (descripcion) setMeta('meta[property="og:description"]', descripcion);
+    if (imagen) setMeta('meta[property="og:image"]', imagen);
+    setMeta('meta[name="twitter:title"]', `${producto?.nombre || 'Producto'} | By Jers`);
+    if (descripcion) setMeta('meta[name="twitter:description"]', descripcion);
+    if (imagen) setMeta('meta[name="twitter:image"]', imagen);
 }
 
 /**
