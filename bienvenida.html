@@ -71,8 +71,23 @@
         </div>
     </noscript>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+    <!--
+      GSAP va con Subresource Integrity. La CSP de vercel.json ya limita
+      script-src a 'self' y a cdn.jsdelivr.net, pero eso solo dice de donde
+      puede venir el script: no impide que quien controle la respuesta del CDN
+      ejecute codigo en la pagina. El hash es lo que ata el archivo a esta
+      version concreta (3.15.0, fijada en la URL): si el CDN sirve otra cosa,
+      el navegador la rechaza en vez de ejecutarla.
+
+      crossorigin="anonymous" es obligatorio: sin el, el navegador hace la
+      peticion sin credenciales y el hash no coincide nunca.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+            integrity="sha384-XmJ9SoHtVOHoQUcKvFAzVXwdkKo1Ie3bhmSoIAkcdsHGaIrVJIkmozyq0FJeb/Ly"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+            integrity="sha384-wl5TeDVvOWt30Pbf8aSo2ZrzsOjddu3avOBvHe+p+OhJt9gP6w9YXmDkN5DK2/dF"
+            crossorigin="anonymous"></script>
     <script type="module" src="js/bienvenida.js"></script>
 </body>
 
