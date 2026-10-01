@@ -80,7 +80,19 @@
         <!-- Producto Principal -->
         <section class="producto-detalle container">
             <div class="producto-grid" id="productoContenido">
-                <!-- Se llena dinámicamente desde js/producto.js -->
+                <!--
+                  El h1 de la ficha lo inyecta js/producto.js cuando la API
+                  responde, con el nombre real del producto. Ese h1 no existia
+                  en el HTML: sin JavaScript, o con un fallo de red antes de
+                  pintar, la pagina se quedaba sin ningun encabezado de nivel 1
+                  y los lectores de pantalla no tenían ningun título que leer.
+
+                  Este h1 de reserva vive dentro del MIS contenedor que el JS
+                  vacía con innerHTML, así que nunca coexiste con el suyo: en
+                  cuanto corre el script desaparece. `.producto-titulo-reserva`
+                  hace que ocupe la fila completa del grid mientras está solo.
+                -->
+                <h1 class="producto-nombre producto-titulo-reserva">Cargando producto...</h1>
             </div>
         </section>
 
