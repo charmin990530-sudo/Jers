@@ -93,7 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!response.ok) {
             // 6. Manejo de errores
-            console.error('Error login:', response);
+            // No se vuelca la respuesta entera: `data` lleva los `details` de
+            // validacion campo a campo, y en login y registro ese sobre acaba
+            // conteniendo lo que la persona escribio (correo, telefono). En la
+            // consola del navegador eso queda a la vista de cualquiera que abra
+            // las devtools. Se registra solo el codigo y el estado HTTP, que es
+            // lo unico que hace falta para diagnosticar.
+            console.error('[auth] Login rechazado:', response.data?.code || 'SIN_CODIGO', response.data?.status ?? 'sin-estado');
 
             if (response.data?.errors && Array.isArray(response.data.errors)) {
                 // Errores de validación Zod (400)
