@@ -231,11 +231,9 @@
   gap: 25px;
 }
 
-.hero-estadisticas .hero-estadistica {
+.hero-estadisticas h3 {
   color: var(--color-mauve);
   font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
 }
 
 .hero-estadisticas span {
@@ -271,10 +269,8 @@
   width: 55px;
 }
 
-.hero-card .hero-card-titulo {
+.hero-card h4 {
   font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
 }
 
 .hero-card p {
@@ -448,10 +444,8 @@
   width: 55px;
 }
 
-.promo-card .promo-card-titulo {
+.promo-card h4 {
   font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
 }
 
 .promo-card p {
