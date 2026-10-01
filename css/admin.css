@@ -5,6 +5,19 @@
     min-height: 100vh;
 }
 
+/* Imagen de la celda de logo/foto en las tablas del panel.
+   Antes estaba definida en tres hojas: admin-categorias.css,
+   admin-productos.css y admin-marcas.css, y las tres no coincidían — la de
+   marcas la dejaba en 40 px, así que el mismo componente se veía a dos
+   tamaños según la pantalla. Aquí queda una sola definición. */
+.tabla-imagen {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--color-cream);
+}
+
 .admin-main {
     padding: var(--spacing-xl) var(--spacing-md);
 }

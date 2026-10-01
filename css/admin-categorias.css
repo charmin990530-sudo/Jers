@@ -66,14 +66,6 @@
     font-weight: 500;
 }
 
-.tabla-imagen {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    background: var(--color-cream);
-}
-
 .sin-imagen {
     color: var(--color-gray-light);
     font-size: 1.5rem;
