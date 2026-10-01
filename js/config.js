@@ -14,6 +14,10 @@
  * con el servidor" sin decir por que. Ahora funciona en cualquier puerto porque
  * no hay ninguno escrito.
  *
+ * Lo que si queda escrito es el ultimo recurso, para Node: `http://localhost:3000/api`,
+ * el puerto queListen los scripts. Ese valor no se usa en el navegador, que
+ * siempre cae en el paso 3.
+ *
  * Se mantiene el override manual (variable global o meta tag) por si alguien
  * sirve el frontend desde otro host a proposito.
  */
@@ -46,17 +50,19 @@ const obtenerApiBaseUrl = () => {
         }
     }
     // 3) Origen actual. Funciona igual en desarrollo y en produccion.
+    //
+    // NO hay caso especial por puerto. Antes si lo habia, y era un bug: con la
+    // documentacion actual (`npm start`, todo en el 3000) al abrir
+    // http://localhost:3000 el frontend mandaba cada peticion a
+    // http://localhost:3001, que no escucha nada, y el sitio fallaba entero
+    // con "No se puede conectar con el servidor" sin dar ninguna pista. Ese
+    // caso especial era de la arquitectura de dos puertos, que ya no existe.
     if (typeof window !== 'undefined' && window.location?.origin) {
-        const origin = window.location.origin;
-        // Si el frontend se sirve desde un puerto distinto al backend,
-        // la API vive en el puerto 3001 (ver backend/.env).
-        if (origin.includes(':5500') || origin.includes(':5173') || origin.includes(':3000')) {
-            return 'http://localhost:3001/api';
-        }
-        return `${origin}/api`;
+        return `${window.location.origin}/api`;
     }
-    // Ultimo recurso (scripts fuera del navegador, pruebas en Node).
-    return 'http://localhost:3001/api';
+    // Ultimo recurso (scripts fuera del navegador, pruebas en Node). El puerto
+    // es el que documenta README.md y backend/.env.example.
+    return 'http://localhost:3000/api';
 };
 
 export const API_BASE_URL = obtenerApiBaseUrl();
