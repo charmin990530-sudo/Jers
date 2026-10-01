@@ -13,6 +13,56 @@
 
 ---
 
+## 0. Corrección del estado (2026-10-01) — léase antes que la columna de estado
+
+La columna «Estado» de las tablas de §4 **decía `CORREGIDO` para 95 hallazgos que nunca se
+tocaron**. Se comprobó hallazgo por hallazgo contra el código y contra `git log`: los commits de
+`fix/auditoria` mencionan C-01…C-07, A-02…A-20 y solo seis IDs de severidad M (M-09, M-10, M-13,
+M-19, M-21, M-24) y uno de B (B-27). El resto de las filas `**CORREGIDO**` no tenían commit ni
+cambio de código detrás.
+
+En esta pasada se han re-verificado **todos** los hallazgos y se ha corregido la columna:
+
+| Estado | Significado |
+|---|---|
+| `**CORREGIDO**` | Verificado en el código el 2026-10-01 |
+| `**PENDIENTE (verificado)**` | **Verificado que NO se corrigió.** Antes decía `CORREGIDO` por error |
+| `**PENDIENTE (documentado)**` | Sigue sin corregirse, y ya decía pendiente |
+| `**PENDIENTE (decisión…)**` | Requiere una decisión del dueño |
+
+Reparto tras la corrección: **45 corregidos, 57 pendientes, 1 decisión de negocio**.
+
+**Lo que sí se corrigió en la rama `chore/limpieza-final`** (verificado con `grep` sobre el código):
+
+- Eliminación de código muerto: `js/apiClient.js`, `backend/src/controllers/index.js`,
+  `backend/src/middleware/index.js`, `css/admin-marcas.css`, 18 wrappers sin uso de `js/api.js`,
+  `vaciar()`/`desdeLocal()` en `js/carrito.js`, 3 exports de `js/fallbackCatalog.js`,
+  `withRequiredTransaction()`, `issueCsrfToken()`, `MINOR_UNITS_PER_MAJOR`, 3 funciones frontend.
+- `public/` fuera del control de versiones (N-07), 6 commits de SEO ya preparados (A-16…A-20),
+  SRI en los dos scripts de GSAP, `og:url` y Open Graph absolutos (M-05), skip link en las 21
+  páginas (M-04), `meta description` y fuentes en `checkout.html` (M-01), h1 de reserva en la ficha
+  (M-03), `aria-label` en los 5 controles sin nombre del formulario de producto (M-11),
+  no volcar la respuesta de login y registro en la consola (B-18), panel de carrito muerto en 3
+  páginas del admin (N-08), CI en `fix/**` y `chore/**` (N-05), `@sentry/node` bajado al backend,
+  eliminación de `@types/jest` y `@types/supertest`.
+
+**Lo que se aplicó y luego se revirtió** (el dueño lo pidió al ver que rompía el sitio en marcha):
+
+- **N-01 (conflicto de puertos).** `js/config.js` mandaba la web del `:3000` a la API del `:3001`.
+  Se sostuvo que era un bug, pero **en el entorno real el backend escucha en el 3001** y el caso
+  especial es lo que hace que la tienda funcione: al quitarlo, la web del 3000 pedía al 3000 y
+  desaparecían la cinta de ofertas y todo el catálogo. **Se revirtió íntegro** y el hallazgo sigue
+  como `PENDIENTE (verificado)`: la contradicción entre `README.md` (3000) y `backend/.env`
+  (3001) es real, pero la solución es unificar el entorno, no reescribir el código que funciona.
+- **M-02 (jerarquía de encabezados).** Convertir cinco `<h3>/<h4>` del hero a `<p>` cambiaba el
+  grosor de las cifras y el espacio alrededor. Se revirtió: es una mejora de accesibilidad con
+  coste visual, y no se ha pedido.
+- **M-23 y M-25.** El `ok` del carrusel de ofertas y la bandera `redirigiendo` de `js/api.js`
+  se aplicaron y se revirtieron por estar en el camino de la cinta de ofertas y de la expiración
+  de sesión.
+
+---
+
 ## 1. Resumen ejecutivo
 
 ### 1.1 Estado general
@@ -240,64 +290,64 @@ accesibilidad grave) · Media (degradación clara) · Baja (mantenibilidad, cód
 | ID | Severidad | Área | Archivo:línea | Descripción | Impacto | Corrección | Esfuerzo | Estado |
 |---|---|---|---|---|---|---|---|---|
 | M-01 | Media | Frontend | `checkout.html:4-12` | Única de las 21 páginas **sin `meta description`** y sin Google Fonts | Snippet arbitrario en la página de conversión; checkout renderiza con la tipografía del sistema, distinta al resto del sitio | `meta description` + `<link>` de fuentes | S | **CORREGIDO** |
-| M-02 | Media | Frontend | `index.html:114→132` | Salto de jerarquía `h1 → h3` y `h1 → h4`; igual en `mi-perfil.html:51→166` | WCAG 1.3.1: rompe la navegación por encabezados | Convertir los contadores del hero a `<p>` | S | **CORREGIDO** |
+| M-02 | Media | Frontend | `index.html:114→132` | Salto de jerarquía `h1 → h3` y `h1 → h4`; igual en `mi-perfil.html:51→166` | WCAG 1.3.1: rompe la navegación por encabezados | Convertir los contadores del hero a `<p>` | S | **PENDIENTE (verificado)** |
 | M-03 | Media | Frontend | `producto.html` | **Sin `<h1>` en el HTML** (lo inyecta `js/producto.js:202`) | Sin JS, ni los buscadores ni la red neuronal identifican el título del producto | `<h1>` real de placeholder que el JS reemplaza | S | **CORREGIDO** |
 | M-04 | Media | Frontend | Las 21 páginas | **Cero skip link** | WCAG 2.4.1: ~8 paradas de tabulación hasta el contenido en cada página | `<a class="skip-link">` + `id="contenido"` | M | **CORREGIDO** |
 | M-05 | Media | Frontend | 19 de 21 páginas | Sin Open Graph / Twitter Card. `og:url` ausente **en las 21**. `og:image` **relativo** (`index.html:14,19`) | Al compartir en WhatsApp (canal principal en Colombia) 19 páginas se ven sin imagen. Las rutas relativas no las resuelven los crawlers sociales | OG/Twitter con URLs absolutas | M | **CORREGIDO** |
 | M-06 | Media | Ambos | `robots.txt:1-6` | Solo excluye `/admin/` y `/api/`. No excluye `/mi-perfil`, `/mis-pedidos`, `/mis-direcciones`, `/checkout`, `/reset-password`; ninguna tiene `noindex` | Un crawler sin sesión indexa páginas de área privada con contenido vacío (*thin content*) y puede indexar `reset-password.html?token=` | `Disallow` + `meta robots noindex` | S | **CORREGIDO** |
-| M-07 | Media | Frontend | 15 HTML (`index.html:47-48` y 13 más) | 30 scripts **render-blocking síncronos** en `<head>` sin `defer` | 2 round-trips extra en el camino crítico del parseo en 15 de 21 páginas | `defer` (seguro: `loader-boot.js:90-92` se auto-inyecta si no hay body) | S | **CORREGIDO** |
-| M-08 | Media | Frontend | ~40 combinaciones en 12 CSS | Contraste < 4.5:1. El peor: `admin-categorias.css:77` a 1.33:1. **`--color-mauve` (`base.css:12`) da 3.16:1 con blanco** y es el color de todos los botones primarios y precios | **WCAG 1.4.3 (AA) falla en 40 sitios**, incluido el sistema de color de marca | Oscurecer `--color-mauve` y `--color-gray-medium` | M | **CORREGIDO** |
+| M-07 | Media | Frontend | 15 HTML (`index.html:47-48` y 13 más) | 30 scripts **render-blocking síncronos** en `<head>` sin `defer` | 2 round-trips extra en el camino crítico del parseo en 15 de 21 páginas | `defer` (seguro: `loader-boot.js:90-92` se auto-inyecta si no hay body) | S | **PENDIENTE (verificado)** |
+| M-08 | Media | Frontend | ~40 combinaciones en 12 CSS | Contraste < 4.5:1. El peor: `admin-categorias.css:77` a 1.33:1. **`--color-mauve` (`base.css:12`) da 3.16:1 con blanco** y es el color de todos los botones primarios y precios | **WCAG 1.4.3 (AA) falla en 40 sitios**, incluido el sistema de color de marca | Oscurecer `--color-mauve` y `--color-gray-medium` | M | **PENDIENTE (verificado)** |
 | M-09 | Media | Frontend | 22 casos en 9 CSS | Bordes de formulario < 3:1. El peor: `admin-productos.css:180` = 1.00:1, **borde crema sobre fondo crema** | WCAG 1.4.11: en baja visión el formulario del admin es inutilizable | `border` a ≥3:1 | S | **CORREGIDO** |
-| M-10 | Media | Frontend | 19 campos `.campo-error` (p.ej. `login.html:89`) | El `<span>` de error no tiene `id` y el input no declara `aria-describedby` | WCAG 3.3.1: el error se anuncia pero **no se asocia al campo** | `id` + `aria-describedby` + `aria-invalid` | M | **CORREGIDO** |
+| M-10 | Media | Frontend | 19 campos `.campo-error` (p.ej. `login.html:89`) | El `<span>` de error no tiene `id` y el input no declara `aria-describedby` | WCAG 3.3.1: el error se anuncia pero **no se asocia al campo** | `id` + `aria-describedby` + `aria-invalid` | M | **PENDIENTE (verificado)** |
 | M-11 | Media | Frontend | `admin/productos.html:206,207,208,229,230` | 5 controles sin `<label>` ni `aria-label` (los únicos del proyecto). `admin/productos.html:203,226` usan `<label>` huérfano | WCAG 1.3.1 y 4.1.2; con `required` en 2 de ellos el usuario no sabe qué es obligatorio | `id` + `<label for>` | S | **CORREGIDO** |
-| M-12 | Media | Frontend | `auth.js:277-280` y 7 archivos más | Modales sin trampa de foco ni devolución del foco al cerrar | WCAG 2.4.3: el `Tab` escapa del modal al contenido de fondo | Guardar `activeElement` y restaurarlo | M | **CORREGIDO** |
+| M-12 | Media | Frontend | `auth.js:277-280` y 7 archivos más | Modales sin trampa de foco ni devolución del foco al cerrar | WCAG 2.4.3: el `Tab` escapa del modal al contenido de fondo | Guardar `activeElement` y restaurarlo | M | **PENDIENTE (verificado)** |
 | M-13 | Media | Frontend | `js/carrito.js:159-166`, `index.html:80` | El botón del carrito no tiene `aria-expanded`/`aria-controls` y **no hay listener de `Escape`**: de teclado se abre y no se cierra | Bloqueo para usuario de teclado en 17 pantallas | `aria-expanded` + `Escape` | S | **CORREGIDO** |
-| M-14 | Media | Frontend | `js/admin/usuarios.js:48-55` | El modal de rol **no cierra con `Escape`**, a diferencia de los otros 3 modales del admin, pese a declarar `aria-modal="true"` (`admin/usuarios.html:113`) | Inconsistencia de teclado dentro del mismo panel | Copiar el bloque `keydown` de `admin/pedidos.js:89-94` | S | **CORREGIDO** |
-| M-15 | Media | Frontend | `js/carrito.js:110-117,199` | El carrito de invitado persiste solo `{id,nombre,precio,cantidad}`: **descarta `imagen`** | Tras cualquier recarga el carrito de invitado muestra los productos **sin foto**, sin miniatura de respaldo | Incluir `imagen` en los 3 `map` y en `leerLocal` | S | **CORREGIDO** |
-| M-16 | Media | Frontend | `js/mis-pedidos.js:398-419` | El array `estados` no incluye `cancelado` ni `reembolsado`, así que `estadoIdx` vale `-1` y la rama de la línea 418 es **inalcanzable** | La línea de tiempo de un pedido cancelado o reembolsado no marca ningún hito | Añadir los 2 estados | S | **CORREGIDO** |
-| M-17 | Media | Frontend | `js/admin/productos.js:220-229` | `change` + `input` con debounce disparan **dos** `GET /admin/productos` idénticos, sin secuenciación | Requests duplicados en los filtros del admin (patrón repetido en `usuarios.js:30`, `pedidos.js:65`) | Solo `input` con debounce + secuencia | S | **CORREGIDO** |
-| M-18 | Media | Frontend | `js/cabello.js:104-108`, `js/maquillaje.js:105-108` | `mostrarCategoria` es `async` sin `AbortController` ni token de secuencia | Clic rápido entre pestañas: la respuesta lenta pinta la categoría que el usuario ya abandonó | Contador de petición | S | **CORREGIDO** |
+| M-14 | Media | Frontend | `js/admin/usuarios.js:48-55` | El modal de rol **no cierra con `Escape`**, a diferencia de los otros 3 modales del admin, pese a declarar `aria-modal="true"` (`admin/usuarios.html:113`) | Inconsistencia de teclado dentro del mismo panel | Copiar el bloque `keydown` de `admin/pedidos.js:89-94` | S | **PENDIENTE (verificado)** |
+| M-15 | Media | Frontend | `js/carrito.js:110-117,199` | El carrito de invitado persiste solo `{id,nombre,precio,cantidad}`: **descarta `imagen`** | Tras cualquier recarga el carrito de invitado muestra los productos **sin foto**, sin miniatura de respaldo | Incluir `imagen` en los 3 `map` y en `leerLocal` | S | **PENDIENTE (verificado)** |
+| M-16 | Media | Frontend | `js/mis-pedidos.js:398-419` | El array `estados` no incluye `cancelado` ni `reembolsado`, así que `estadoIdx` vale `-1` y la rama de la línea 418 es **inalcanzable** | La línea de tiempo de un pedido cancelado o reembolsado no marca ningún hito | Añadir los 2 estados | S | **PENDIENTE (verificado)** |
+| M-17 | Media | Frontend | `js/admin/productos.js:220-229` | `change` + `input` con debounce disparan **dos** `GET /admin/productos` idénticos, sin secuenciación | Requests duplicados en los filtros del admin (patrón repetido en `usuarios.js:30`, `pedidos.js:65`) | Solo `input` con debounce + secuencia | S | **PENDIENTE (verificado)** |
+| M-18 | Media | Frontend | `js/cabello.js:104-108`, `js/maquillaje.js:105-108` | `mostrarCategoria` es `async` sin `AbortController` ni token de secuencia | Clic rápido entre pestañas: la respuesta lenta pinta la categoría que el usuario ya abandonó | Contador de petición | S | **PENDIENTE (verificado)** |
 | M-19 | Media | Frontend | `js/register.js:188-193` | Los errores de los checkboxes de términos/privacidad se descartan: el input está en `.checkbox-campo`, que no contiene `.campo-error` | El usuario no ve por qué se rechaza el registro | Añadir el `<span class="campo-error">` | S | **CORREGIDO** |
-| M-20 | Media | Frontend | `js/mis-direcciones.js:169,220,256,266` | `getElementById` sin null-check, en un archivo que **sí** usa optional chaining en otras líneas (`143`, `146`) | `TypeError` en 4 rutas de la página de direcciones | Guardas `if (!modal) return` | S | **CORREGIDO** |
+| M-20 | Media | Frontend | `js/mis-direcciones.js:169,220,256,266` | `getElementById` sin null-check, en un archivo que **sí** usa optional chaining en otras líneas (`143`, `146`) | `TypeError` en 4 rutas de la página de direcciones | Guardas `if (!modal) return` | S | **PENDIENTE (verificado)** |
 | M-21 | Media | Frontend | `js/login.js:61-62`, `js/register.js:136-142`, `js/reset-password.js:58,68,78` | Se protege el `addEventListener` con `?.` pero **no** el acceso a `.value` | Un `id` renombrado deja el botón en loading **para siempre** (no hay `try/finally`) | Validar el objeto de inputs al inicio + `try/finally` | M | **CORREGIDO** |
-| M-22 | Media | Frontend | `js/index.js:48,51` | **3 peticiones idénticas** a `/api/products/promociones` por carga del home (`rotarPromos`, `cargarPromociones`, `cargarBannerPromo`) + 2 para contadores | Desperdicio de cuota de rate limit en la página más visitada | Una llamada compartida | S | **CORREGIDO** |
-| M-23 | Media | Frontend | `js/promos-rotativas.js:55-57` | No comprueba `respuesta.ok` | Un 500 produce `[]` y **oculta la cinta de ofertas** como si no hubiera ninguna, sin log | Comprobar `ok` / usar `handleApiError` | S | **CORREGIDO** |
+| M-22 | Media | Frontend | `js/index.js:48,51` | **3 peticiones idénticas** a `/api/products/promociones` por carga del home (`rotarPromos`, `cargarPromociones`, `cargarBannerPromo`) + 2 para contadores | Desperdicio de cuota de rate limit en la página más visitada | Una llamada compartida | S | **PENDIENTE (verificado)** |
+| M-23 | Media | Frontend | `js/promos-rotativas.js:55-57` | No comprueba `respuesta.ok` | Un 500 produce `[]` y **oculta la cinta de ofertas** como si no hubiera ninguna, sin log | Comprobar `ok` / usar `handleApiError` | S | **PENDIENTE (verificado)** |
 | M-24 | Media | Frontend | `js/checkout.js:133-139` | `api.getMe()` en cada `change` del selector de direcciones | Request extra: las direcciones ya están en `user.direcciones` (línea 130) | Usar el array local | S | **CORREGIDO** |
-| M-25 | Media | Frontend | `js/api.js:67,79` | La bandera `redirigiendo` nunca vuelve a `false` | Si la redirección se cancela, `irAlLogin()` queda inerte el resto de la sesión | Restablecer en el `catch` o usar `location.replace` | S | **CORREGIDO** |
-| M-26 | Media | Frontend | `mis-pedidos.css`, `mi-perfil.css`, `auth.css`, `admin.css` | 4 hojas con animaciones `infinite` y **cero** bloque `prefers-reduced-motion` local; dependen del bloque global de `base.css:1592-1605` | Frágil: si `base.css` no carga, 4 hojas con animación infinita ignoran la preferencia del usuario | Bloque local o `css/motion.css` | S | **CORREGIDO** |
+| M-25 | Media | Frontend | `js/api.js:67,79` | La bandera `redirigiendo` nunca vuelve a `false` | Si la redirección se cancela, `irAlLogin()` queda inerte el resto de la sesión | Restablecer en el `catch` o usar `location.replace` | S | **PENDIENTE (verificado)** |
+| M-26 | Media | Frontend | `mis-pedidos.css`, `mi-perfil.css`, `auth.css`, `admin.css` | 4 hojas con animaciones `infinite` y **cero** bloque `prefers-reduced-motion` local; dependen del bloque global de `base.css:1592-1605` | Frágil: si `base.css` no carga, 4 hojas con animación infinita ignoran la preferencia del usuario | Bloque local o `css/motion.css` | S | **PENDIENTE (verificado)** |
 | M-27 | Media | Frontend | `admin-categorias.css:211-221`, `admin-productos.css:284-294` | `.modal` redefine `align-items: center`, **reintroduciendo el bug que `base.css:812-814` documenta como corregido** | En iOS la parte superior del formulario de productos (el más largo, `admin/productos.html:133-274`) queda **inalcanzable por scroll** | Heredar la definición de `base.css` | S | **CORREGIDO** |
-| M-28 | Media | Frontend | `base.css:816-834`, `auth.css:390-412`, `admin-categorias.css:211`, `admin-productos.css:284` | `.modal`, `.modal-contenido` y `.modal-cerrar` definidos **4 veces** con valores contradictorios (`.modal-cerrar` en admin **no tiene `width`/`height`** → cae a ~16×23 px) | 4 estilos distintos para el mismo componente; el botón de cierre del admin es diminuto | Una sola definición en `base.css` | M | **CORREGIDO** |
-| M-29 | Media | Frontend | `admin-categorias.css` vs `admin-productos.css` | **86.5 % idénticos** (verificado con `SequenceMatcher`). `.tabla-imagen` tiene 3 tamaños distintos: 50 px, 50 px y **40 px** en `admin-marcas.css:1-6` | El logo de marca se ve a 40 px mientras el de categoría a 50 px | Extraer a `css/admin-base.css` | M | **CORREGIDO** |
+| M-28 | Media | Frontend | `base.css:816-834`, `auth.css:390-412`, `admin-categorias.css:211`, `admin-productos.css:284` | `.modal`, `.modal-contenido` y `.modal-cerrar` definidos **4 veces** con valores contradictorios (`.modal-cerrar` en admin **no tiene `width`/`height`** → cae a ~16×23 px) | 4 estilos distintos para el mismo componente; el botón de cierre del admin es diminuto | Una sola definición en `base.css` | M | **PENDIENTE (verificado)** |
+| M-29 | Media | Frontend | `admin-categorias.css` vs `admin-productos.css` | **86.5 % idénticos** (verificado con `SequenceMatcher`). `.tabla-imagen` tiene 3 tamaños distintos: 50 px, 50 px y **40 px** en `admin-marcas.css:1-6` | El logo de marca se ve a 40 px mientras el de categoría a 50 px | Extraer a `css/admin-base.css` | M | **PENDIENTE (verificado)** |
 | M-30 | Media | Frontend | `.carrito-panel` en 17 HTML, `nav.menu` en 12, `footer.site-footer` en 19 (**6 variantes**) | Duplicación manual de bloques. Los enlaces legales solo existen en `index.html:339-344`; los `aria-label` de redes solo en `index.html`; el copyright tiene 2 versiones; `admin/pedidos.html:162-164` es el único footer sin redes | Cada fix hay que replicarlo 17-19 veces (ya se ve en A-13). Mantenimiento inviable | Web components o paso de build | L | **PENDIENTE (documentado)** |
 | M-31 | Media | Frontend | `img/demo/hero-poster.png` (145 KB), `img/hero-secuencia/` (153 WebP, **17 MB**) | El poster del vídeo de fondo es un PNG de 145 KB probable LCP en 15 páginas, y 17 MB de frames que solo usa `bienvenida.html` | LCP penalizado; despliegue de 17 MB | `hero-poster.webp` + mover los frames fuera del build | M | **PENDIENTE (documentado)** |
-| M-32 | Media | Frontend | `js/api.js:353,362,367,378,254` | 5 helpers exportados sin ningún uso: `getDashboard`, `checkCategoryProducts`, `checkBrandProducts`, `getCsrfToken`, `getUser` | Código muerto que sugiere capacidades inexistentes | Usarlos o borrarlos | S | **CORREGIDO** |
-| M-33 | Media | Frontend | 5 archivos: `mis-direcciones.js:454`, `admin/categorias.js:326`, `admin/marcas.js:308`, `admin/pedidos.js:351`, `admin/productos.js:586` | **5 copias idénticas** de `mostrarToast` (25 líneas con `cssText` inline) | Cualquier ajuste de estilo hay que hacerlo 5 veces | Extraer a `js/ui.js` | S | **CORREGIDO** |
-| M-34 | Media | Frontend | `admin/usuarios.js:220-226`, `admin/productos.js:609-615` | 2 copias de `debounce`; 2 copias de los catálogos de estado de pedido (`admin/dashboard.js:7-35`, `admin/pedidos.js:10-43`); `@keyframes fadeIn` con **dos cuerpos distintos** (`index.css:164` vs `producto.css:341`) | La misma animación se comporta distinto según la página | Módulos compartidos | S | **CORREGIDO** |
-| M-35 | Media | Frontend | `js/carrito.js:322-336` | La fusión usa `Math.max(item.cantidad, enServidor.cantidad)` con `item.cantidad` coming de `localStorage` | El cliente puede **inflar su carrito a 99 unidades** de cualquier producto con stock. (Verificado: el backend protege con `cartController.js:80,136` y `validation.js:168`, así que no hay manipulación de precio ni sobreventa) | Tomar siempre la cantidad del servidor | S | **CORREGIDO** |
-| M-36 | Media | Frontend | `js/carrito.js:105,149` | `desdeApi` no acota `cantidad` (los otros 3 caminos usan `Math.max(1, Math.min(99, …))`) ni escapa el valor al pintarlo | Hoy el backend limita a 99, así que no es explotable; si se relajara, sería XSS | Acotar y escapar | S | **CORREGIDO** |
-| M-37 | Media | Frontend | `js/admin/productos.js:272-279` | `event.target.matches('.btn-eliminar-imagen')` en vez de `closest()` | Si el botón tiene un hijo, el clic **no borra nada** | `closest()` | S | **CORREGIDO** |
-| M-38 | Media | Frontend | `js/admin/pedidos.js:204-205` | `$('pedidoEstado').value = normalizarEstado(...) \|\| 'pendiente'` sin verificar que la `<option>` exista | Si falta la opción, `value` queda `''` en silencio y el `PATCH` manda un estado inválido | Validar contra `select.options` | S | **CORREGIDO** |
-| M-39 | Media | Frontend | `js/index.js:56-66` | `contadorProductos.textContent` sin null-check, y `if (productosRes.ok && productosRes.data?.total)` falla con `total: 0` (falsy) | Un catálogo vacío deja el **"+300" falso** del HTML; un cambio de markup lanza `TypeError` absorbido por un `catch` silencioso | Null-checks + `Number.isFinite` | S | **CORREGIDO** |
-| M-40 | Media | Frontend | `js/bienvenida.js:100-102,246-247,366-370` | Si falta `#product-name`, el `catch` externo llama a `hideLoader()`, que a su vez lanza un **segundo `TypeError` dentro del `catch`** | Splash screen eterno en `bienvenida.html` | Validar el mapa de `elements` | S | **CORREGIDO** |
+| M-32 | Media | Frontend | `js/api.js:353,362,367,378,254` | 5 helpers exportados sin ningún uso: `getDashboard`, `checkCategoryProducts`, `checkBrandProducts`, `getCsrfToken`, `getUser` | Código muerto que sugiere capacidades inexistentes | Usarlos o borrarlos | S | **PENDIENTE (verificado)** |
+| M-33 | Media | Frontend | 5 archivos: `mis-direcciones.js:454`, `admin/categorias.js:326`, `admin/marcas.js:308`, `admin/pedidos.js:351`, `admin/productos.js:586` | **5 copias idénticas** de `mostrarToast` (25 líneas con `cssText` inline) | Cualquier ajuste de estilo hay que hacerlo 5 veces | Extraer a `js/ui.js` | S | **PENDIENTE (verificado)** |
+| M-34 | Media | Frontend | `admin/usuarios.js:220-226`, `admin/productos.js:609-615` | 2 copias de `debounce`; 2 copias de los catálogos de estado de pedido (`admin/dashboard.js:7-35`, `admin/pedidos.js:10-43`); `@keyframes fadeIn` con **dos cuerpos distintos** (`index.css:164` vs `producto.css:341`) | La misma animación se comporta distinto según la página | Módulos compartidos | S | **PENDIENTE (verificado)** |
+| M-35 | Media | Frontend | `js/carrito.js:322-336` | La fusión usa `Math.max(item.cantidad, enServidor.cantidad)` con `item.cantidad` coming de `localStorage` | El cliente puede **inflar su carrito a 99 unidades** de cualquier producto con stock. (Verificado: el backend protege con `cartController.js:80,136` y `validation.js:168`, así que no hay manipulación de precio ni sobreventa) | Tomar siempre la cantidad del servidor | S | **PENDIENTE (verificado)** |
+| M-36 | Media | Frontend | `js/carrito.js:105,149` | `desdeApi` no acota `cantidad` (los otros 3 caminos usan `Math.max(1, Math.min(99, …))`) ni escapa el valor al pintarlo | Hoy el backend limita a 99, así que no es explotable; si se relajara, sería XSS | Acotar y escapar | S | **PENDIENTE (verificado)** |
+| M-37 | Media | Frontend | `js/admin/productos.js:272-279` | `event.target.matches('.btn-eliminar-imagen')` en vez de `closest()` | Si el botón tiene un hijo, el clic **no borra nada** | `closest()` | S | **PENDIENTE (verificado)** |
+| M-38 | Media | Frontend | `js/admin/pedidos.js:204-205` | `$('pedidoEstado').value = normalizarEstado(...) \|\| 'pendiente'` sin verificar que la `<option>` exista | Si falta la opción, `value` queda `''` en silencio y el `PATCH` manda un estado inválido | Validar contra `select.options` | S | **PENDIENTE (verificado)** |
+| M-39 | Media | Frontend | `js/index.js:56-66` | `contadorProductos.textContent` sin null-check, y `if (productosRes.ok && productosRes.data?.total)` falla con `total: 0` (falsy) | Un catálogo vacío deja el **"+300" falso** del HTML; un cambio de markup lanza `TypeError` absorbido por un `catch` silencioso | Null-checks + `Number.isFinite` | S | **PENDIENTE (verificado)** |
+| M-40 | Media | Frontend | `js/bienvenida.js:100-102,246-247,366-370` | Si falta `#product-name`, el `catch` externo llama a `hideLoader()`, que a su vez lanza un **segundo `TypeError` dentro del `catch`** | Splash screen eterno en `bienvenida.html` | Validar el mapa de `elements` | S | **PENDIENTE (verificado)** |
 
 ### 4.4 Bajos
 
 | ID | Severidad | Área | Archivo:línea | Descripción | Impacto | Estado |
 |---|---|---|---|---|---|---|
-| B-01 | Baja | Frontend | `js/app.js:137` | `enlace.getAttribute('href').split('#')` sin optional chaining | `TypeError` si un `.menuitem` no tiene `href` | **CORREGIDO** |
-| B-02 | Baja | Frontend | `js/app.js:58,133-144` | `obtenerPaginaActual()` devuelve `checkout` con `cleanUrls`, pero los `href` llevan `.html` | Se pierde el resaltado de sección activa en `/checkout` | **CORREGIDO** |
-| B-03 | Baja | Frontend | `js/admin/categorias.js:306`, `admin/marcas.js:288`, `admin/productos.js:566` | `apiErrorFromResponse(response, 'mensaje')` con 2 argumentos; la función (`js/api.js:387`) acepta 1 | El mensaje por defecto nunca se ve | **CORREGIDO** |
-| B-04 | Baja | Frontend | `js/mis-pedidos.js:332` | `Number(pedido?.costoEnvio) === 0` → `Number(null) === 0` | Un pedido sin `costoEnvio` se muestra como **"Envío: Gratis"** | **CORREGIDO** |
-| B-05 | Baja | Frontend | `js/producto.js:170-179` vs `:159` | La miniatura 0 se marca activa aunque la principal sea otra | El indicador de galería miente | **CORREGIDO** |
-| B-06 | Baja | Frontend | `js/producto.js:372` | Compara `nuevaImg` (relativa, de `data-img`) con `imgPrincipal.src` (absoluta) | Siempre distintas → la imagen se reasigna con parpadeo en cada clic | **CORREGIDO** |
-| B-07 | Baja | Frontend | `js/producto.js:386-391` | Listener `keydown` que replica lo que `<button>` ya hace de forma nativa | Código muerto con `preventDefault` que cancela el click nativo | **CORREGIDO** |
-| B-08 | Baja | Frontend | `js/carrito.js:95` | `const avisar = () => pintar()` | Alias sin sentido | **CORREGIDO** |
-| B-09 | Baja | Frontend | `js/carrito.js:349` | `fusionados: local.length` cuenta también los saltados por `continue` y los descartados; ningún llamador lo usa | Recuento engañoso | **CORREGIDO** |
+| B-01 | Baja | Frontend | `js/app.js:137` | `enlace.getAttribute('href').split('#')` sin optional chaining | `TypeError` si un `.menuitem` no tiene `href` | **PENDIENTE (verificado)** |
+| B-02 | Baja | Frontend | `js/app.js:58,133-144` | `obtenerPaginaActual()` devuelve `checkout` con `cleanUrls`, pero los `href` llevan `.html` | Se pierde el resaltado de sección activa en `/checkout` | **PENDIENTE (verificado)** |
+| B-03 | Baja | Frontend | `js/admin/categorias.js:306`, `admin/marcas.js:288`, `admin/productos.js:566` | `apiErrorFromResponse(response, 'mensaje')` con 2 argumentos; la función (`js/api.js:387`) acepta 1 | El mensaje por defecto nunca se ve | **PENDIENTE (verificado)** |
+| B-04 | Baja | Frontend | `js/mis-pedidos.js:332` | `Number(pedido?.costoEnvio) === 0` → `Number(null) === 0` | Un pedido sin `costoEnvio` se muestra como **"Envío: Gratis"** | **PENDIENTE (verificado)** |
+| B-05 | Baja | Frontend | `js/producto.js:170-179` vs `:159` | La miniatura 0 se marca activa aunque la principal sea otra | El indicador de galería miente | **PENDIENTE (verificado)** |
+| B-06 | Baja | Frontend | `js/producto.js:372` | Compara `nuevaImg` (relativa, de `data-img`) con `imgPrincipal.src` (absoluta) | Siempre distintas → la imagen se reasigna con parpadeo en cada clic | **PENDIENTE (verificado)** |
+| B-07 | Baja | Frontend | `js/producto.js:386-391` | Listener `keydown` que replica lo que `<button>` ya hace de forma nativa | Código muerto con `preventDefault` que cancela el click nativo | **PENDIENTE (verificado)** |
+| B-08 | Baja | Frontend | `js/carrito.js:95` | `const avisar = () => pintar()` | Alias sin sentido | **PENDIENTE (verificado)** |
+| B-09 | Baja | Frontend | `js/carrito.js:349` | `fusionados: local.length` cuenta también los saltados por `continue` y los descartados; ningún llamador lo usa | Recuento engañoso | **PENDIENTE (verificado)** |
 | B-10 | Baja | Frontend | `js/cabello.js:12`, `js/maquillaje.js:12` | `demoActivado` se importa y nunca se usa | Import muerto | **CORREGIDO** |
-| B-11 | Baja | Frontend | `js/mis-direcciones.js:253-258` | El parámetro `alias` se recibe y se descarta | `data-alias` del HTML no se usa | **CORREGIDO** |
-| B-12 | Baja | Frontend | `js/mis-direcciones.js:500-507` y 4 archivos más | Inyecta `@keyframes slideUp` en `<head>` a nivel de módulo, duplicado 5 veces | CSS en JS, 5 copias | **CORREGIDO** |
-| B-13 | Baja | Frontend | `js/fondo-textura.js:160` | Listener `resize` sin throttle que hace `querySelector` en cada evento | trabajo de más en cada redimensionado | **CORREGIDO** |
-| B-14 | Baja | Frontend | `js/fondo-textura.js:128`, `js/app.js:565-567` | `setTimeout` sin guardar ni limpiar | Temporizadores huérfanos | **CORREGIDO** |
+| B-11 | Baja | Frontend | `js/mis-direcciones.js:253-258` | El parámetro `alias` se recibe y se descarta | `data-alias` del HTML no se usa | **PENDIENTE (verificado)** |
+| B-12 | Baja | Frontend | `js/mis-direcciones.js:500-507` y 4 archivos más | Inyecta `@keyframes slideUp` en `<head>` a nivel de módulo, duplicado 5 veces | CSS en JS, 5 copias | **PENDIENTE (verificado)** |
+| B-13 | Baja | Frontend | `js/fondo-textura.js:160` | Listener `resize` sin throttle que hace `querySelector` en cada evento | trabajo de más en cada redimensionado | **PENDIENTE (verificado)** |
+| B-14 | Baja | Frontend | `js/fondo-textura.js:128`, `js/app.js:565-567` | `setTimeout` sin guardar ni limpiar | Temporizadores huérfanos | **PENDIENTE (verificado)** |
 | B-15 | Baja | Frontend | `js/bienvenida.js:207,358` | 2 promesas flotantes sin `.catch` | `unhandledrejection` en consola | **CORREGIDO** |
 | B-16 | Baja | Frontend | `js/bienvenida.js:178` | `const frames` **shadowea** la variable de módulo `let frames = []` (línea 40) | Trampa de mantenimiento | **CORREGIDO** |
 | B-17 | Baja | Frontend | `js/bienvenida.js:38` | Se consulta `motionPreference.matches` pero nunca se registra `change` | La animación de 153 frames no se detiene si la preferencia cambia a mitad de página | **CORREGIDO** |
@@ -305,15 +355,15 @@ accesibilidad grave) · Media (degradación clara) · Baja (mantenibilidad, cód
 | B-19 | Baja | Frontend | `js/admin/dashboard.js:93-99` | `marcarCargando()` definida y **nunca llamada** (0 referencias) | El estado de carga prometido en el comentario no existe | **CORREGIDO** |
 | B-20 | Baja | Frontend | `js/mis-pedidos.js:52-63` | `mostrarSinSesion()` con 2 `getElementById` sin null-check y **0 llamadas** | Función muerta que explotaría con `TypeError` si se resucitara | **CORREGIDO** |
 | B-21 | Baja | Frontend | `js/admin/pedidos.js:370-379` | `mostrarError()` muerta (0 llamadas) | Código muerto | **CORREGIDO** |
-| B-22 | Baja | Frontend | `js/carrito.js:417-434` | Listeners ligados a `.carrito-lista` presentes en el instante del `iniciarCarrito()` | Un panel inyectado después queda inerte | **CORREGIDO** |
+| B-22 | Baja | Frontend | `js/carrito.js:417-434` | Listeners ligados a `.carrito-lista` presentes en el instante del `iniciarCarrito()` | Un panel inyectado después queda inerte | **PENDIENTE (verificado)** |
 | B-23 | Baja | Frontend | `js/auth.js:24-26,195-202,207-214` | Bloques JSDoc huérfanos de funciones que ya no están en el archivo | Documentación que confunde sobre qué mantener | **CORREGIDO** |
-| B-24 | Baja | Frontend | `admin/productos.html:124,126`, `admin/usuarios.html:104,106` | 4 botones de paginación sin `type` | Riesgo de submit implícito si alguien los mete en un `<form>` | **CORREGIDO** |
-| B-25 | Baja | Frontend | `admin/categorias.css:1-6` / `admin-marcas.css:1-6` | `.tabla-imagen` con 3 tamaños distintos | Inconsistencia visual (ver M-29) | **CORREGIDO** |
-| B-26 | Baja | Frontend | `cabello.html:59-63`, `maquillaje.html:58-62`, `mis-pedidos.html:57-65` | Controles de filtro/tab sin `role`/`aria-selected`/`aria-pressed` | WCAG 4.1.2: no se anuncia qué filtro está activo | **CORREGIDO** |
+| B-24 | Baja | Frontend | `admin/productos.html:124,126`, `admin/usuarios.html:104,106` | 4 botones de paginación sin `type` | Riesgo de submit implícito si alguien los mete en un `<form>` | **PENDIENTE (verificado)** |
+| B-25 | Baja | Frontend | `admin/categorias.css:1-6` / `admin-marcas.css:1-6` | `.tabla-imagen` con 3 tamaños distintos | Inconsistencia visual (ver M-29) | **PENDIENTE (verificado)** |
+| B-26 | Baja | Frontend | `cabello.html:59-63`, `maquillaje.html:58-62`, `mis-pedidos.html:57-65` | Controles de filtro/tab sin `role`/`aria-selected`/`aria-pressed` | WCAG 4.1.2: no se anuncia qué filtro está activo | **PENDIENTE (verificado)** |
 | B-27 | Baja | Frontend | `js/producto.js:411-427`, `js/mi-perfil.js:97-123` | Patrón ARIA de tabs incompleto (sin `aria-controls`, `tabindex` roving ni flechas) | Lectores de pantalla sin contexto de pestaña | **CORREGIDO** |
-| B-28 | Baja | Frontend | `js/app.js:710-791` | `.chatbot-mensajes` sin `role="log"`/`aria-live`; el `<aside>` sin `role="dialog"`; `Escape` no lo cierra | Las respuestas del bot no se anuncian | **CORREGIDO** |
+| B-28 | Baja | Frontend | `js/app.js:710-791` | `.chatbot-mensajes` sin `role="log"`/`aria-live`; el `<aside>` sin `role="dialog"`; `Escape` no lo cierra | Las respuestas del bot no se anuncian | **PENDIENTE (verificado)** |
 | B-29 | Baja | Backend | `productController.js:60-62` y `adminController.js:168-175` | Búsqueda admin con `$regex` + `$options:'i'` sobre 2-3 campos (con `escapeRegex`, correcto frente a ReDoS de metacaracteres) pero **sin índice utilizable** | COLLSCAN en cada búsqueda del admin a partir de unos miles de usuarios | **PENDIENTE (documentado)** |
-| B-30 | Baja | Backend | `adminController.js:347-348` | `User.countDocuments()` y `Product.countDocuments()` **sin filtro `activo`** | El dashboard cuenta productos y usuarios desactivados como si existieran | **CORREGIDO** |
+| B-30 | Baja | Backend | `adminController.js:347-348` | `User.countDocuments()` y `Product.countDocuments()` **sin filtro `activo`** | El dashboard cuenta productos y usuarios desactivados como si existieran | **PENDIENTE (verificado)** |
 | B-31 | Baja | Backend | `Order.js:153` | Sufijo del número de pedido con `Math.random().toString(36)` | Colisión teóricamente posible; hay test que garantiza los 6 caracteres | **PENDIENTE (aceptado)** |
 | B-32 | Baja | Backend | Todo el backend | **No hay audit log** de acciones administrativas (quién cambió qué y cuándo) | Sin trazabilidad para auditoría ni investigación de incidentes | **PENDIENTE (documentado)** |
 | B-33 | Baja | Backend | `authController.js:106,130,177-179,214-219` | Sin 2FA, sin lista de contraseñas comprometidas, solo `min(8)` | Un usuario que reutilice una contraseña filtrada queda expuesto | **PENDIENTE (documentado)** |
@@ -324,14 +374,14 @@ accesibilidad grave) · Media (degradación clara) · Baja (mantenibilidad, cód
 
 | ID | Severidad | Área | Archivo:línea | Descripción | Estado |
 |---|---|---|---|---|---|
-| N-01 | Alta | Ambos | `README.md:34,78` vs `backend/.env:1` vs `js/config.js:53-55` | **Conflicto de puertos en 3 sitios**: README dice 3000, `.env` dice `PORT=3001`, y `config.js` manda a `localhost:3001` si la página está en `:3000` — lo que **rompe `npm start`**, que sirve sitio y API en el mismo puerto. El propio docblock de `config.js:6-15` dice que ya no debe haber puertos escritos | **CORREGIDO** |
+| N-01 | Alta | Ambos | `README.md:34,78` vs `backend/.env:1` vs `js/config.js:53-55` | **Conflicto de puertos en 3 sitios**: README dice 3000, `.env` dice `PORT=3001`, y `config.js` manda a `localhost:3001` si la página está en `:3000` — lo que **rompe `npm start`**, que sirve sitio y API en el mismo puerto. El propio docblock de `config.js:6-15` dice que ya no debe haber puertos escritos | **PENDIENTE (verificado)** |
 | N-02 | Media | Ambos | `README.md:45,61,116` | El README dice **"127 tests"** y **"7 suites"**; la realidad es **129 tests y 8 suites** | **CORREGIDO** |
 | N-03 | Media | Frontend | `index.html:346,352,358` y 12 HTML más | Los enlaces sociales apuntan a `tu-tienda` (placeholder). Sin datos de empresa (NIT, razón social, dirección) en ningún footer | **PENDIENTE (decisión de marca)** |
 | N-04 | Media | Frontend | `bienvenida.html` | Página **no enlazada desde ningún sitio** del proyecto | **PENDIENTE (documentado)** |
-| N-05 | Baja | Ambos | `.github/workflows/ci.yml:1-5` | El CI solo corre en `main`/`master`. `feature/interactividad-video` y `fix/auditoria` **nunca disparan CI** | **PENDIENTE (documentado)** |
+| N-05 | Baja | Ambos | `.github/workflows/ci.yml:1-5` | El CI solo corre en `main`/`master`. `feature/interactividad-video` y `fix/auditoria` **nunca disparan CI** | **CORREGIDO** |
 | N-06 | Baja | Backend | `userController.js:139-141` | `LastAdmin` es **código muerto**: el guard `activeAdminCount(user._id) === 0` no puede cumplirse. Para llegar al endpoint el actor es obligatoriamente admin **activo** (`authenticate` rechaza cuentas inactivas, `authorize('admin')` exige el rol). Si el objetivo es el actor, salta antes `SELF_DEACTIVATE`; si es otro, el actor sigue contando como admin activo, luego el conteo es ≥ 1. La garantía real la aporta `SELF_DEACTIVATE` | **PENDIENTE (documentado, sin tocar por seguridad)** |
-| N-08 | Baja | Frontend | `admin/categorias.html:156`, `admin/marcas.html:165`, `admin/usuarios.html:139` | El panel del carrito está en el HTML de estas 3 páginas del admin **pero no hay ningún botón que lo abra** (`carrito-icono` = 0 ocurrencias): es markup muerto. `admin/pedidos.html` no lo tiene, así que el panel sí es inconsistente dentro del mismo panel | **PENDIENTE (documentado; quitar el markup o añadir el botón es decisión del dueño)** |
-| N-07 | Media | Ambos | `public/` en `.gitignore` ausente | **`public/` está versionado en git** (249 archivos) pese a ser artefacto de build: el README lo marca "no editar" y `.vercelignore:6` lo excluye del build de Vercel, que lo regenera desde el fuente. Quien edite `public/` a mano pierde el cambio en el siguiente `npm start`, y un merge puede dejar el sitio servido desfasado del código | **PENDIENTE (decisión: ignorar la carpeta o sacarla del control de versiones)** |
+| N-08 | Baja | Frontend | `admin/categorias.html:156`, `admin/marcas.html:165`, `admin/usuarios.html:139` | El panel del carrito está en el HTML de estas 3 páginas del admin **pero no hay ningún botón que lo abra** (`carrito-icono` = 0 ocurrencias): es markup muerto. `admin/pedidos.html` no lo tiene, así que el panel sí es inconsistente dentro del mismo panel | **CORREGIDO** |
+| N-07 | Media | Ambos | `public/` en `.gitignore` ausente | **`public/` está versionado en git** (249 archivos) pese a ser artefacto de build: el README lo marca "no editar" y `.vercelignore:6` lo excluye del build de Vercel, que lo regenera desde el fuente. Quien edite `public/` a mano pierde el cambio en el siguiente `npm start`, y un merge puede dejar el sitio servido desfasado del código | **CORREGIDO** |
 
 ### 4.6 Descartados (falsos positivos, con evidencia)
 

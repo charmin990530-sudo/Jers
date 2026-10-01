@@ -42,7 +42,7 @@ npm start
 | `npm run dev` | Desarrollo con recarga automática |
 | `npm run build:static` | Solo regenera `public/` |
 | `npm run seed` | Carga datos iniciales (desarrollo) |
-| `npm test` | Ejecuta 127 tests |
+| `npm test` | Ejecuta 164 tests |
 
 ## Estructura
 
@@ -58,13 +58,14 @@ npm start
 │   │   ├── routes/     # Rutas de la API
 │   │   ├── seeds/      # Datos iniciales
 │   │   └── services/   # Transacciones, emails, dinero
-│   └── tests/          # 127 tests (Jest)
+│   └── tests/          # 164 tests (Jest)
 ├── css/                # Estilos
 ├── data/               # Datos estáticos
 ├── img/                # Imágenes (WebP)
 ├── js/                 # Lógica del frontend
-├── public/             # Build generado (no editar)
+├── public/            # Build generado por npm run build:static (no editar, no versionado)
 ├── scripts/            # Scripts de build
+├── docs/               # Documentación (auditoría técnica)
 └── *.html              # Páginas del sitio
 ```
 
@@ -113,12 +114,16 @@ Ver `API.md` para el contrato completo.
 npm test
 ```
 
-127 tests en 7 suites:
+**164 tests en 11 suites** (verificado con `npm test`):
 - `money.test.js` — Aritmética monetaria
 - `financial.test.js` — Totales, stock, idempotencia
 - `auth.test.js` — Autenticación
+- `user-activation.test.js` — Activación y revocación de cuentas
 - `cart-orders.test.js` — Carrito y pedidos
+- `order-email.test.js` — Correos de pedido
 - `products.test.js` — Catálogo
+- `error-codes.test.js` — Contrato de códigos de error
+- `env-production.test.js` — Variables de entorno en producción
 - `security-middleware.test.js` — CSRF, validación
 - `security-flows.test.js` — Flujos de seguridad
 
@@ -134,13 +139,15 @@ Ver `backend/.env.example` para la checklist de producción.
 
 ## CI/CD
 
-GitHub Actions ejecuta automáticamente los tests en cada push a `main`/`master`:
+GitHub Actions ejecuta automáticamente los tests en cada push y PR a `main`/`master`, `fix/**`,
+`chore/**` y `feat/**`:
 
 ```yaml
 # .github/workflows/ci.yml
 - Instala dependencias
-- Ejecuta npm test (127 tests)
-- Genera build estático
+- Ejecuta npm test dos veces: en UTC y en TZ=America/Bogota (164 tests)
+- npm audit en la raíz y en backend
+- Genera el build estático
 ```
 
 ## Monitoreo
