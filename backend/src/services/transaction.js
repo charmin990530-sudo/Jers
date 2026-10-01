@@ -137,22 +137,3 @@ export const withTransaction = async fn => {
     await session.endSession();
   }
 };
-
-/**
- * Igual que `withTransaction` pero propaga el error de soporte ausente.
- * Se usa en operaciones donde perder la compensacion seria un fallo de
- * integridad silencioso y conviene que el cliente lo note en la respuesta.
- * @template T
- * @param {(ctx: {session: any}) => Promise<T>} fn
- * @returns {Promise<T>}
- */
-export const withRequiredTransaction = async fn => {
-  const { transactional, result } = await withTransaction(fn);
-  if (!transactional) {
-    const error = new Error('Esta operacion requiere transacciones y el despliegue no las admite');
-    error.code = 'TRANSACTIONS_UNAVAILABLE';
-    error.statusCode = 503;
-    throw error;
-  }
-  return result;
-};

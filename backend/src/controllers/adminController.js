@@ -170,7 +170,7 @@ const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /**
  * Zona horaria en la que se cuentan los dias del negocio. Colombia.
  */
-export const ZONA_NEGOCIO = 'America/Bogota';
+const ZONA_NEGOCIO = 'America/Bogota';
 
 /**
  * Desplazamiento de Colombia respecto a UTC, en minutos. Es fijo todo el ano:

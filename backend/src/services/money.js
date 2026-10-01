@@ -26,9 +26,6 @@
  * `percentOfMinor`; el resto del sistema ya trabaja en enteros.
  */
 
-/** Unidad minima de la moneda. En COP el peso no se divide. */
-export const MINOR_UNITS_PER_MAJOR = 1;
-
 /**
  * Limite duro de un importe. Por encima de este valor IEEE-754 deja de
  * representar enteros de forma exacta, asi que se rechaza en vez de dejar que

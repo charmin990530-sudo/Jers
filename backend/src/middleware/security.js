@@ -8,8 +8,8 @@ import {
 } from '../config/env.js';
 import { ErrorCodes, sendError } from './apiError.js';
 
-export const CSRF_COOKIE_NAME = 'jers_csrf';
-export const CSRF_HEADER_NAME = 'x-csrf-token';
+const CSRF_COOKIE_NAME = 'jers_csrf';
+const CSRF_HEADER_NAME = 'x-csrf-token';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'POST', 'PATCH', 'PUT', 'DELETE']);
 const csrfKey = crypto.createHash('sha256').update(`${JWT_SECRET}:csrf:v1`).digest();
@@ -22,7 +22,7 @@ const constantTimeEqual = (left, right) => {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
-export const isValidCsrfToken = token => {
+const isValidCsrfToken = token => {
   const parts = String(token || '').split('.');
   if (parts.length !== 2) return false;
   const [raw, signature] = parts;
@@ -55,7 +55,7 @@ const ensureCsrfToken = (req, res) => {
 
 const reject = (res, status, code, message, options) => sendError(res, status, code, message, options);
 
-export const requestSecurity = (req, res, next) => {
+const requestSecurity = (req, res, next) => {
   const suppliedId = req.get('x-request-id');
   const requestId = suppliedId && /^[A-Za-z0-9._-]{1,64}$/.test(suppliedId)
     ? suppliedId
@@ -108,7 +108,7 @@ const esMismoServidor = (origin, req) => {
   }
 };
 
-export const originGuard = (req, res, next) => {
+const originGuard = (req, res, next) => {
   if (SAFE_METHODS.has(req.method)) return next();
   if (req.get('sec-fetch-site') === 'cross-site') {
     return reject(res, 403, ErrorCodes.ORIGIN_NOT_ALLOWED, 'Origen no permitido');
@@ -143,11 +143,6 @@ export const csrfProtection = (req, res, next) => {
   }
   req.csrfToken = cookieToken;
   next();
-};
-
-export const issueCsrfToken = (req, res) => {
-  const token = ensureCsrfToken(req, res);
-  res.status(200).json({ success: true, csrfToken: token });
 };
 
 export const securityMiddleware = [requestSecurity, originGuard];
