@@ -18,8 +18,5 @@
     "dev": "node --watch backend/src/app.js",
     "seed": "node backend/src/seeds/seed.js",
     "test": "npm test --prefix backend"
-  },
-  "dependencies": {
-    "@sentry/node": "^11.1.0"
   }
 }
