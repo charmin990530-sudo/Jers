@@ -30,7 +30,7 @@ En esta pasada se han re-verificado **todos** los hallazgos y se ha corregido la
 | `**PENDIENTE (documentado)**` | Sigue sin corregirse, y ya decía pendiente |
 | `**PENDIENTE (decisión…)**` | Requiere una decisión del dueño |
 
-Reparto tras la corrección: **45 corregidos, 57 pendientes, 1 decisión de negocio**.
+Reparto tras la corrección: **46 corregidos, 56 pendientes, 1 decisión de negocio**.
 
 **Lo que sí se corrigió en la rama `chore/limpieza-final`** (verificado con `grep` sobre el código):
 
@@ -48,12 +48,12 @@ Reparto tras la corrección: **45 corregidos, 57 pendientes, 1 decisión de nego
 
 **Lo que se aplicó y luego se revirtió** (el dueño lo pidió al ver que rompía el sitio en marcha):
 
-- **N-01 (conflicto de puertos).** `js/config.js` mandaba la web del `:3000` a la API del `:3001`.
-  Se sostuvo que era un bug, pero **en el entorno real el backend escucha en el 3001** y el caso
-  especial es lo que hace que la tienda funcione: al quitarlo, la web del 3000 pedía al 3000 y
-  desaparecían la cinta de ofertas y todo el catálogo. **Se revirtió íntegro** y el hallazgo sigue
-  como `PENDIENTE (verificado)`: la contradicción entre `README.md` (3000) y `backend/.env`
-  (3001) es real, pero la solución es unificar el entorno, no reescribir el código que funciona.
+- **N-01 (conflicto de puertos).** Cerrado al final, con autorización del dueño. El caso especial
+  de `js/config.js` (web en `:3000` → API en `:3001`) se quitó, y `backend/.env` pasó a
+  `PORT=3000`, con lo que la documentación y el entorno coinciden por primera vez. El error fue
+  mío dos veces: la primera por quitar el caso especial sin tocar el `.env` (se cayó el sitio),
+  y la segunda por dejar un servidor de pruebas ocupando el 3000. El puerto queda unificado en
+  3000 y `config.js` no escribe ningún puerto, así que mover `PORT` ya no rompe nada.
 - **M-02 (jerarquía de encabezados).** Convertir cinco `<h3>/<h4>` del hero a `<p>` cambiaba el
   grosor de las cifras y el espacio alrededor. Se revirtió: es una mejora de accesibilidad con
   coste visual, y no se ha pedido.
@@ -374,7 +374,7 @@ accesibilidad grave) · Media (degradación clara) · Baja (mantenibilidad, cód
 
 | ID | Severidad | Área | Archivo:línea | Descripción | Estado |
 |---|---|---|---|---|---|
-| N-01 | Alta | Ambos | `README.md:34,78` vs `backend/.env:1` vs `js/config.js:53-55` | **Conflicto de puertos en 3 sitios**: README dice 3000, `.env` dice `PORT=3001`, y `config.js` manda a `localhost:3001` si la página está en `:3000` — lo que **rompe `npm start`**, que sirve sitio y API en el mismo puerto. El propio docblock de `config.js:6-15` dice que ya no debe haber puertos escritos | **PENDIENTE (verificado)** |
+| N-01 | Alta | Ambos | `README.md:34,78` vs `backend/.env:1` vs `js/config.js:53-55` | **Conflicto de puertos en 3 sitios**: README dice 3000, `.env` dice `PORT=3001`, y `config.js` manda a `localhost:3001` si la página está en `:3000` — lo que **rompe `npm start`**, que sirve sitio y API en el mismo puerto. El propio docblock de `config.js:6-15` dice que ya no debe haber puertos escritos | **CORREGIDO** |
 | N-02 | Media | Ambos | `README.md:45,61,116` | El README dice **"127 tests"** y **"7 suites"**; la realidad es **129 tests y 8 suites** | **CORREGIDO** |
 | N-03 | Media | Frontend | `index.html:346,352,358` y 12 HTML más | Los enlaces sociales apuntan a `tu-tienda` (placeholder). Sin datos de empresa (NIT, razón social, dirección) en ningún footer | **PENDIENTE (decisión de marca)** |
 | N-04 | Media | Frontend | `bienvenida.html` | Página **no enlazada desde ningún sitio** del proyecto | **PENDIENTE (documentado)** |
