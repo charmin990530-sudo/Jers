@@ -93,7 +93,7 @@ const leerCookie = nombre => {
     return hallada ? decodeURIComponent(hallada.slice(prefijo.length)) : null;
 };
 
-export const obtenerCsrf = () => leerCookie(CLAVE_CSRF);
+const obtenerCsrf = () => leerCookie(CLAVE_CSRF);
 
 /**
  * Devuelve el token CSRF, pidiéndolo al backend solo si no está en cookie.
@@ -102,7 +102,7 @@ export const obtenerCsrf = () => leerCookie(CLAVE_CSRF);
  * cualquier petición que mute necesita el par cookie + cabecera, y tener el
  * token en dos sitios era una forma de que se desincronizaran.
  */
-export const asegurarCsrf = async () => {
+const asegurarCsrf = async () => {
     const actual = obtenerCsrf();
     if (actual) return actual;
     if (typeof fetch === 'undefined') return null;
@@ -251,8 +251,6 @@ export async function request(endpoint, options = {}) {
 // ---------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------
-export const getCsrfToken = async () => ({ ok: true, msg: 'ok', data: { csrfToken: await asegurarCsrf() } });
-
 export const register = async datos => {
     const r = await request('/auth/register', { method: 'POST', body: datos });
     if (r.ok) { expirada = false; notificarSesion(r.data?.user || null); }
@@ -307,12 +305,9 @@ export const getProducts = (params = {}) => request(conQuery('/products', params
 export const getProduct = id => request(`/products/${id}`, { requiereCsrf: false });
 export const getFeaturedProducts = () => request('/products/featured', { requiereCsrf: false });
 export const getPromoProducts = () => request('/products/promociones', { requiereCsrf: false });
-export const getCategories = () => request('/products/categorias', { requiereCsrf: false });
 export const getBrands = () => request('/products/marcas', { requiereCsrf: false });
 export const getProductsByCategory = (slug, params = {}) =>
     request(conQuery(`/products/categoria/${encodeURIComponent(slug)}`, params), { requiereCsrf: false });
-export const searchProducts = (q, params = {}) =>
-    request(conQuery('/products/buscar', { q, ...params }), { requiereCsrf: false });
 
 // ---------------------------------------------------------------
 // Carrito
@@ -350,32 +345,17 @@ export const createContact = datos => request('/contact', { method: 'POST', body
 // ---------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------
-export const getDashboard = () => request('/admin/dashboard', { requiereCsrf: false });
 export const getAdminProducts = (params = {}) => request(conQuery('/admin/productos', params), { requiereCsrf: false });
-export const createProduct = datos => request('/admin/productos', { method: 'POST', body: datos });
-export const updateProduct = (id, datos) => request(`/admin/productos/${id}`, { method: 'PATCH', body: datos });
-export const deleteProduct = id => request(`/admin/productos/${id}`, { method: 'DELETE' });
 export const getAdminCategories = () => request('/admin/categorias', { requiereCsrf: false });
-export const createCategory = datos => request('/admin/categorias', { method: 'POST', body: datos });
-export const updateCategory = (id, datos) => request(`/admin/categorias/${id}`, { method: 'PATCH', body: datos });
-export const deleteCategory = id => request(`/admin/categorias/${id}`, { method: 'DELETE' });
-export const checkCategoryProducts = id => request(`/admin/categorias/${id}/check-products`, { requiereCsrf: false });
 export const getAdminBrands = () => request('/admin/marcas', { requiereCsrf: false });
-export const createBrand = datos => request('/admin/marcas', { method: 'POST', body: datos });
-export const updateBrand = (id, datos) => request(`/admin/marcas/${id}`, { method: 'PATCH', body: datos });
-export const deleteBrand = id => request(`/admin/marcas/${id}`, { method: 'DELETE' });
-export const checkBrandProducts = id => request(`/admin/marcas/${id}/check-products`, { requiereCsrf: false });
 export const getAdminOrders = (params = {}) => request(conQuery('/admin/pedidos', params), { requiereCsrf: false });
 export const getAdminOrder = id => request(`/admin/pedidos/${id}`, { requiereCsrf: false });
 export const updateAdminOrder = (id, datos) => request(`/admin/pedidos/${id}`, { method: 'PATCH', body: datos });
-export const getContacts = (params = {}) => request(conQuery('/admin/contactos', params), { requiereCsrf: false });
-export const updateContact = (id, datos) => request(`/admin/contactos/${id}`, { method: 'PATCH', body: datos });
 
 // ---------------------------------------------------------------
 // Usuarios
 // ---------------------------------------------------------------
 export const getUsers = (params = {}) => request(conQuery('/users', params), { requiereCsrf: false });
-export const getUser = id => request(`/users/${id}`, { requiereCsrf: false });
 export const updateUserRole = (id, role) => request(`/users/${id}/role`, { method: 'PATCH', body: { role } });
 export const toggleUserActive = id => request(`/users/${id}/toggle-active`, { method: 'PATCH', body: {} });
 export const deleteUser = id => request(`/users/${id}`, { method: 'DELETE' });
@@ -401,18 +381,16 @@ export const handleApiError = (error = {}, contexto = 'api') => {
 
 /** Objeto agrupado, para quien prefiera `api.getCart()` a la función suelta. */
 export const api = {
-    request, getCsrfToken, obtenerCsrf, asegurarCsrf,
+    request, obtenerCsrf, asegurarCsrf,
     register, login, logout, getMe, forgotPassword, resetPassword,
     updateProfile, changePassword, addAddress, updateAddress, deleteAddress,
     getProducts, getProduct, getFeaturedProducts, getPromoProducts,
-    getCategories, getBrands, getProductsByCategory, searchProducts,
+    getBrands, getProductsByCategory,
     getCart, addToCart, updateCartItem, removeFromCart, clearCart,
     createOrder, getOrders, getOrder, cancelOrder, createContact,
-    getDashboard, getAdminProducts, createProduct, updateProduct, deleteProduct,
-    getAdminCategories, createCategory, updateCategory, deleteCategory, checkCategoryProducts,
-    getAdminBrands, createBrand, updateBrand, deleteBrand, checkBrandProducts,
-    getAdminOrders, getAdminOrder, updateAdminOrder, getContacts, updateContact,
-    getUsers, getUser, updateUserRole, toggleUserActive, deleteUser,
+    getAdminProducts, getAdminCategories, getAdminBrands,
+    getAdminOrders, getAdminOrder, updateAdminOrder,
+    getUsers, updateUserRole, toggleUserActive, deleteUser,
     apiErrorFromResponse, handleApiError,
     alCambiarSesion, obtenerUsuario, irAlLogin,
 };
