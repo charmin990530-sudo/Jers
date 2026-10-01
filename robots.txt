@@ -1,6 +1,25 @@
 User-agent: *
 Allow: /
+
+# Panel de administración: nunca debe indexarse.
 Disallow: /admin/
+
+# API.
 Disallow: /api/
+
+# Área privada. El login los sirve igual, pero no sirven de nada en un índice:
+# sin sesión, estas páginas solo muestran texto de espera, y `reset-password`
+# lleva el token de recuperación en la URL, que no debe acabar en un índice.
+Disallow: /mi-perfil
+Disallow: /mis-pedidos
+Disallow: /mis-direcciones
+Disallow: /checkout
+Disallow: /reset-password
+
+# Las fichas de producto se sirven en la misma ruta con query string
+# (producto.html?id=... y producto.html?slug=...). Se deja indexable el patrón
+# normal, pero se bloquean las variantes que no aportan nada al índice.
+Disallow: /producto.html?*token*
+Disallow: /*?utm_
 
 Sitemap: https://byjers.com/sitemap.xml

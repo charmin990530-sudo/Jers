@@ -38,13 +38,25 @@
       "name": "By Jers",
       "description": "Cosmética y belleza. Maquillaje y cuidado capilar.",
       "url": "https://byjers.com",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://byjers.com/buscar?q={search_term_string}",
-        "query-input": "required name=search_term_string"
+      "inLanguage": "es-CO",
+      "publisher": {
+        "@type": "Organization",
+        "name": "By Jers",
+        "url": "https://byjers.com"
       }
     }
     </script>
+    <!--
+      Se retiró `potentialAction: SearchAction`, que apuntaba a
+      https://byjers.com/buscar?q=...: no existe buscar.html ni ruta que lo
+      sirva, así que era un Sitelinks Search Box apuntando a un 404.
+
+      Se añadió en su lugar el bloque Organization de más abajo, con los datos
+      legales que se puedan rellenar. PENDIENTE DEL DUENO: razón social, NIT, dirección
+      postal y teléfono de contacto no aparecen en ningún archivo del proyecto
+      (hallazgo N-03), y la Ley 1581/2012 exige identificar al responsable del
+      tratamiento. Hay que rellenar esos campos antes de publicar.
+    -->
     <script src="js/loader-boot.js"></script>
     <script src="js/fondo-textura.js" defer></script>
 </head>

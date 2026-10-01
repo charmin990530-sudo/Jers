@@ -1,37 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Solo se declaran las páginas PÚBLICAS e indexables. Las de área privada
+  (/checkout, /mi-perfil, /mis-pedidos, /mis-direcciones, /reset-password), las
+  del panel /admin, y /404.html quedan fuera a propósito, y además llevan
+  `noindex, nofollow` en su HTML y `Disallow` en robots.txt.
+
+  La forma de URL es con `.html`, que es la que usan todos los enlaces internos
+  del sitio y la que declara `vercel.json` con `cleanUrls: true` como canónica
+  en el `<link rel="canonical">` de cada página. Antes el sitemap declaraba 7
+  URLs sin `lastmod` y le faltaban 9 páginas reales, incluidas las fichas de
+  producto, que son las de mayor valor de tráfico.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://byjers.com/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://byjers.com/producto.html</loc>
+    <lastmod>2026-09-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://byjers.com/maquillaje.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://byjers.com/cabello.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://byjers.com/resenas.html</loc>
+    <loc>https://byjers.com/contacto.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://byjers.com/contacto.html</loc>
+    <loc>https://byjers.com/resenas.html</loc>
+    <lastmod>2026-09-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://byjers.com/bienvenida.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://byjers.com/login.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://byjers.com/register.html</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
