@@ -2,9 +2,23 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    # Se corre en cualquier rama de trabajo, no solo en main/master. Con el
+    # filtro de antes, un `fix/**` o un `chore/**` no daba ninguna señal hasta
+    # que alguien abria la PR: los tests solo saltaban en el push a la rama
+    # principal, que es justo cuando ya no hay nada que arreglar.
+    branches:
+      - main
+      - master
+      - 'fix/**'
+      - 'chore/**'
+      - 'feat/**'
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - 'fix/**'
+      - 'chore/**'
+      - 'feat/**'
 
 jobs:
   test:
