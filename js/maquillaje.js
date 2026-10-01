@@ -8,7 +8,7 @@
  * 4. Maneja loading, errores y estado vacío
  */
 
-import { getProductsByCategory, handleApiError } from './apiClient.js';
+import { getProductsByCategory, handleApiError } from './api.js';
 import { renderCargando, renderError, resolverCatalogo, demoActivado } from './estados.js';
 import { renderizarCatalogo, obtenerImagenProducto, iniciarAplicacion } from './app.js';
 

@@ -11,7 +11,7 @@
  * 7. Lógica: solo una dirección principal a la vez
  */
 
-import { getMe, addAddress, updateAddress, deleteAddress, handleApiError } from './apiClient.js';
+import { getMe, addAddress, updateAddress, deleteAddress, handleApiError } from './api.js';
 import { protegerRuta } from './rutas.js';
 import { 
     iniciarAplicacion,

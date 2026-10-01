@@ -501,7 +501,7 @@ export function iniciarFormularioContacto() {
         const boton = formulario.querySelector('button[type="submit"]');
         setBtnLoading(boton, true);
         try {
-            const { api } = await import('./apiClient.js');
+            const { api } = await import('./api.js');
             // Se usa el helper `createContact` y no una llamada suelta: el objeto
             // `api` no tiene método `post`, así que `api.post(...)` lanzaba
             // TypeError y el formulario de contacto quedaba inoperante.
@@ -947,7 +947,7 @@ export function iniciarAnimacionesScroll() {
  */
 export async function cerrarSesion() {
     try {
-        const { api } = await import('./apiClient.js');
+        const { api } = await import('./api.js');
         const result = await api.logout();
         if (!result.ok) throw new Error(result.msg || 'No se pudo cerrar sesión');
 
@@ -986,7 +986,7 @@ async function inicializarSesionUI() {
     const menu = document.querySelector('.menulist');
     if (!menu || menu.querySelector('[data-session-ui]')) return;
     try {
-        const { api } = await import('./apiClient.js');
+        const { api } = await import('./api.js');
 
         // La capa de red ya no manda al login por su cuenta: eso lo decide
         // protegerRuta() en las pantallas que exigen sesión. Lo que sí hace falta

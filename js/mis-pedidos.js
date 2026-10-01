@@ -9,7 +9,7 @@
  * 5. Botón "Cancelar" para pedidos en estado pendiente/confirmado
  */
 
-import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './apiClient.js';
+import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './api.js';
 import { protegerRuta } from './rutas.js';
 import { formatearPrecio, formatearFecha as formatearFechaGlobal } from './config.js';
 import { iniciarAplicacion } from './app.js';

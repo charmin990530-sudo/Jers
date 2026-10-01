@@ -10,7 +10,7 @@
  * 6. Validación cliente + servidor (Zod)
  */
 
-import { getMe, updateProfile, changePassword, handleApiError } from './apiClient.js';
+import { getMe, updateProfile, changePassword, handleApiError } from './api.js';
 import { protegerRuta } from './rutas.js';
 import { 
     iniciarAplicacion, 

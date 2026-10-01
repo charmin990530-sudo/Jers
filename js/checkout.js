@@ -17,7 +17,7 @@
  * envenenamiento del carrito.
  */
 
-import { api } from './apiClient.js';
+import { api } from './api.js';
 import { safeExternalUrl } from './sanitize.js';
 import { sincronizar } from './carrito.js';
 import { formatearPrecio } from './config.js';

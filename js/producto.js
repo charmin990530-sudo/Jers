@@ -9,7 +9,7 @@
  * 5. Carga productos relacionados por misma categoría
  */
 
-import { getProduct, getProducts, handleApiError } from './apiClient.js';
+import { getProduct, getProducts, handleApiError } from './api.js';
 import { formatearPrecio } from './config.js';
 import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';

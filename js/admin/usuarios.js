@@ -1,4 +1,4 @@
-import { api, handleApiError } from '../../js/apiClient.js';
+import { api, handleApiError } from '../../js/api.js';
 import { formatearFecha } from '../config.js';
 import { protegerRuta } from '../rutas.js';
 import { iniciarAplicacion } from '../../js/app.js';

@@ -91,7 +91,7 @@ export const renderError = (contenedor, mensaje = 'No pudimos cargar los product
  * Resuelve el catálogo aplicando la política de estados.
  *
  * @param {HTMLElement} contenedor
- * @param {{ok: boolean, data: any, msg: string}} respuesta - Respuesta de apiClient.
+ * @param {{ok: boolean, data: any, msg: string}} respuesta - Respuesta de api.js.
  * @param {object} opciones
  * @param {string[]} opciones.claves - Ruta al array dentro de la respuesta ('products').
  * @param {Function} opciones.alReintentar
