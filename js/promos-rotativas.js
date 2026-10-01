@@ -53,6 +53,20 @@ export const rotarPromos = async () => {
 
   try {
     const respuesta = await getPromoProducts();
+
+    // Sin esta comprobación, un fallo de red se confundía con "no hay
+    // promociones": `respuesta.data.products` venía undefined y el carrusel
+    // se ocultaba en silencio, sin dejar rastro. Ahora el fallo se registra y
+    // el carrusel se oculta igualmente, que es lo que toca.
+    if (!respuesta?.ok) {
+      handleApiError(
+        { status: respuesta?.data?.status, message: respuesta?.msg },
+        'carrusel de promociones',
+      );
+      cinta.hidden = true;
+      return;
+    }
+
     const productos = respuesta?.data?.products ?? respuesta?.products ?? [];
     const promos = construirPromos(productos);
 
