@@ -79,18 +79,6 @@ export const irAlLogin = () => {
     redirigiendo = true;
     try { sessionStorage.setItem('auth_redirect_url', actual); } catch { /* modo privado */ }
     window.location.assign(`/login?redirect=${encodeURIComponent(actual)}`);
-
-    // La bandera se soltaba al descargar la página, porque el módulo se
-    // reinstanciaba al volver del login. Si la navegación NO ocurre — un
-    // diálogo beforeunload cancelado, un beforeunload que devuelve cadena, o
-    // un móvil que congela la pestaña — la bandera se quedaba en true para
-    // siempre y `irAlLogin()` ya no volvía a hacer nada en el resto de la
-    // sesión: el usuario se quedaba en una pantalla que exige sesión y no
-    // tenía forma de salir. Se suelta sola si la página sigue viva.
-    window.setTimeout(() => { redirigiendo = false; }, 0);
-    // Y también al restaurar desde la caché de ida y vuelta (bfcache), que es
-    // el otro camino por el que se puede volver con la bandera puesta.
-    window.addEventListener('pageshow', () => { redirigiendo = false; }, { once: true });
 };
 
 // ---------------------------------------------------------------
