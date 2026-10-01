@@ -21,6 +21,8 @@
 </head>
 
 <body class="admin-page">
+
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
     <header class="header">
         <nav class="menu">
             <img src="../img/logo/logo.webp" alt="Logo By Jers" class="menulogo" width="300" height="300">
@@ -44,7 +46,7 @@
         </nav>
     </header>
 
-    <main class="admin-main">
+    <main class="admin-main" id="contenido">
         <section class="pagina-header">
             <div class="header-content">
                 <div>
@@ -201,13 +203,16 @@
                     <span class="campo-error" aria-live="polite"></span>
                 </div>
 
-                <div class="form-grupo">
-                    <label>Imágenes *</label>
+                <!-- fieldset/legend y no <label>: estos 5 controles se repiten en
+                     varias filas y un <label for> solo puede apuntar a uno. El
+                     legend nombra el grupo y cada control lleva su aria-label. -->
+                <fieldset class="form-grupo">
+                    <legend>Imágenes *</legend>
                     <div id="imagenesContainer">
                         <div class="imagen-item">
-                            <input type="url" name="imagenes[0][url]" placeholder="URL de la imagen" required>
-                            <input type="text" name="imagenes[0][alt]" placeholder="Texto alternativo (opcional)">
-                            <select name="imagenes[0][posicion]">
+                            <input type="url" name="imagenes[0][url]" placeholder="URL de la imagen" aria-label="URL de la imagen" required>
+                            <input type="text" name="imagenes[0][alt]" placeholder="Texto alternativo (opcional)" aria-label="Texto alternativo de la imagen">
+                            <select name="imagenes[0][posicion]" aria-label="Posición del recorte de la imagen">
                                 <option value="center">Centro</option>
                                 <option value="top">Arriba</option>
                                 <option value="bottom">Abajo</option>
@@ -222,14 +227,14 @@
                     </div>
                     <button type="button" class="btn-secundario" id="btnAgregarImagen">+ Agregar imagen</button>
                     <small class="form-ayuda">Mínimo 1 imagen. La primera marcada como principal se usará en listados.</small>
-                </div>
+                </fieldset>
 
                 <fieldset class="form-grupo">
                     <legend>Ingredientes (opcional)</legend>
                     <div id="ingredientesContainer">
                         <div class="ingrediente-item">
-                            <input type="text" name="ingredientes[0][nombre]" placeholder="Nombre del ingrediente" required>
-                            <input type="text" name="ingredientes[0][descripcion]" placeholder="Descripción (opcional)">
+                            <input type="text" name="ingredientes[0][nombre]" placeholder="Nombre del ingrediente" aria-label="Nombre del ingrediente" required>
+                            <input type="text" name="ingredientes[0][descripcion]" placeholder="Descripción (opcional)" aria-label="Descripción del ingrediente">
                             <button type="button" class="btn-eliminar-ingrediente" title="Eliminar">🗑️</button>
                         </div>
                     </div>

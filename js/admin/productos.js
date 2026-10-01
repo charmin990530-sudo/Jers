@@ -301,9 +301,9 @@ function agregarImagenInput() {
     const div = document.createElement('div');
     div.className = 'imagen-item';
     div.innerHTML = `
-        <input type="url" name="imagenes[${escapeHTML(index)}][url]" placeholder="URL de la imagen" required>
-        <input type="text" name="imagenes[${escapeHTML(index)}][alt]" placeholder="Texto alternativo (opcional)">
-        <select name="imagenes[${escapeHTML(index)}][posicion]">
+        <input type="url" name="imagenes[${escapeHTML(index)}][url]" placeholder="URL de la imagen" aria-label="URL de la imagen" required>
+        <input type="text" name="imagenes[${escapeHTML(index)}][alt]" placeholder="Texto alternativo (opcional)" aria-label="Texto alternativo de la imagen">
+        <select name="imagenes[${escapeHTML(index)}][posicion]" aria-label="Posición del recorte de la imagen">
             <option value="center">Centro</option>
             <option value="top">Arriba</option>
             <option value="bottom">Abajo</option>
@@ -336,8 +336,8 @@ function agregarIngredienteInput() {
     const div = document.createElement('div');
     div.className = 'ingrediente-item';
     div.innerHTML = `
-        <input type="text" name="ingredientes[${escapeHTML(index)}][nombre]" placeholder="Nombre del ingrediente" required>
-        <input type="text" name="ingredientes[${escapeHTML(index)}][descripcion]" placeholder="Descripción (opcional)">
+        <input type="text" name="ingredientes[${escapeHTML(index)}][nombre]" placeholder="Nombre del ingrediente" aria-label="Nombre del ingrediente" required>
+        <input type="text" name="ingredientes[${escapeHTML(index)}][descripcion]" placeholder="Descripción (opcional)" aria-label="Descripción del ingrediente">
         <button type="button" class="btn-eliminar-ingrediente" title="Eliminar">Eliminar</button>
     `;
     container.appendChild(div);
