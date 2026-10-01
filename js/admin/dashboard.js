@@ -83,21 +83,6 @@ function renderStats(stats) {
     if (statRevenue) statRevenue.textContent = formatearMoneda(stats.totalRevenue);
 }
 
-/**
- * Marca el panel como cargando ANTES de pedir los datos.
- *
- * El dashboard se queda en blanco si la peticion falla o tarda, y el usuario no
- * puede distinguir "aun cargando" de "no hay datos". Con este estado y el botón
- * de reintentar de abajo, siempre queda claro en qué situación está.
- */
-function marcarCargando() {
-    document.querySelectorAll('.status-item').forEach(item => item.classList.add('loading'));
-    const tbody = document.getElementById('recentOrdersBody');
-    if (tbody && !tbody.children.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="admin-vacio">Cargando pedidos recientes...</td></tr>';
-    }
-}
-
 function renderOrdersStatus(ordersByStatus) {
     Object.entries(iconosEstado).forEach(([key, icon]) => {
         const element = document.querySelector(`.status-item[data-status="${key}"]`);
