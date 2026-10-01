@@ -34,6 +34,12 @@ npm start
 # http://localhost:3000
 ```
 
+> **Un solo puerto: 3000.** El sitio y la API los sirve el mismo proceso de Express, así que
+> el puerto de `backend/.env` (`PORT`) tiene que ser el mismo desde el que abres el navegador.
+> `js/config.js` deriva la URL de la API de `window.location.origin` sin escribir ningún puerto,
+> así que si mueves `PORT` a otra cosa, ábrelo también en ese puerto. En Vercel no hay puerto:
+> `origin` ya es el dominio y no hay nada que configurar.
+
 ## Scripts
 
 | Script | Descripción |

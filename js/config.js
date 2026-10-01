@@ -1,18 +1,23 @@
 /**
  * config.js - Configuración del frontend
  *
- * ORIGEN ÚNICO
- * ------------
+ * ORIGEN ÚNICO, UN SOLO PUERTO
+ * -----------------------------
  * La API y el sitio se sirven desde el mismo Express (ver backend/src/app.js), asi
- * que el navegador solo habla con un origen. Por eso la URL de la API se deriva
- * de `window.location.origin` y NO hay ningun puerto escrito en el codigo.
+ * que el navegador solo habla con un origen y un puerto. Por eso la URL de la API
+ * se deriva de `window.location.origin` y NO hay ningun puerto escrito en el codigo.
  *
- * Antes estaba `http://localhost:3000/api` fijo para desarrollo y
- * `${origin}/api` para produccion, guardado en una condicion segun el hostname.
- * Eso era una fuente de fallos silenciosos: si el backend arrancaba en otro
- * puerto, el sitio no se enteraba y cada fetch fallaba con "No se puede conectar
- * con el servidor" sin decir por que. Ahora funciona en cualquier puerto porque
- * no hay ninguno escrito.
+ * El puerto de desarrollo es 3000, el mismo en `README.md`,
+ * `backend/.env.example` y `backend/.env`. En Vercel no hay puerto: `origin` ya
+ * es el dominio, y por eso esta regla no necesita un caso especial para
+ * produccion.
+ *
+ * Antes había `http://localhost:3000/api` fijo para desarrollo y
+ * `${origin}/api` para produccion, guardado en una condicion segun el hostname,
+ * y otra condicion mas que mandaba a un 3001. Eso era una fuente de fallos
+ * silenciosos: si el backend arrancaba en otro puerto, el sitio no se enteraba y
+ * cada fetch fallaba con "No se puede conectar con el servidor" sin decir por
+ * que. Ahora funciona en cualquier puerto porque no hay ninguno escrito.
  *
  * Se mantiene el override manual (variable global o meta tag) por si alguien
  * sirve el frontend desde otro host a proposito.
@@ -46,17 +51,28 @@ const obtenerApiBaseUrl = () => {
         }
     }
     // 3) Origen actual. Funciona igual en desarrollo y en produccion.
+    //
+    // AQUÍ NO HAY NINGÚN PUERTO ESCRITO, y esa es la regla del proyecto: el
+    // sitio y la API se sirven desde el mismo Express (backend/src/app.js), así
+    // que el puerto de desarrollo es el mismo en los dos. En producción es
+    // todavía más simple, porque en Vercel no hay puerto: `origin` ya es
+    // `https://byjers.com`.
+    //
+    // Antes había una excepción aquí: si el origen era :3000, :5173 o :5500 se
+    // mandaba todo a `http://localhost:3001/api`. Venía de la arquitectura de
+    // dos procesos, y era una trampa: con el backend en el 3001 y el sitio en
+    // el 3000 era lo único que hacía que la tienda funcionara, pero en cuanto
+    // el backend se movía al 3000 (que es lo que dicen el README y
+    // `backend/.env.example`) la web pedía al 3001 y no encontraba nada, sin
+    // más rastro que un "No se puede conectar con el servidor". Con el puerto
+    // unificado en 3000, `${origin}/api` acierta siempre y no hay nada que
+    // mantener sincronizado.
     if (typeof window !== 'undefined' && window.location?.origin) {
-        const origin = window.location.origin;
-        // Si el frontend se sirve desde un puerto distinto al backend,
-        // la API vive en el puerto 3001 (ver backend/.env).
-        if (origin.includes(':5500') || origin.includes(':5173') || origin.includes(':3000')) {
-            return 'http://localhost:3001/api';
-        }
-        return `${origin}/api`;
+        return `${window.location.origin}/api`;
     }
-    // Ultimo recurso (scripts fuera del navegador, pruebas en Node).
-    return 'http://localhost:3001/api';
+    // Último recurso: scripts fuera del navegador (Node, pruebas). Solo aplica
+    // cuando no hay `window`, así que no puede desincronizarse del navegador.
+    return 'http://localhost:3000/api';
 };
 
 export const API_BASE_URL = obtenerApiBaseUrl();
