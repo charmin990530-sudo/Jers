@@ -12,9 +12,17 @@
     <meta property="og:type" content="product">
     <meta property="og:title" content="By Jers | Producto">
     <meta property="og:description" content="Detalle de producto By Jers">
-    <meta property="og:image" content="/img/logo/logo.webp">
+    <meta property="og:url" content="https://byjers.com/producto.html">
+    <meta property="og:site_name" content="By Jers">
+    <meta property="og:image" content="https://byjers.com/img/hero/soficora.webp">
     <meta property="og:locale" content="es_CO">
     <meta name="twitter:card" content="summary_large_image">
+    <!--
+      Estos valores son los que el crawler lee del HTML crudo. actualizarOpenGraph()
+      en js/producto.js los reescribe con los datos del producto real (nombre,
+      descripción, imagen y la URL con su id) en cuanto la API responde, así que
+      lo que se comparte en WhatsApp o Facebook ya no es la tarjeta genérica.
+    -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
