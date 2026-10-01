@@ -41,7 +41,7 @@
  * siempre; ahora no puede volver a envenenar el carrito.
  */
 
-import { getCart, addToCart, updateCartItem, removeFromCart, clearCart, getMe } from './api.js';
+import { getCart, addToCart, updateCartItem, removeFromCart, getMe } from './api.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 import { formatearPrecio } from './config.js';
 
@@ -105,15 +105,6 @@ const desdeApi = item => ({
     cantidad: Number(item.cantidad) || 1,
     imagen: item.imagenSnapshot || item.producto?.imagenes?.[0]?.url || '',
     itemId: item._id,
-});
-
-const desdeLocal = item => ({
-    id: item.id,
-    nombre: item.nombre,
-    precio: Number(item.precio) || 0,
-    cantidad: Number(item.cantidad) || 1,
-    imagen: '',
-    itemId: null,
 });
 
 const total = () => items.reduce((suma, i) => suma + i.precio * i.cantidad, 0);
@@ -287,20 +278,6 @@ export async function cambiarCantidad(indice, cantidad) {
 
     item.cantidad = nueva;
     escribirLocal(items.map(({ id, nombre, precio, cantidad: c }) => ({ id, nombre, precio, cantidad: c })));
-    avisar();
-    return { ok: true };
-}
-
-/** Vacía el carrito. */
-export async function vaciar() {
-    if (!modoInvitado) {
-        const respuesta = await clearCart();
-        if (!respuesta.ok && ![401, 403].includes(respuesta.data?.status)) {
-            return { ok: false, motivo: respuesta.msg };
-        }
-    }
-    items = [];
-    limpiarLocal();
     avisar();
     return { ok: true };
 }
