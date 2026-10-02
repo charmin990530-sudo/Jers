@@ -98,6 +98,33 @@
         </div>
     </div>
 
+    <!-- Confirmación de cancelación.
+         Antes se usaba `prompt()`: pedía el MOTIVO, no la confirmación, así que
+         un clic en "Aceptar" cancelaba el pedido de inmediato (con restauración
+         de stock en el servidor) sin un "¿estás seguro?". El queQuería escribir
+         una nota y pulsaba Enter sin querer ya había cancelado. Además `prompt`
+         no es traducible y en iOS se muestra fuera de contexto. -->
+    <div class="modal" id="modalCancelarPedido" hidden role="dialog" aria-modal="true" aria-labelledby="modalCancelarTitulo">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" type="button" aria-label="Cerrar">✕</button>
+            <h2 id="modalCancelarTitulo" class="modal-titulo">Cancelar pedido</h2>
+            <p id="modalCancelarTexto" class="modal-texto">
+                Vas a cancelar el pedido <strong id="modalCancelarOrden"></strong>.
+                Si ya hiciste el pago, contacta con la tienda para que te devolvamos el dinero.
+            </p>
+            <div class="campo">
+                <label for="cancelarMotivo">Motivo (opcional)</label>
+                <textarea id="cancelarMotivo" name="motivo" rows="3" maxlength="500"
+                          placeholder="Por ejemplo: pedí dos unidades por error"></textarea>
+            </div>
+            <div class="modal-acciones">
+                <button class="btn-secundario" type="button" id="cancelarVolver">Mejor no</button>
+                <button class="btn-primario" type="button" id="cancelarConfirmar">Sí, cancelar el pedido</button>
+            </div>
+            <div class="formulario-mensaje" id="cancelarMensaje" aria-live="polite"></div>
+        </div>
+    </div>
+
     <div class="carrito-panel" id="carritoPanel" role="dialog" aria-modal="true" aria-labelledby="carritoTitulo" aria-hidden="true" inert>
         <div class="carrito-cabecera">
             <h2 id="carritoTitulo">Tu carrito</h2>

@@ -15,6 +15,8 @@ import { getMe, addAddress, updateAddress, deleteAddress, handleApiError } from 
 import { protegerRuta } from './rutas.js';
 import {
     iniciarAplicacion,
+    abrirModal,
+    cerrarModal,
     mostrarToast,
     mostrarErrorCampo,
     limpiarErrorCampo,
@@ -208,18 +210,14 @@ function abrirModalDireccion(addressId = null) {
         }
     }
 
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    form.alias.focus();
+    abrirModal(modal, { primerFoco: form.elements.alias });
 }
 
 /**
  * Cierra modal dirección
  */
 function cerrarModalDireccion() {
-    const modal = document.getElementById('modalDireccion');
-    modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal(document.getElementById('modalDireccion'));
 }
 
 /**
@@ -253,19 +251,15 @@ function inicializarModalEliminar() {
  */
 function abrirModalEliminar(addressId, alias) {
     direccionAEliminar = addressId;
-    const modal = document.getElementById('modalEliminar');
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    abrirModal(document.getElementById('modalEliminar'));
 }
 
 /**
  * Cierra modal eliminar
  */
 function cerrarModalEliminar() {
-    const modal = document.getElementById('modalEliminar');
     direccionAEliminar = null;
-    modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal(document.getElementById('modalEliminar'));
 }
 
 /**

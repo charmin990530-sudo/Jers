@@ -2,6 +2,8 @@ import { api, handleApiError, apiErrorFromResponse } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,
+    abrirModal,
+    cerrarModal,
     mostrarToast,
     mostrarErrorCampo,
     limpiarErroresFormulario,
@@ -165,9 +167,7 @@ function abrirModalMarca(marcaId = null) {
         titulo.textContent = 'Nueva Marca';
     }
 
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    document.getElementById('nombre')?.focus();
+    abrirModal(modal, { primerFoco: document.getElementById('nombre') });
 }
 
 async function cargarMarcaParaEditar(marcaId) {
@@ -198,9 +198,7 @@ async function cargarMarcaParaEditar(marcaId) {
 }
 
 function cerrarModalMarca() {
-    const modal = document.getElementById('modalMarca');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal(document.getElementById('modalMarca'));
 }
 
 async function confirmarEliminar(marcaId) {

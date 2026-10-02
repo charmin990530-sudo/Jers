@@ -31,7 +31,7 @@
 }
 
 .review-nombre {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-size: .9rem;
     font-weight: 600;
 }

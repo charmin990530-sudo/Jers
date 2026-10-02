@@ -169,7 +169,7 @@
 .hero-etiqueta {
   background: white;
   border-radius: 30px;
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   display: inline-block;
   font-size: .85rem;
   font-weight: 600;
@@ -184,7 +184,7 @@
 }
 
 .hero h1 span {
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
 }
 
 .hero-descripcion {
@@ -211,18 +211,18 @@
 }
 
 .herobtn {
-  background: var(--color-mauve);
+  background: var(--color-mauve-texto);
   border: 0;
   color: white;
 }
 
 .hero-secundario {
   border: 2px solid var(--color-mauve);
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
 }
 
 .hero-secundario:hover {
-  background: var(--color-mauve);
+  background: var(--color-mauve-texto);
   color: white;
 }
 
@@ -232,7 +232,7 @@
 }
 
 .hero-estadisticas h3 {
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   font-size: 1.5rem;
 }
 
@@ -337,7 +337,7 @@
 }
 
 .marca-nombre:hover {
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   opacity: 1;
   transform: scale(1.15);
 }
@@ -358,7 +358,7 @@
 
 .promo-btn {
   background: white;
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
 }
 
 .promo-btn:hover {
@@ -474,7 +474,7 @@
 }
 
 .beneficio-icono {
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   font-size: 1.3rem;
 }
 
@@ -513,7 +513,7 @@
 }
 
 .cat-tile-icono {
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   display: inline-block;
   font-size: 1.3rem;
   margin-bottom: 14px;

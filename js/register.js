@@ -254,12 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
             strengthText.textContent = '';
         }
 
-        // Redirigir tras breve pausa
         setTimeout(() => {
+            setBtnLoading(btnRegister, false);
             redirigirTrasAuth();
         }, 1000);
-
-        setBtnLoading(btnRegister, false);
     });
 
     // ==========================================

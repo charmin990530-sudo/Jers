@@ -125,10 +125,29 @@ export function mostrarErrorCampo(input, mensaje) {
  * @param {HTMLInputElement} input
  */
 export function limpiarErrorCampo(input) {
+    if (!input) return;
     input.removeAttribute('aria-invalid');
-    const errorSpan = input.parentElement.querySelector('.campo-error');
+
+    // Mismo criterio que `mostrarErrorCampo` de arriba: el mensaje se busca
+    // subiendo hasta el contenedor del CAMPO, no en el padre inmediato. Aquí
+    // seguía `parentElement`, que es justo lo que `mostrarErrorCampo` documenta
+    // que falla en los campos de contraseña: el input vive dentro de un
+    // `.password-wrapper` y el `<span class="campo-error">` es HERMANO de ese
+    // wrapper. El mensaje no se borraba nunca: el usuario escribía mal la
+    // confirmación, veía el texto rojo, lo corregía, y el texto rojo seguía ahí
+    // mientras `aria-invalid` ya se había retirado.
+    const contenedor = input.closest('.campo, .form-grupo, .checkbox-campo, fieldset, .mb-3') || input.parentElement;
+    const errorSpan = contenedor?.querySelector('.campo-error');
     if (errorSpan) {
         errorSpan.textContent = '';
+        // `mostrarErrorCampo` deja un `aria-describedby` apuntando al span. Si el
+        // span queda vacío, ese enlace sobra y hace que el lector de pantalla
+        // anuncie una descripción vacía en cada campo.
+        const descrito = (input.getAttribute('aria-describedby') || '')
+            .split(/\s+/)
+            .filter(id => id && id !== errorSpan.id);
+        if (descrito.length) input.setAttribute('aria-describedby', descrito.join(' '));
+        else input.removeAttribute('aria-describedby');
     }
 }
 
@@ -235,8 +254,130 @@ export function redirigirTrasAuth() {
 }
 
 // ==========================================
-// MODALES (Términos, Privacidad)
+// MODALES
 // ==========================================
+
+/**
+ * Elementos por los que se puede mover el foco dentro de un modal.
+ *
+ * `inert` ya saca el fondo del recorrido del teclado en los navegadores que lo
+ * soportan; esta lista cubre el resto y hace la trampa de Tab explícita.
+ */
+const FOCOABLES = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Abre un modal gestionando el foco.
+ *
+ * HASTA AQUÍ, solo cuatro de los doce modales del sitio lo hacían. Abrir un
+ * modal sin mover el foco deja al usuario de teclado con el foco en el botón
+ * que lo abrió, DETRÁS del modal: la siguiente lectura anuncia ese botón y `Tab`
+ * recorre los ~200 elementos del fondo en lugar del contenido del modal. Es el
+ * fallo de accesibilidad más común y más fácil de arreglar de forma centralizada,
+ * así que se arregla una vez aquí y se usa en todas partes.
+ *
+ * Qué hace:
+ *  1. Recuerda quién tenía el foco para devolvérselo al cerrar.
+ *  2. Marca el resto de la página como `inert` de verdad (no solo `aria-hidden`,
+ *     que esVisual pero no saca nada del tabulador).
+ *  3. Mete el foco dentro, en el primer control o en el propio contenedor.
+ *  4. Atrapa Tab y Shift+Tab para que no se salgan del modal.
+ *  5. Escape cierra.
+ *
+ * @param {HTMLElement} modal
+ * @returns {void}
+ */
+export function abrirModal(modal, { primerFoco } = {}) {
+    if (!modal) return;
+
+    // Si ya hay un modal abierto, este lo sustituye: solo uno puede controlar
+    // el foco a la vez, y el `inert` es global.
+    const otro = document.querySelector('.modal:not([hidden])');
+    if (otro && otro !== modal) cerrarModal(otro, { restaurarFoco: false });
+
+    modal.__focoPrevio = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    marcarFondoInerte(modal, true);
+
+    const destino = primerFoco
+        || modal.querySelector(FOCOABLES)
+        || modal;
+    // `focus({preventScroll})` evita que la página salte al centro cuando el
+    // modal está más abajo que el punto actual del scroll.
+    destino.focus?.({ preventScroll: true });
+    // Un `role="dialog"` sin nombre no lo anuncia como diálogo. El HTML de
+    // este proyecto ya declara `aria-labelledby` en todos sus modales; esto es
+    // la red de seguridad para los que se creen a mano.
+    if (!modal.getAttribute('aria-labelledby') && !modal.getAttribute('aria-label')) {
+        const titulo = modal.querySelector('h1, h2, h3');
+        if (titulo) {
+            if (!titulo.id) titulo.id = `modal-titulo-${Math.random().toString(36).slice(2, 8)}`;
+            modal.setAttribute('aria-labelledby', titulo.id);
+        }
+    }
+}
+
+/**
+ * Marca todo lo que cuelga de `<body>` salvo el modal como `inert`.
+ *
+ * `inert` es lo que saca a los descendientes del foco, del tabulador y del
+ * árbol de accesibilidad. Aparece en todos los navegadores desde finales de 2023.
+ * En los que no lo soportan, el atributo no hace nada pero no rompe: el
+ * `aria-hidden` del HTML y la trampa de Tab en `abrirModal` cubren el resto.
+ */
+function marcarFondoInerte(modal, inerte) {
+    for (const hijo of document.body.children) {
+        if (hijo === modal || hijo.contains(modal)) continue;
+        // El toast y el carrito son `position: fixed`; dejarlos inertes tiene
+        // sentido igual, pero el aviso del carrito necesita poder leerse.
+        hijo.toggleAttribute('inert', inerte);
+    }
+}
+
+/**
+ * Cierra un modal y devuelve el foco a donde estaba.
+ * @param {HTMLElement} modal
+ * @param {{restaurarFoco?: boolean}} [opciones]
+ */
+export function cerrarModal(modal, { restaurarFoco = true } = {}) {
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    marcarFondoInerte(modal, false);
+    // Solo se restaura el `overflow` si no queda otro modal abierto: si no, al
+    // cerrar dos seguidos el segundo dejaba la página sin scroll para siempre.
+    if (!document.querySelector('.modal:not([hidden])')) {
+        document.body.style.overflow = '';
+    }
+    if (restaurarFoco) {
+        const previo = modal.__focoPrevio;
+        modal.__focoPrevio = null;
+        // Si el elemento que tenía el foco ya no existe (se re-renderizó la
+        // lista), no se intenta: `.focus()` en un nodo desconectado no hace nada
+        // y el usuario se queda perdido en el `<body>`.
+        if (previo && previo.isConnected) previo.focus({ preventScroll: true });
+    }
+}
+
+/**
+ * Atrapa Tab dentro de un modal abierto.
+ *
+ * `inert` ya impide salir del modal en los navegadores modernos. Esta trampa
+ * cubre los demás y, sobre todo, hace el comportamiento explícito.
+ */
+function atraparTabEnModal(modal, evento) {
+    if (evento.key !== 'Tab' || modal.hidden) return;
+    const focoables = [...modal.querySelectorAll(FOCOABLES)].filter(el => el.offsetParent !== null || el === document.activeElement);
+    if (focoables.length < 2) return;
+    const primero = focoables[0];
+    const ultimo = focoables[focoables.length - 1];
+    if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault();
+        ultimo.focus();
+    } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault();
+        primero.focus();
+    }
+}
 
 /**
  * Inicializa modales con delegación de eventos
@@ -248,39 +389,30 @@ export function inicializarModales() {
         if (!enlace) return;
         e.preventDefault();
         const modalId = `modal${enlace.dataset.modal.charAt(0).toUpperCase() + enlace.dataset.modal.slice(1)}`;
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.hidden = false;
-            modal.querySelector('.modal-cerrar')?.focus();
-            document.body.style.overflow = 'hidden';
-        }
+        abrirModal(document.getElementById(modalId));
     });
 
     // Cerrar modal: botón X, click en fondo, tecla Escape
     document.addEventListener('click', (e) => {
         if (e.target.matches('.modal-cerrar') || e.target.matches('.modal')) {
             const modal = e.target.closest('.modal');
-            if (modal) {
-                cerrarModal(modal);
-            }
+            if (modal) cerrarModal(modal);
         }
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const modalAbierto = document.querySelector('.modal:not([hidden])');
-            if (modalAbierto) cerrarModal(modalAbierto);
-        }
+        if (e.key !== 'Escape') return;
+        const modalAbierto = document.querySelector('.modal:not([hidden])');
+        if (modalAbierto) cerrarModal(modalAbierto);
     });
-}
 
-/**
- * Cierra un modal
- * @param {HTMLElement} modal
- */
-export function cerrarModal(modal) {
-    modal.hidden = true;
-    document.body.style.overflow = '';
+    // Un solo listener en `document` para la trampa de Tab de todos los modales
+    // abiertos: registrar uno por modal era imposible de mantener y cualquiera
+    // de los dos acababa sin él.
+    document.addEventListener('keydown', (e) => {
+        const abierto = document.querySelector('.modal:not([hidden])');
+        if (abierto) atraparTabEnModal(abierto, e);
+    });
 }
 
 // ==========================================

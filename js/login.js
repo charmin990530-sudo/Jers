@@ -135,12 +135,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // 8. Éxito: mostrar mensaje y redirigir
         mostrarMensajeGlobal(form, response.msg || '¡Bienvenida de vuelta!', 'exito');
 
-        // Pequeño delay para que se vea el mensaje
+        // El botón NO se rehabilita antes de navegar. Antes se hacía 800 ms antes,
+        // con lo que quedaba pulsable mientras el formulario ya se había
+        // enviado: un doble clic hacía un segundo POST /auth/login (segundo
+        // viaje, segundo token emitido) y podía comerse el límite de 5 intentos
+        // por minuto. Mismo criterio que ya aplica `checkout.js`.
+        // El `setBtnLoading(false)` va dentro del setTimeout para que, si la
+        // navegación no llegara a ocurrir, el botón se rehabilite igualmente.
         setTimeout(() => {
+            setBtnLoading(btnLogin, false);
             redirigirTrasAuth();
         }, 800);
-
-        setBtnLoading(btnLogin, false);
     });
 
     // ==========================================

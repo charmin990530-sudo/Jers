@@ -100,8 +100,12 @@
     outline-offset: 2px;
 }
 
+/* Los placeholders eran #b8a9a9: 2.26:1 sobre blanco, muy por debajo del 4.5:1
+   que WCAG AA exige para texto normal. #867172 da 4.55:1. El texto que ocupa su
+   lugar ("tu@email.com", "••••••••", "300 123 4567") era ilegible con baja
+   visión. */
 .campo input::placeholder {
-    color: #b8a9a9;
+    color: #867172;
 }
 
 .campo input[aria-invalid="true"] {
@@ -212,7 +216,7 @@
 }
 
 .checkbox-campo a {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -244,7 +248,7 @@
 }
 
 .enlace-olvido {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-size: 0.85rem;
     font-weight: 500;
     text-decoration: none;
@@ -374,8 +378,12 @@
     color: #c0392b;
 }
 
+/* #27ae60 daba 2.87:1. Aquí viven los mensajes de "¡Cuenta creada con éxito!",
+   "Pedido X creado correctamente" y "Contraseña actualizada": un usuario con
+   baja visión NO veía la confirmación de que su compra se había registrado.
+   #1e7a45 da 5.35:1. */
 .formulario-mensaje.exito {
-    color: #27ae60;
+    color: #1e7a45;
 }
 
 /* ==========================================
@@ -383,7 +391,12 @@
    ========================================== */
 .auth-btn {
     align-items: center;
-    background: var(--color-mauve);
+    /* El fondo va en el tono accesible (4.88:1 con el texto blanco). Con el rosa
+       base, 3.16:1: el botón de acción principal de todo el sitio era el de
+       menor contraste de la web. `opacity: .6` en `:disabled` baja el texto
+       efectivo a ~1.9:1, pero un control deshabilitado está exento del
+       requisito de contraste (WCAG 1.4.3, excepción de componentes inactivos). */
+    background: var(--color-mauve-texto);
     border: none;
     border-radius: 12px;
     color: white;
@@ -431,7 +444,7 @@
 }
 
 .auth-footer a {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-weight: 600;
     text-decoration: none;
 }

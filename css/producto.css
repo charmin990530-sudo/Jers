@@ -35,7 +35,7 @@
 }
 
 .breadcrumb-lista a:hover {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
 }
 
 .breadcrumb-lista li[aria-current="page"] {
@@ -126,7 +126,7 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     margin-bottom: 4px;
 }
 
@@ -167,7 +167,7 @@
 .precio-actual {
     font-size: clamp(1.8rem, 1.2rem + 3vw, 2.5rem);
     font-weight: 700;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-family: var(--fuente-titulos);
 }
 
@@ -249,7 +249,7 @@
 }
 
 .btn-agregar-carrito {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
 }
 
@@ -323,11 +323,11 @@
 }
 
 .tab-tab:hover {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
 }
 
 .tab-tab.activo {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     border-bottom-color: var(--color-mauve);
 }
 
@@ -416,7 +416,7 @@
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
     border-radius: 25px;
     text-decoration: none;

@@ -296,7 +296,7 @@ body.is-static .intro-copy > * {
 }
 
 .intro-noscript a {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-weight: 600;
 }
 

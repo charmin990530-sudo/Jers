@@ -24,7 +24,7 @@
 
 .perfil-tab:hover,
 .perfil-tab.activo {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border-color: var(--color-mauve);
     color: white;
 }
@@ -187,7 +187,7 @@
     width: 100%;
     max-width: 300px;
     padding: 14px 28px;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
     border: none;
     border-radius: 25px;
@@ -334,7 +334,7 @@
 
 .proximamente-lista li::before {
     content: '✓';
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-weight: bold;
 }
 
