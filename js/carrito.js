@@ -48,6 +48,17 @@ import { formatearPrecio } from './config.js';
 const CLAVE = 'jers_carrito';
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 
+/**
+ * Tope de unidades por producto.
+ *
+ * El backend valida `max(99)` por petición (`validation.js`), pero
+ * `Cart.agregarItem` SUMA sobre la cantidad que ya había, así que N llamadas con
+ * `cantidad: 1` llegaban a 150 en el carrito. La UI ya recortaba a 99 en tres
+ * sitios; aquí se centraliza para que el límite del botón `+`, el de `agregar()`
+ * y el de `cambiarCantidad()` no puedan divergir.
+ */
+export const MAX_POR_ITEM = 99;
+
 // ---------------------------------------------------------
 // Estado interno
 // ---------------------------------------------------------
@@ -70,7 +81,7 @@ const leerLocal = () => {
                 id: String(i.id),
                 nombre: String(i.nombre || 'Producto'),
                 precio: Number(i.precio) || 0,
-                cantidad: Math.max(1, Math.min(99, Number(i.cantidad) || 1)),
+                cantidad: Math.max(1, Math.min(MAX_POR_ITEM, Number(i.cantidad) || 1)),
             }));
     } catch {
         return [];
@@ -90,9 +101,49 @@ const limpiarLocal = () => {
 };
 
 // ---------------------------------------------------------
-// Pintado de la UI
+// Pintado del panel (respeta los selectores que usan los HTML)
 // ---------------------------------------------------------
 const avisar = () => pintar();
+
+/**
+ * Mensaje breve para el usuario.
+ *
+ * Sin esto, `agregar()` devolvía `{ok:false, motivo}` (sin stock, producto
+ * desactivado, red caída) y el llamante lo descartaba: el usuario pulsaba
+ * "Añadir al carrito", no se abría el panel, no cambiaba el contador y no veía
+ * ninguna señal. El sistema calculaba la causa exacta y la tiraba.
+ *
+ * Se usa `role="status"` (no `alert`) para no interrumpir al lector de pantalla
+ * a mitad de una tarea.
+ */
+let avisoTimer = null;
+
+/**
+ * El aviso se inserta desde JS en vez de declararse en los 14 HTML que llevan el
+ * panel: así no hay 14 copias que mantener en sincronía y cualquier página
+ * nueva lo recibe solo. `role="status"` (no `alert`) para no interrumpir al
+ * lector de pantalla a mitad de una tarea.
+ */
+const asegurarAviso = () => {
+    const panel = panelCarrito();
+    if (!panel || document.getElementById('carritoAviso')) return;
+    const aviso = document.createElement('p');
+    aviso.id = 'carritoAviso';
+    aviso.className = 'carrito-aviso';
+    aviso.setAttribute('role', 'status');
+    aviso.hidden = true;
+    panel.querySelector('.carrito-resumen')?.before(aviso);
+};
+
+const mostrarAviso = texto => {
+    asegurarAviso();
+    const aviso = document.getElementById('carritoAviso');
+    if (!aviso || !texto) return;
+    aviso.textContent = texto;
+    aviso.hidden = false;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(() => { aviso.hidden = true; }, 6000);
+};
 
 // ---------------------------------------------------------
 // API
@@ -131,13 +182,27 @@ function pintar() {
     lista.innerHTML = items.map((item, indice) => {
         const imagen = safeAssetUrl(item.imagen);
         const escapado = escapeHTML(item.nombre);
+        // El placeholder mantiene el ancho de la miniatura cuando el producto no
+        // tiene imagen, para que la fila no "salte" al pintar los datos.
+        const miniatura = imagen
+            ? `<img class="carrito-item__img" src="${escapeHTML(imagen)}" alt="" width="64" height="64" loading="lazy" decoding="async">`
+            : '<span class="carrito-item__placeholder" aria-hidden="true"></span>';
         return `
             <li class="carrito-item">
-                ${imagen ? `<img class="carrito-item__img" src="${escapeHTML(imagen)}" alt="${escapado}">` : ''}
+                ${miniatura}
                 <div class="carrito-item__datos">
                     <span class="carrito-item__nombre">${escapado}</span>
                     <span class="carrito-item__precio">${escapeHTML(formatearPrecio(item.precio * item.cantidad))}</span>
-                    <span class="carrito-item__cantidad">Cant: ${item.cantidad}</span>
+                    <span class="carrito-item__cantidad">
+                        <button class="carrito-cantidad-btn" type="button" data-accion="restar" data-indice="${indice}"
+                                ${item.cantidad <= 1 ? 'disabled' : ''}
+                                aria-label="Quitar una unidad de ${escapado}">&minus;</button>
+                        <span class="carrito-item__cantidad-valor" data-indice="${indice}"
+                              aria-live="polite" aria-label="Cantidad de ${escapado}">${item.cantidad}</span>
+                        <button class="carrito-cantidad-btn" type="button" data-accion="sumar" data-indice="${indice}"
+                                ${item.cantidad >= MAX_POR_ITEM ? 'disabled' : ''}
+                                aria-label="Añadir una unidad de ${escapado}">+</button>
+                    </span>
                 </div>
                 <button class="quitar-item" type="button" data-indice="${indice}"
                         ${item.itemId ? `data-item-id="${escapeHTML(item.itemId)}"` : ''}
@@ -200,12 +265,12 @@ export async function agregar(producto) {
     if (!producto?.id || !OBJECT_ID.test(String(producto.id))) {
         return { ok: false, motivo: 'Ese producto no se puede comprar.' };
     }
-    const cantidad = Math.max(1, Math.min(99, Number(producto.cantidad) || 1));
+    const cantidad = Math.max(1, Math.min(MAX_POR_ITEM, Number(producto.cantidad) || 1));
 
     if (modoInvitado) {
         const existente = items.find(i => i.id === producto.id);
         if (existente) {
-            existente.cantidad = Math.min(99, existente.cantidad + cantidad);
+            existente.cantidad = Math.min(MAX_POR_ITEM, existente.cantidad + cantidad);
         } else {
             items.push({
                 id: String(producto.id),
@@ -263,7 +328,7 @@ export async function quitar(indice) {
 export async function cambiarCantidad(indice, cantidad) {
     const item = items[indice];
     if (!item) return { ok: false };
-    const nueva = Math.max(1, Math.min(99, Number(cantidad) || 1));
+    const nueva = Math.max(1, Math.min(MAX_POR_ITEM, Number(cantidad) || 1));
 
     if (!modoInvitado && item.itemId) {
         const respuesta = await updateCartItem(item.itemId, nueva);
@@ -392,6 +457,7 @@ export async function iniciarCarrito() {
         return;
     }
     instanciaUnica = true;
+    asegurarAviso();
 
     document.addEventListener('click', evento => {
         const boton = evento.target.closest('.cardbtn');
@@ -402,7 +468,15 @@ export async function iniciarCarrito() {
             id: tarjeta.dataset.id,
             nombre: tarjeta.dataset.nombre,
             precio: Number(tarjeta.dataset.precio) || 0,
-        }).then(r => { if (r.ok) abrirPanel(); });
+        }).then(r => {
+            if (r.ok) {
+                abrirPanel();
+            } else {
+                // El motivo ya viene calculado por `agregar()`: id no válido,
+                // stock insuficiente, producto desactivado o error de red.
+                mostrarAviso(r.motivo || 'No se pudo agregar el producto.');
+            }
+        });
     });
 
     // Evento para el boton "Comprar ahora" de la ficha de producto.
@@ -416,15 +490,37 @@ export async function iniciarCarrito() {
             onComplete?.(true);
         } else {
             console.warn('[carrito] No se agrego:', r.motivo);
+            mostrarAviso(r.motivo || 'No se pudo agregar el producto.');
             onComplete?.(false);
         }
     });
 
     document.querySelector('.carrito-lista')?.addEventListener('click', evento => {
-        const boton = evento.target.closest('.quitar-item');
-        if (!boton) return;
-        const indice = Number(boton.dataset.indice);
-        if (!Number.isNaN(indice)) quitar(indice);
+        const quitarBoton = evento.target.closest('.quitar-item');
+        if (quitarBoton) {
+            const indice = Number(quitarBoton.dataset.indice);
+            if (!Number.isNaN(indice)) quitar(indice);
+            return;
+        }
+
+        // Control de cantidad. `cambiarCantidad()` ya existía y funcionaba, pero
+        // no tenía ningún call site: la cantidad era texto plano y la única forma
+        // de corregirla era quitar el producto y volver a añadirlo desde la ficha.
+        const botonCantidad = evento.target.closest('.carrito-cantidad-btn');
+        if (!botonCantidad || botonCantidad.disabled) return;
+        const indice = Number(botonCantidad.dataset.indice);
+        if (Number.isNaN(indice)) return;
+        const item = items[indice];
+        if (!item) return;
+        const delta = botonCantidad.dataset.accion === 'sumar' ? 1 : -1;
+        // El botón se deshabilita mientras va la petición para que un doble clic
+        // rápido no envíe dos cambios con el mismo valor.
+        botonCantidad.disabled = true;
+        cambiarCantidad(indice, item.cantidad + delta)
+            .then(r => {
+                if (!r.ok && r.motivo) mostrarAviso(r.motivo);
+            })
+            .catch(() => mostrarAviso('No se pudo cambiar la cantidad.'));
     });
 
     document.querySelector('.carrito-icono')?.addEventListener('click', abrirPanel);
@@ -461,7 +557,10 @@ export async function iniciarCarrito() {
 
     document.querySelector('.finalizar-pedido')?.addEventListener('click', () => {
         if (items.length === 0) {
-            window.alert('Tu carrito esta vacio. Agrega algun producto primero.');
+            // Aviso en el propio panel en vez de `window.alert()`: `alert` bloquea
+            // la pagina entera, no es traducible, en iOS se muestra fuera de
+            // contexto y un lector de pantalla no lo anuncia de forma útil.
+            mostrarAviso('Tu carrito está vacío. Agrega algún producto primero.');
             return;
         }
         window.location.href = '/checkout';
