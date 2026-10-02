@@ -32,7 +32,21 @@
         <section class="checkout-summary" aria-labelledby="resumen-title">
             <h2 id="resumen-title">Resumen</h2>
             <ul id="checkout-items"></ul>
-            <p class="checkout-total">Total: <strong id="checkout-total">$0</strong></p>
+            <dl class="checkout-totales">
+                <div class="checkout-totales__fila">
+                    <dt>Subtotal</dt>
+                    <dd id="checkout-subtotal">$0</dd>
+                </div>
+                <div class="checkout-totales__fila">
+                    <dt>Envío <span id="checkout-envio-nota" class="checkout-totales__nota"></span></dt>
+                    <dd id="checkout-envio">$0</dd>
+                </div>
+                <div class="checkout-totales__fila checkout-totales__fila--total">
+                    <dt>Total</dt>
+                    <dd id="checkout-total">$0</dd>
+                </div>
+            </dl>
+            <p class="checkout-aviso" id="checkout-aviso" hidden></p>
         </section>
 
         <form id="checkout-form" class="formulario-auth" method="post" novalidate>
