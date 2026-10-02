@@ -34,6 +34,11 @@ npm start
 # http://localhost:3000
 ```
 
+> **MongoDB local.** `backend/.env.example` trae comentada la `MONGODB_URI` de Atlas.
+> Con Atlas activa la API responde 503 en todo `/api/*` (`bad auth`) si la credencial
+> caducó. Para trabajar en local, descomenta la de `127.0.0.1` y deja Atlas comentada;
+> MongoDB Compass se conecta a esa misma base.
+
 > **Un solo puerto: 3000.** El sitio y la API los sirve el mismo proceso de Express, así que
 > el puerto de `backend/.env` (`PORT`) tiene que ser el mismo desde el que abres el navegador.
 > `js/config.js` deriva la URL de la API de `window.location.origin` sin escribir ningún puerto,
@@ -49,6 +54,22 @@ npm start
 | `npm run build:static` | Solo regenera `public/` |
 | `npm run seed` | Carga datos iniciales (desarrollo) |
 | `npm test` | Ejecuta 164 tests |
+| `npm run autostart` | Instala y arranca el servicio systemd de usuario que deja el backend encendido y lo reinicia si se cae |
+| `npm run autostart:status` | Estado del servicio |
+| `npm run autostart:stop` | Lo detiene y lo desinstala |
+
+### Backend siempre encendido en local
+
+```bash
+npm run autostart        # instala y arranca
+systemctl --user status by-jers-dev   # ver estado
+journalctl --user -u by-jers-dev -f  # ver logs
+```
+
+El servicio es de usuario (no de sistema), así que **no pide sudo** y se detiene
+al cerrar sesión. Levanta el sitio y la API en `http://localhost:3000` y se
+reinicia solo si el proceso muere. Antes de arrancar regenera `public/`, que es
+lo mismo que hace `npm start`.
 
 ## Estructura
 
