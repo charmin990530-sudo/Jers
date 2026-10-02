@@ -197,6 +197,5 @@ orderSchema.index(
     partialFilterExpression: { idempotencyKey: { $type: 'string' } },
   },
 );
-orderSchema.index({ estado: 1 });                 // Admin: filtrar por estado
 
 export default mongoose.model('Order', orderSchema);

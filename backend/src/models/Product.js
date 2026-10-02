@@ -29,6 +29,7 @@
  * - compuestos para filtros comunes (categoria+activo, marca+activo, etc.)
  */
 import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
 import { discountPercentage, isMinorAmount } from '../services/money.js';
 
 /**
@@ -142,9 +143,25 @@ productSchema.pre('validate', function () {
       .replace(/(^-|-$)/g, '');
   }
   if (!this.sku && this.nombre) {
-    this.sku = `BJ-${this.nombre.substring(0, 3).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+    this.sku = generarSku(this.nombre);
   }
 });
+
+/**
+ * SKU único: "BJ-BAS-3F2A9C" (3 letras del nombre + sufijo aleatorio).
+ *
+ * El sufijo era `Date.now().toString(36)`, con resolución de milisegundo. Con el
+ * índice `unique` de `sku`, dos altas simultáneas de productos que compartieran
+ * las tres primeras letras ("Shampoo…", "Sérum…" dan SHA) en el mismo milisegundo
+ * terminaban en E11000 y un 400 "El recurso ya existe" sin explicación. El seed
+ * ya lo esquivaba forzando el SKU por posición; la ruta de API no.
+ *
+ * `randomUUID` no puede colisionar en la práctica y no depende del reloj.
+ */
+const generarSku = nombre => {
+  const prefijo = String(nombre || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'GEN';
+  return `BJ-${prefijo}-${randomUUID().slice(0, 6).toUpperCase()}`;
+};
 
 // Virtual: % descuento calculado dinámicamente
 // Ej: precioAnterior=100, precio=80 -> 20%
@@ -168,9 +185,10 @@ productSchema.pre('save', function (next) {
   if (!this.slug) {
     this.slug = this.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   }
-  // SKU único: "BJ-BAS-A1B2C3" (3 letras nombre + timestamp base36)
-  if (!this.sku) {
-    this.sku = `BJ-${this.nombre.substring(0, 3).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  // Solo se rellena si sigue vacío: `pre('validate')` ya lo ha puesto, y
+  // duplicar la lógica en los dos hooks era una fuente de divergencia.
+  if (!this.sku && this.nombre) {
+    this.sku = generarSku(this.nombre);
   }
   // Asegurar EXACTAMENTE una imagen principal
   const principalCount = this.imagenes.filter(img => img.esPrincipal).length;
@@ -200,5 +218,30 @@ productSchema.index({ marca: 1, activo: 1 });
 productSchema.index({ destacado: 1, activo: 1 });
 // Promociones: GET /api/products/promociones
 productSchema.index({ enPromocion: 1, activo: 1 });
+
+// Listado por defecto del catálogo: `GET /api/products` sin filtros, que es la
+// petición más frecuente de la tienda (portada, pestañas, sitemap).
+//
+// `buildFilter` (productController.js) SIEMPRE aplica `activo: true`, y ninguno de
+// los cuatro índices anteriores tiene `activo` como campo líder, así que Mongo no
+// podía usarlos para un filtro de un solo campo: acababa en COLLSCAN con orden en
+// memoria. Este cubre el caso, y además el `createdAt` final cubre `sort=nuevos`
+// (el orden por defecto), que si no se resuelve en memoria.
+productSchema.index({ activo: 1, createdAt: -1, _id: 1 });
+
+// Orden por precio y rango de precios: `sort=precio_asc|precio_desc`,
+// `minPrice`, `maxPrice`. Con `activo` primero por el mismo motivo, y porque el
+// rango (minPrice/maxPrice) solo es indexable si el campo de igualdad está antes.
+productSchema.index({ activo: 1, precio: 1 });
+
+// Destacados y promociones, con el orden REAL de sus queries:
+//   getFeaturedProducts: find({destacado:true, activo:true}).sort({createdAt:-1})
+//   getPromoProducts:     find({enPromocion:true, activo:true}).sort({createdAt:-1})
+// Los índices anteriores `{destacado:1, activo:1}` y `{enPromocion:1, activo:1}`
+// no los aprovechaban: `activo` está en segundo lugar y la query ordena por
+// `createdAt`, un campo que no está en el índice, así que Mongo tenía que
+// ordenar en memoria de todos modos.
+productSchema.index({ destacado: 1, activo: 1, createdAt: -1 });
+productSchema.index({ enPromocion: 1, activo: 1, createdAt: -1 });
 
 export default mongoose.model('Product', productSchema);
