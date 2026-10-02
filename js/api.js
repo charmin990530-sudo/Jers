@@ -374,9 +374,20 @@ export const deleteUser = id => request(`/users/${id}`, { method: 'DELETE' });
 // ---------------------------------------------------------------
 // Utilidades que se utilizaban en dos sitios
 // ---------------------------------------------------------------
-/** Convierte una respuesta fallida en un Error que conserva el payload. */
-export const apiErrorFromResponse = respuesta => {
-    const error = new Error(respuesta?.msg || 'Error en la petición');
+/**
+ * Convierte una respuesta fallida en un Error que conserva el payload.
+ *
+ * El segundo argumento es el mensaje por defecto para cuando la API no devuelve
+ * uno. Antes se llamaba con dos argumentos desde los tres formularios del panel
+ * admin (`'No se pudo guardar el producto'` y equivalentes) y el segundo se
+ * perdía: la firma solo aceptaba uno, así que caía siempre al texto genérico.
+ *
+ * @param {object} respuesta - La respuesta de `request()`, ya normalizada.
+ * @param {string} [porDefecto='Error en la petición']
+ * @returns {Error} Con `.data`, `.status` y `.message`.
+ */
+export const apiErrorFromResponse = (respuesta, porDefecto = 'Error en la petición') => {
+    const error = new Error(respuesta?.msg || porDefecto);
     error.data = respuesta?.data ?? null;
     error.status = respuesta?.data?.status ?? null;
     return error;

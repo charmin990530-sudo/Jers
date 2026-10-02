@@ -1,7 +1,7 @@
 import { api, handleApiError } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import { formatearPrecio, formatearFecha } from '../config.js';
-import { iniciarAplicacion, setBtnLoading } from '../../js/app.js';
+import { iniciarAplicacion, setBtnLoading, mostrarToast } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
 let paginaActual = 1;
@@ -349,22 +349,3 @@ function formatearMoneda(valor) {
 // siempre en "No se pudieron cargar los pedidos", aun con la API funcionando.
 // Los call sites pasan 'hora' explícito para conservar el formato que buscaba
 // la función original.
-
-function mostrarToast(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = mensaje;
-    toast.style.cssText = `
-        position: fixed; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
-            box-sizing: border-box; max-width: calc(100vw - 32px); text-align: center;
-        background: var(--color-mauve); color: white; padding: 14px 24px;
-        border-radius: 25px; font: 600 0.9rem var(--fuente-texto);
-        box-shadow: 0 6px 20px rgb(0 0 0 / 20%); z-index: 1000;
-        animation: slideUp 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'slideUp 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}

@@ -469,6 +469,51 @@ import { formatearPrecio } from './config.js';
 export { iniciarCarrito, formatearPrecio };
 
 // ==================================================================
+// AVISOS FLOTANTES (toast)
+// ==================================================================
+
+/**
+ * Aviso breve y no bloqueante.
+ *
+ * Estaba copiado poratimismo en `js/admin/productos.js`,
+ * `js/admin/categorias.js`, `js/admin/marcas.js` y `js/mis-direcciones.js`,
+ * cada uno con su propio estilo inline. Aquí vive una sola vez y lo usan las
+ * cuatro, más los caminos que antes no mostraban nada: cancelar un pedido,
+ * marcar una dirección principal o pausar un usuario que fallaban solo con un
+ * `console.error`, de modo que el usuario pulsaba, no pasaba nada visible y
+ * repetía la acción creyendo que la app estaba rota.
+ *
+ * Los estilos van en línea a propósito: así funciona igual en las 22 páginas
+ * sin depender de que su hoja de estilo declare `.toast` (hoy solo lohacían
+ * tres CSS de los cinco que lo usaban).
+ *
+ * `role="status"` y no `alert`: `alert` interrumpe al lector de pantalla y el
+ * aviso no requiere respuesta inmediata.
+ *
+ * @param {string} mensaje
+ * @param {{tipo?: 'info'|'error', duracion?: number}} [opciones]
+ */
+export function mostrarToast(mensaje, { tipo = 'info', duracion = 3000 } = {}) {
+    if (!mensaje) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = mensaje;
+    // El fondo del aviso de error no usa --color-mauve: sobre ese rosa el texto
+    // blanco queda en 3.16:1 (WCAG AA exige 4.5:1 para texto normal).
+    const fondo = tipo === 'error' ? '#8f2f2f' : 'var(--color-mauve)';
+    toast.style.cssText = `
+        position: fixed; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+        box-sizing: border-box; max-width: calc(100vw - 32px); text-align: center;
+        background: ${fondo}; color: white; padding: 14px 24px;
+        border-radius: 25px; font: 600 0.9rem var(--fuente-texto);
+        box-shadow: 0 6px 20px rgb(0 0 0 / 20%); z-index: 1000;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duracion);
+}
+
+// ==================================================================
 // FORMULARIO DE CONTACTO
 // ==================================================================
 
@@ -1001,21 +1046,31 @@ async function inicializarSesionUI() {
         item.className = 'menuitem sesion-menu';
         item.dataset.sessionUi = 'true';
         if (response.ok && response.data?.user) {
+            // Rutas ABSOLUTAS a propósito. Este mismo bloque se inyecta en los
+            // seis HTML del panel de administración (`/admin/dashboard`,
+            // `/admin/productos`…), y `iniciarAplicacion()` lo llama desde allí.
+            // Con rutas relativas, "Mi perfil" pedía `/admin/mi-perfil.html`, que
+            // no existe, y devolvía el 404 del sitio. Verificado contra el
+            // servidor: `GET /admin/mi-perfil.html` → 404,
+            // `GET /mi-perfil.html` → 200.
             const profile = document.createElement('a');
-            profile.href = 'mi-perfil.html';
+            profile.href = '/mi-perfil.html';
             profile.textContent = 'Mi perfil';
             const orders = document.createElement('a');
-            orders.href = 'mis-pedidos.html';
+            orders.href = '/mis-pedidos.html';
             orders.textContent = 'Mis pedidos';
+            const addresses = document.createElement('a');
+            addresses.href = '/mis-direcciones.html';
+            addresses.textContent = 'Mis direcciones';
             const logout = document.createElement('button');
             logout.type = 'button';
             logout.className = 'menu-logout';
             logout.textContent = 'Cerrar sesión';
             logout.addEventListener('click', () => cerrarSesion());
-            item.append(profile, orders, logout);
+            item.append(profile, orders, addresses, logout);
         } else {
             const login = document.createElement('a');
-            login.href = 'login.html';
+            login.href = '/login.html';
             login.textContent = 'Iniciar sesión';
             item.append(login);
         }
