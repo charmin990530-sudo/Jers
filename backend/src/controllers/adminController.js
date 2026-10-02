@@ -330,6 +330,14 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
   const revierteStock = nextEstado !== previousEstado
     && (nextEstado === 'cancelado' || nextEstado === 'reembolsado');
 
+  // Se declara aqui, y no dentro del callback de la transaccion, porque la
+  // compensacion del `catch` de abajo la necesita y ese callback ya cerro su
+  // alcance. Antes vivia dentro (linea 341 del fichero original) y se usaba
+  // fuera (linea 388): ReferenceError en el `catch`, que es justamente el codigo
+  // que corre cuando la transaccion falla, o sea cuando compensar es lo unico
+  // que puede salvar el pedido. Cubierto por tests/admin-order-compensation.
+  const cancelacion = nextEstado === 'cancelado';
+
   if (revierteStock) {
     // Cancelar desde admin devuelve el stock al inventario. Es una operacion de
     // saldo, asi que el cambio de estado y el bulkWrite de stock van en la misma
@@ -338,7 +346,6 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     const transactional = await detectTransactionSupport();
     try {
       const outcome = await withTransaction(async ({ session }) => {
-        const cancelacion = nextEstado === 'cancelado';
         const updated = await Order.findOneAndUpdate(
           { _id: order._id, estado: previousEstado },
           {
