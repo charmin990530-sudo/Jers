@@ -1,0 +1,91 @@
+# Prompt de continuación
+
+Este archivo es el prompt para pegar en opencode cuando vuelvas a trabajar en el
+proyecto. Es autocontenido: quien lo ejecute no necesita leer nada más para
+saber por dónde empezar.
+
+**Cómo usarlo:** copia todo el bloque de abajo y pégalo como mensaje.
+
+---
+
+```
+Lee CONTINUAR.md y AUDITORIA.md completos antes de tocar nada. Son el estado
+del trabajo y el informe de auditoría; CONTINUAR.md tiene el desglose de lo que
+ya se corrigió y lo que queda.
+
+El proyecto es una tienda de cosméticos (Node/Express + MongoDB + frontend
+HTML/CSS/JS vanilla) en:
+/home/juandagamer/Escritorio/Desarollo2026-20260903T192909Z-1-001/Desarollo 2026
+
+Estado: rama `audit/fixes`, 13 commits, árbol limpio, 196 tests en verde, el
+backend se autoarranca con systemd de usuario (npm run autostart).
+
+Empieza así:
+1. `git status` y `git log --oneline master..HEAD` para confirmar dónde estamos.
+2. `npm test` para verificar que partimos de una base que funciona.
+3. `npm run autostart:status` y `curl -s localhost:3000/api/health`.
+
+Después, continúa por el Bloque 8 de CONTINUAR.md §4.1, en este orden:
+
+a) B-06: añadir ESLint con checkJs y un paso en el CI. Es lo más rentable que
+   queda: varios bugs de esta auditoría eran de tipos que el navegador descubre
+   en runtime (un `throw` sin catch, leer `.data` cuando la API devuelve un
+   objeto). Ningún paso previo los avisa.
+
+b) M-12 / B-07: `npm audit --prefix backend` falla con ENOLOCK porque el
+   lockfile vive en la raíz al ser workspace, pero `.github/workflows/ci.yml`
+   afirma ejecutarlo en los dos sitios. Arreglar el workflow o el comando, y que
+   CI pase de verdad.
+
+c) B-26: dos cabeceras CSP en Vercel, la de vercel.json y la de helmet. Hoy
+   coinciden en lo importante; alinea o elimina una de las dos.
+
+d) B-27: STATIC_DENY en backend/src/app.js solo se aplica a la ruta de HTML
+   abreviado, no a express.static. Pasa el bloqueo a express.static de verdad, o
+   corrige el comentario para que describa lo que el código hace.
+
+Después el Bloque 9 (§4.2): los lows de SEO y contenido (doble splash en
+bienvenida.html, iconos del pie que apuntan a facebook.com/tu-tienda, Google
+Fonts render-blocking). Y B-25: resenas.html dice "opiniones reales de quienes ya
+compraron" sobre seis reseñas escritas a mano; pregúntame antes de tocarlo si la
+opción es conectar un modelo Review.
+
+Reglas:
+- Un commit por problema, con mensaje que explique el porqué y el archivo:línea.
+- No inventes: antes de reportar un bug, verificalo leyendo el codigo o
+  ejecutándolo.
+- Nada de secretos: backend/.env está en .gitignore y no se imprime.
+- Si algo requiere una decisión de negocio, pregúntame en lugar de asumir.
+
+Al final: recorre a mano el flujo de compra completo (navegación → búsqueda →
+producto → carrito → checkout → pago → confirmación → mis pedidos) con el
+navegador, y actualiza AUDITORIA.md marcando cada hallazgo como resuelto,
+pendiente o pendiente de decisión.
+
+Una nota importante: lo único que no se pudo verificar con navegador es el
+layout. C-02 (el carrito) se resolvió por cálculo del CSS, no mirando la
+página. Antes de dar el trabajo por cerrado, mira el panel del carrito con
+productos dentro.
+```
+
+---
+
+## Si prefieres una versión más corta
+
+Para cuando solo quieras arrancar rápido y ver el estado, sin la lista de
+tareas:
+
+```
+Lee CONTINUAR.md. Verifica que estamos en `audit/fixes` con `npm test` en verde
+y el backend vivo. Después sigue el Bloque 8 de §4.1, empezando por el linter
+(B-06). Un commit por problema, sin secretos, y me preguntas lo que sea decisión
+de negocio.
+```
+
+## Estado al escribir este archivo
+
+- **Fecha:** 2 de octubre de 2026
+- **Rama:** `audit/fixes`, 13 commits desde `master` @ `e19cdba`
+- **Tests:** 196 en 12 suites
+- **Pendiente de decisión de negocio:** pasarela de pago (CONTINUAR.md §5)
+- **Pendiente de verificación:** layout del carrito en navegador real
