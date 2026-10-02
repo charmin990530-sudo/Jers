@@ -107,9 +107,23 @@ ninguna suma, y `zod` (`backend/src/middleware/validation.js`) y los modelos
 Mongoose rechazan `58000.5` con un 400. Toda la aritmética pasa por
 `backend/src/services/money.js`.
 
-Envío: gratis desde **$200.000**, si no **$15.000** (`SHIPPING_RULES` en
-`orderController.js`). `descuentoPorcentaje` es un entero 0–100 redondeado
-half-up.
+Envío: gratis desde **$200.000**, si no **$15.000** (`SHIPPING_RULES`, que sale
+de `config/env.js` y se ajusta con `SHIPPING_COST` y `SHIPPING_FREE_FROM`).
+
+IVA: los precios del catálogo son **sin impuestos**. El IVA se suma en el
+servidor sobre la base imponible (`subtotal + envío`) con `TAX_RATE_BP`, en
+puntos básicos: `1900` = 19%. Se eligió esa unidad y no un porcentaje entero
+porque en Colombia no todas las tarifas son la general (la cesta básica va al
+5% = 500 bp, y hay exenciones al 0%). La tasa queda congelada en cada pedido
+como `tasaImpuestosBp`, así que un cambio de tarifa no altera lo ya cobrado.
+
+No hay descuentos ni cupones: el campo `descuento` del modelo de pedido era un
+placeholder que siempre valía 0 y se eliminó para que el esquema no sugiera una
+capacidad inexistente.
+
+`discountPercentage` (0–100, redondeo half-up) sigue existiendo, pero solo para
+el virtual de presentación `descuentoPorcentaje` del producto, que compara
+`precio` con `precioAnterior`. No interviene en ningún cálculo de cobro.
 
 ## Transacciones
 

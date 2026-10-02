@@ -170,33 +170,60 @@ export const discountPercentage = (previousPrice, currentPrice) => {
 };
 
 /**
- * Aplica un descuento ya calculado a un importe y devuelve un entero.
- * Nunca baja de cero: un descuento mayor que el precio daria un total negativo.
- * @param {number} amount
- * @param {number} percentage - 0..100
- * @param {string} [field]
- * @returns {number}
+ * IVA aplicable a una base, a partir de una tasa en puntos basicos.
+ *
+ * POR QUE PUNTOS BASICOS Y NO PORCENTAJE ENTERO
+ * ----------------------------------------------
+ * En Colombia el IVA general es del 19%, pero hay tasas que no lo son: el 5% de
+ * los productos de la cesta basica, y el 0% de exportaciones y de servicios
+ * con tratamiento especial. Un entero de porcentaje no puede representar el
+ * 19,5% de una tarifa especifica sin redondear a 20 y cobrar de mas.
+ *
+ * Un punto basico es la centesima parte de un porcentaje: 1900 bp = 19%. Asi
+ * cualquier tarifa se escribe exacta y sin decisiones de redondeo.
+ *
+ * El redondeo es half-up a entero, igual que el resto del modulo, y el producto
+ * se comprueba contra el limite representable ANTES de dividir.
+ *
+ * @param {number} base - Base imponible ya entera.
+ * @param {number} rateBasisPoints - Tasa en puntos basicos (1900 = 19%).
+ * @param {string} [field='impuestos']
+ * @returns {number} IVA entero, nunca negativo.
+ * @throws {MoneyError} Si la base o la tasa no son validas.
  */
-export const applyDiscountPercentage = (amount, percentage, field = 'descuento') => {
-  const base = toNonNegativeMinorAmount(amount, field);
-  if (percentage <= 0) return base;
-  if (percentage >= 100) return 0;
-  return Math.max(0, base - percentOfMinorAmount(base, percentage, field));
+export const taxFor = (base, rateBasisPoints, field = 'impuestos') => {
+  const amount = toNonNegativeMinorAmount(base, 'baseImponible');
+  const rate = toMinorAmount(rateBasisPoints, 'tasaIVA');
+  if (rate < 0) throw new MoneyError('La tasa de IVA no puede ser negativa', 'tasaIVA');
+  if (rate === 0 || amount === 0) return 0;
+  const raw = amount * rate;
+  if (!Number.isSafeInteger(raw)) {
+    throw new MoneyError('El calculo del IVA excede el limite representable', field);
+  }
+  // half-up sobre division entera, con divisor 10.000 (puntos basicos).
+  return Math.floor(raw / 10000 + 0.5);
 };
 
 /**
- * Total de un pedido: subtotal mas envio menos descuento, en enteros.
+ * Total de un pedido: subtotal mas envio mas impuestos, en enteros.
+ *
+ * La base imponible del IVA es `subtotal + envio`: cuando la tienda cobra el
+ * flete por separado, la partitioned entrega tambien es una prestacion de
+ * servicio sujeta a gravamen, asi que excluirla del IVA subgrava la operacion.
+ * Quien no comparta esa lectura puede cambiar esta funcion sin tocar el resto
+ * del sistema: es el unico sitio donde se decide la base.
+ *
  * @param {object} totals
  * @param {number} totals.subtotal
  * @param {number} [totals.shipping=0]
- * @param {number} [totals.discount=0]
+ * @param {number} [totals.tax=0]
  * @returns {number} Total entero, nunca negativo.
  */
-export const computeOrderTotal = ({ subtotal, shipping = 0, discount = 0 }) => {
+export const computeOrderTotal = ({ subtotal, shipping = 0, tax = 0 }) => {
   const base = toNonNegativeMinorAmount(subtotal, 'subtotal');
   const ship = toNonNegativeMinorAmount(shipping, 'costoEnvio');
-  const off = toNonNegativeMinorAmount(discount, 'descuento');
-  const total = base + ship - off;
+  const taxAmount = toNonNegativeMinorAmount(tax, 'impuestos');
+  const total = base + ship + taxAmount;
   if (!Number.isSafeInteger(total)) {
     throw new MoneyError('El total excede el limite representable', 'total');
   }

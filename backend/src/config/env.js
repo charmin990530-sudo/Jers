@@ -160,6 +160,24 @@ const parseMinorAmountEnv = (value, fallback, nombre) => {
 export const SHIPPING_COST = parseMinorAmountEnv(process.env.SHIPPING_COST, 15000, 'SHIPPING_COST');
 export const SHIPPING_FREE_FROM = parseMinorAmountEnv(process.env.SHIPPING_FREE_FROM, 200000, 'SHIPPING_FREE_FROM');
 export const SHIPPING_RULES = Object.freeze({ freeFrom: SHIPPING_FREE_FROM, cost: SHIPPING_COST });
+
+// ==========================================
+// IVA
+// ==========================================
+// Los precios del catálogo son SIN impuestos: el IVA se suma en el servidor al
+// calcular el pedido. Antes `total = subtotal + envio` y no había ninguna
+// cantidad de IVA en el sistema, así que el negocio факuraba por debajo de lo
+// que corresponde.
+//
+// La tasa va en PUNTOS BÁSICOS (la centésima parte de un porcentaje) porque en
+// Colombia no todas las tarifas son el 19% general: hay productos de la cesta
+// básica al 5% y exportaciones al 0%. Un porcentaje entero no podría
+// representarlas. 1900 bp = 19%. El rango cubre de 0% a 100%.
+const TAX_RATE_BP_RAW = process.env.TAX_RATE_BP === undefined ? 1900 : Number(process.env.TAX_RATE_BP);
+if (!Number.isInteger(TAX_RATE_BP_RAW) || TAX_RATE_BP_RAW < 0 || TAX_RATE_BP_RAW > 10000) {
+  throw new Error('TAX_RATE_BP debe ser un entero entre 0 y 10000 (puntos basicos: 1900 = 19%)');
+}
+export const TAX_RATE_BP = TAX_RATE_BP_RAW;
 export const TRUST_PROXY_HOPS = Number.parseInt(process.env.TRUST_PROXY_HOPS || '0', 10);
 if (!Number.isInteger(TRUST_PROXY_HOPS) || TRUST_PROXY_HOPS < 0 || TRUST_PROXY_HOPS > 5) {
   throw new Error('TRUST_PROXY_HOPS debe estar entre 0 y 5');

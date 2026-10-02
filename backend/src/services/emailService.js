@@ -17,6 +17,26 @@ const escapeHtml = value => String(value ?? '')
   .replace(/'/g, '&#39;');
 const normalizeHeader = value => String(value ?? '').replace(/[\r\n]/g, ' ').trim();
 
+/**
+ * Línea de IVA para los correos, en texto plano y en HTML.
+ *
+ * Devuelve arrays vacíos cuando el pedido no lleva impuestos (por ejemplo, una
+ * tasa a 0%), para que quien lo llama pueda hacer `...iva.texto` sin conditionally
+ * ensuciar las dos plantillas. La tasa se congela en el pedido (`tasaImpuestosBp`),
+ * así que el correo de un pedido antiguo sigue mostrando lo que se cobró entonces
+ * aunque la tarifa global haya cambiado.
+ */
+const lineaImpuestos = (impuestos, tasaBp) => {
+  const monto = Number(impuestos) || 0;
+  if (monto === 0) return { texto: [], html: [] };
+  const tasa = Number.isFinite(Number(tasaBp)) ? Number(tasaBp) / 100 : null;
+  const etiqueta = tasa === null ? 'IVA' : `IVA (${tasa.toFixed(tasa % 1 === 0 ? 0 : 2)}%)`;
+  return {
+    texto: [`${etiqueta}: ${montoCorreo(monto)}`],
+    html: [`<strong>${escapeHtml(etiqueta)}:</strong> ${montoCorreo(monto)}<br>`],
+  };
+};
+
 let transporter;
 
 const getTransporter = () => {
@@ -82,9 +102,10 @@ const detalleItems = items => (items || [])
  * @returns {{subject: string, text: string, html: string}} Plantilla pura, sin
  *   dependencias de red: se puede verificar en tests sin SMTP configurado.
  */
-export const construirCorreoConfirmacionPedido = ({ nombre, numeroOrden, items, subtotal, costoEnvio, total, direccionEnvio, notas }) => {
+export const construirCorreoConfirmacionPedido = ({ nombre, numeroOrden, items, subtotal, costoEnvio, impuestos, tasaImpuestosBp, total, direccionEnvio, notas }) => {
   const lineas = detalleItems(items);
   const envio = Number(costoEnvio) === 0 ? 'Gratis' : montoCorreo(costoEnvio);
+  const iva = lineaImpuestos(impuestos, tasaImpuestosBp);
   const ciudad = [direccionEnvio?.ciudad, direccionEnvio?.departamento].filter(Boolean).join(', ');
   const envioLineas = [
     direccionEnvio?.nombreCompleto || '',
@@ -102,6 +123,7 @@ export const construirCorreoConfirmacionPedido = ({ nombre, numeroOrden, items, 
     '',
     `Subtotal: ${montoCorreo(subtotal)}`,
     `Envío: ${envio}`,
+    ...iva.texto,
     `Total: ${montoCorreo(total)}`,
     '',
     'Datos de envío:',
@@ -119,6 +141,7 @@ export const construirCorreoConfirmacionPedido = ({ nombre, numeroOrden, items, 
     `<ul>${lineas.map(l => l.html).join('')}</ul>`,
     `<p><strong>Subtotal:</strong> ${montoCorreo(subtotal)}<br>`,
     `<strong>Envío:</strong> ${escapeHtml(envio)}<br>`,
+    ...iva.html,
     `<strong>Total:</strong> ${montoCorreo(total)}</p>`,
     '<p><strong>Datos de envío:</strong><br>',
     envioLineas.map(l => escapeHtml(l)).join('<br>'),
@@ -139,9 +162,10 @@ export const construirCorreoConfirmacionPedido = ({ nombre, numeroOrden, items, 
  * quien tiene que enterarse del pedido es la tienda, no él. Sin esto, la única
  * señal de una venta era que alguien mirara el panel de administración.
  */
-export const construirAvisoPedidoNuevo = ({ numeroOrden, cliente, email, telefono, items, subtotal, costoEnvio, total, direccionEnvio, notas }) => {
+export const construirAvisoPedidoNuevo = ({ numeroOrden, cliente, email, telefono, items, subtotal, costoEnvio, impuestos, tasaImpuestosBp, total, direccionEnvio, notas }) => {
   const lineas = detalleItems(items);
   const envio = Number(costoEnvio) === 0 ? 'Gratis' : montoCorreo(costoEnvio);
+  const iva = lineaImpuestos(impuestos, tasaImpuestosBp);
   const ciudad = [direccionEnvio?.ciudad, direccionEnvio?.departamento].filter(Boolean).join(', ');
 
   const text = [
@@ -155,6 +179,7 @@ export const construirAvisoPedidoNuevo = ({ numeroOrden, cliente, email, telefon
     '',
     `Subtotal: ${montoCorreo(subtotal)}`,
     `Envío: ${envio}`,
+    ...iva.texto,
     `Total: ${montoCorreo(total)}`,
     '',
     'Enviar a:',
@@ -170,6 +195,7 @@ export const construirAvisoPedidoNuevo = ({ numeroOrden, cliente, email, telefon
     `<ul>${lineas.map(l => l.html).join('')}</ul>`,
     `<p><strong>Subtotal:</strong> ${montoCorreo(subtotal)}<br>`,
     `<strong>Envío:</strong> ${escapeHtml(envio)}<br>`,
+    ...iva.html,
     `<strong>Total:</strong> ${montoCorreo(total)}</p>`,
     '<p><strong>Enviar a:</strong><br>',
     [direccionEnvio?.nombreCompleto, direccionEnvio?.direccion, ciudad].filter(Boolean).map(l => escapeHtml(l)).join('<br>'),

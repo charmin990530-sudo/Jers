@@ -15,9 +15,16 @@
  * - numeroOrden: único, auto-generado (ej: BJ-260922-A1B2C3)
  * - items: snapshot completo (producto, nombre, imagen, precio, cantidad, subtotal)
  * - subtotal: suma items
- * - costoEnvio: 0 si subtotal >= 200k, sino 15k (lógica en controller)
- * - descuento: para cupones futuros
- * - total: subtotal + envio - descuento
+ * - costoEnvio: 0 si subtotal >= umbral, sino el costo (regla en config/env.js)
+ * - impuestos: IVA calculado en el servidor sobre subtotal + envio
+ * - tasaImpuestosBp: tasa aplicada en puntos basicos (1900 = 19%), congelada
+ *   en el pedido para que un cambio de tarifa en el futuro no altere lo ya
+ *   cobrado
+ * - total: subtotal + envio + impuestos
+ *
+ * No hay campo de descuento: existia como placeholder para "cupones futuros" y
+ * valia siempre 0. Se elimino para que el modelo no sugiera una capacidad que
+ * el sistema no tiene.
  * - estado: tracking logístico (7 estados)
  * - estadoPago: tracking financiero (4 estados)
  * - metodoPago: 'whatsapp' | 'transferencia' | 'efectivo' | 'tarjeta'
@@ -93,7 +100,8 @@ const orderSchema = new mongoose.Schema({
   items: [orderItemSchema],
   subtotal: { type: Number, required: true, min: 0, ...minorAmount('El subtotal') },
   costoEnvio: { type: Number, default: 0, min: 0, ...minorAmount('El costo de envio') },
-  descuento: { type: Number, default: 0, min: 0, ...minorAmount('El descuento') },
+  impuestos: { type: Number, default: 0, min: 0, ...minorAmount('El IVA') },
+  tasaImpuestosBp: { type: Number, default: 0, min: 0, ...minorAmount('La tasa de IVA') },
   total: { type: Number, required: true, min: 0, ...minorAmount('El total') },
   estado: {
     type: String,

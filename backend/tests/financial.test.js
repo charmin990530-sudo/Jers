@@ -19,8 +19,10 @@ import mongoose from 'mongoose';
 import { app } from '../src/app.js';
 import { Product, Category, Brand, Order, Cart } from '../src/models/index.js';
 import { detectTransactionSupport } from '../src/services/transaction.js';
+import { taxFor } from '../src/services/money.js';
 import { generarNumeroOrden } from '../src/models/Order.js';
 import { SHIPPING_RULES } from '../src/controllers/orderController.js';
+import { TAX_RATE_BP } from '../src/config/env.js';
 import { inicioDiaNegocio, rangoDiaNegocio } from '../src/controllers/adminController.js';
 
 const DIR = {
@@ -165,17 +167,31 @@ describe('validacion de importes en la capa HTTP', () => {
 });
 
 describe('total del pedido: lo calculado es lo guardado y lo devuelto', () => {
-  it('sin envio gratis: suma el envio al subtotal', async () => {
+  it('sin envio gratis: suma envio e IVA al subtotal', async () => {
     const producto = await crearProducto({ precio: 62000, stock: 10 });
     await agregar(producto, 3);
     const res = await pedir();
     expect(res.status).toBe(201);
-    expect(res.body.order.total).toBe(201000); // 186000 + 15000
 
     const guardado = await Order.findById(res.body.order.id);
     expect(guardado.subtotal).toBe(186000);
     expect(guardado.costoEnvio).toBe(SHIPPING_RULES.cost);
-    expect(guardado.total).toBe(guardado.subtotal + guardado.costoEnvio - guardado.descuento);
+    // El IVA se aplica sobre la base imponible (subtotal + envio), no solo sobre
+    // el subtotal: el flete también es una prestación sujeta a gravamen.
+    expect(guardado.impuestos).toBe(taxFor(186000 + SHIPPING_RULES.cost, TAX_RATE_BP));
+    expect(guardado.total).toBe(
+      guardado.subtotal + guardado.costoEnvio + guardado.impuestos,
+    );
+    expect(res.body.order.total).toBe(guardado.total);
+  });
+
+  it('el total con IVA cuadra con el subtotal + envio + impuestos', async () => {
+    const producto = await crearProducto({ precio: 62000, stock: 10 });
+    await agregar(producto, 3);
+    const res = await pedir();
+    const guardado = await Order.findById(res.body.order.id);
+    expect(guardado.total).toBe(186000 + 15000 + 38190); // 239190
+    expect(res.body.order.total).toBe(239190);
   });
 
   it('en el umbral exacto el envio es gratis (borde inclusivo)', async () => {
@@ -183,8 +199,13 @@ describe('total del pedido: lo calculado es lo guardado y lo devuelto', () => {
     await agregar(producto, 4);
     const res = await pedir();
     expect(res.status).toBe(201);
-    expect(res.body.order.total).toBe(200000);
-    expect((await Order.findById(res.body.order.id)).costoEnvio).toBe(0);
+    const guardado = await Order.findById(res.body.order.id);
+    expect(guardado.subtotal).toBe(200000);
+    expect(guardado.costoEnvio).toBe(0);
+    // Sin envío, la base imponible es solo el subtotal.
+    expect(guardado.impuestos).toBe(38000);
+    expect(guardado.total).toBe(238000);
+    expect(res.body.order.total).toBe(238000);
   });
 
   it('un peso por debajo del umbral si cobra envio', async () => {
@@ -230,8 +251,13 @@ describe('total del pedido: lo calculado es lo guardado y lo devuelto', () => {
     await agregar(producto, 2);
     const res = await pedir();
     const guardado = await Order.findById(res.body.order.id);
-    const texto = decodeURIComponent(new URL(res.body.order.whatsappUrl).searchParams.get('text'));
+    // `searchParams.get()` YA decodifica: Applying decodeURIComponent encima es
+    // una doble decodificacion que revienta con el "%" del "IVA (19%)". Solo
+    // fallaba ahora porque la linea de IVA es lo primero que mete un "%" en el
+    // mensaje; el resto del texto nunca tuvo ninguno.
+    const texto = new URL(res.body.order.whatsappUrl).searchParams.get('text');
     expect(texto).toContain(`$${guardado.subtotal.toLocaleString('es-CO')}`);
+    expect(texto).toContain(`$${guardado.impuestos.toLocaleString('es-CO')}`);
     expect(texto).toContain(`$${guardado.total.toLocaleString('es-CO')}`);
   });
 });
@@ -807,8 +833,10 @@ describe('el carrito expone el desglose que se va a cobrar', () => {
     const carrito = await cliente.agent.get('/api/cart');
     expect(carrito.body.cart.subtotal).toBe(29000);
     expect(carrito.body.cart.costoEnvio).toBe(SHIPPING_RULES.cost);
-    expect(carrito.body.cart.total).toBe(29000 + SHIPPING_RULES.cost);
+    expect(carrito.body.cart.impuestos).toBe(taxFor(29000 + SHIPPING_RULES.cost, TAX_RATE_BP));
+    expect(carrito.body.cart.total).toBe(29000 + SHIPPING_RULES.cost + 8360);
     expect(carrito.body.cart.envioGratisDesde).toBe(SHIPPING_RULES.freeFrom);
+    expect(carrito.body.cart.tasaImpuestosBp).toBe(TAX_RATE_BP);
 
     const pedido = await pedir();
     expect(pedido.status).toBe(201);
@@ -824,7 +852,8 @@ describe('el carrito expone el desglose que se va a cobrar', () => {
 
     const carrito = await cliente.agent.get('/api/cart');
     expect(carrito.body.cart.costoEnvio).toBe(0);
-    expect(carrito.body.cart.total).toBe(SHIPPING_RULES.freeFrom);
+    expect(carrito.body.cart.impuestos).toBe(taxFor(SHIPPING_RULES.freeFrom, TAX_RATE_BP));
+    expect(carrito.body.cart.total).toBe(SHIPPING_RULES.freeFrom + 38000);
 
     const pedido = await pedir();
     const guardado = await Order.findById(pedido.body.order.id).lean();
@@ -840,6 +869,7 @@ describe('el carrito expone el desglose que se va a cobrar', () => {
     const carrito = await cliente.agent.get('/api/cart');
     expect(agregado.body.cart.subtotal).toBe(carrito.body.cart.subtotal);
     expect(agregado.body.cart.costoEnvio).toBe(carrito.body.cart.costoEnvio);
+    expect(agregado.body.cart.impuestos).toBe(carrito.body.cart.impuestos);
     expect(agregado.body.cart.total).toBe(carrito.body.cart.total);
   });
 });

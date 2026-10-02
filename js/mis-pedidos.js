@@ -315,10 +315,10 @@ function renderizarModalDetalle(pedido, contenedor) {
                     <span>Envío</span>
                     <span>${Number(pedido?.costoEnvio) === 0 ? 'Gratis' : `${escapeHTML(formatearMonto(pedido?.costoEnvio))}`}</span>
                 </div>
-                ${Number(pedido?.descuento) > 0 ? `
-                    <div class="resumen-fila descuento">
-                        <span>Descuento</span>
-                        <span>-${escapeHTML(formatearMonto(pedido?.descuento))}</span>
+                ${Number(pedido?.impuestos) > 0 ? `
+                    <div class="resumen-fila">
+                        <span>IVA${pedido?.tasaImpuestosBp ? ` (${(Number(pedido.tasaImpuestosBp) / 100).toFixed(Number(pedido.tasaImpuestosBp) % 100 === 0 ? 0 : 2)}%)` : ''}</span>
+                        <span>${escapeHTML(formatearMonto(pedido?.impuestos))}</span>
                     </div>
                 ` : ''}
                 <div class="resumen-fila total">
