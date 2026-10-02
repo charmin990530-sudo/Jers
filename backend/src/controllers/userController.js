@@ -56,8 +56,13 @@ export const getUsers = asyncHandler(async (req, res) => {
     ];
   }
   if (role) filter.role = role;
-  if (activo === 'true') filter.activo = true;
-  if (activo === 'false') filter.activo = false;
+  // `validateQuery` reemplaza req.query por la salida de Zod, y
+  // `optionalBooleanQuery` convierte el valor a booleano. Comparar contra las
+  // cadenas 'true'/'false' no era cierto nunca, asi que `filter.activo` no se
+  // asignaba jamas y el endpoint devolvia siempre la lista completa: el admin
+  // pedia "ver solo desactivados" y recibia todos. `API.md` documenta `activo`
+  // como soportado.
+  if (activo !== undefined) filter.activo = activo;
 
   const [users, total] = await Promise.all([
     User.find(filter)

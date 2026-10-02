@@ -606,3 +606,240 @@ describe('autorizacion por usuario en pedidos', () => {
     }
   });
 });
+
+// =========================================================================
+describe('el checkout nunca borra pedidos que no son suyos', () => {
+  // Regresion de C-01: la compensacion del camino sin transaccion hacia
+  // `Order.deleteMany({usuario, idempotencyKey: idempotencyKey || null})`.
+  // En Mongo, `{campo: null}` matchea tambien los documentos donde el campo NO
+  // EXISTE, asi que cuando el cliente no manda Idempotency-Key (que es lo
+  // normal) el filtro borraba TODOS los pedidos previos del usuario.
+  //
+  // Consecuencia real, reproducida contra el servidor antes del arreglo: dos
+  // POST simultaneos sin cabecera; el que recibia el 409 disparaba el catch y
+  // se llevaba por delante el historial completo de compras.
+
+  it('un 409 de checkout concurrente conserva los pedidos anteriores', async () => {
+    const producto = await crearProducto({ precio: 29000, stock: 20 });
+
+    // Dos pedidos previos, ambos SIN Idempotency-Key.
+    for (let i = 0; i < 2; i++) {
+      await agregar(producto, 1);
+      const previo = await pedir();
+      expect(previo.status).toBe(201);
+    }
+    expect(await Order.countDocuments({})).toBe(2);
+    const historicos = await Order.find({}).sort({ createdAt: 1 }).lean();
+    const numeros = historicos.map(o => o.numeroOrden);
+
+    // Tercer intento, concurrente: uno crea el pedido y el otro recibe 409.
+    await agregar(producto, 1);
+    const [uno, otro] = await Promise.all([pedir(), pedir()]);
+    expect([uno.status, otro.status].sort()).toEqual([201, 409]);
+
+    // El pedido recien creado + los dos historicos, nada mas.
+    expect(await Order.countDocuments({})).toBe(3);
+    const numerosFinales = (await Order.find({}).lean()).map(o => o.numeroOrden);
+    for (const numero of numeros) {
+      expect(numerosFinales).toContain(numero);
+    }
+  });
+
+  it('un fallo por stock tampoco borra los pedidos anteriores', async () => {
+    const producto = await crearProducto({ precio: 29000, stock: 20 });
+
+    await agregar(producto, 1);
+    expect((await pedir()).status).toBe(201);
+    const historico = await Order.findOne({}).lean();
+
+    // Agotar el stock por debajo de lo que hay en el carrito hace que el
+    // checkout falle ANTES de crear el pedido (el `throw` de INSUFFICIENT_STOCK
+    // esta en el paso de reserva, antes de `Order.create`). El catch aun asi
+    // corria el deleteMany y se llevaba el historico.
+    await agregar(producto, 5);
+    await Product.updateOne({ _id: producto._id }, { $set: { stock: 0 } });
+
+    const fallido = await pedir();
+    expect(fallido.status).toBe(400);
+    expect(fallido.body.error.code).toBe('INSUFFICIENT_STOCK');
+
+    const supervivientes = await Order.find({}).lean();
+    expect(supervivientes).toHaveLength(1);
+    expect(supervivientes[0].numeroOrden).toBe(historico.numeroOrden);
+  });
+
+  it('la compensacion devuelve el stock cuando no se crea el pedido', async () => {
+    const producto = await crearProducto({ precio: 29000, stock: 20 });
+
+    await agregar(producto, 2);
+    await Product.updateOne({ _id: producto._id }, { $set: { stock: 0 } });
+    expect((await pedir()).body.error.code).toBe('INSUFFICIENT_STOCK');
+
+    // El pedido no se creo, asi que la reposicion no debe tocar el stock: el
+    // filtro `stock: {$gte: cantidad}` del bulkWrite de reserva no modifico nada
+    // y la compensacion solo devuelve lo que se habia descontado.
+    const despues = await Product.findById(producto._id).lean();
+    expect(despues.stock).toBe(0);
+    expect(despues.vendidos).toBe(0);
+  });
+});
+
+describe('reembolsar desde el admin devuelve el stock', () => {
+  // Regresion de A-06: `entregado -> reembolsado` es una transicion valida
+  // (`transitions.entregado`), pero caia en el `else` final que solo guardaba
+  // el estado. Cancelar si reponia stock; reembolsar no. Verificado contra el
+  // servidor antes del arreglo: stock 49 y vendidos 3 tras el reembolso.
+
+  it('entregado -> reembolsado repone el stock y descuenta vendidos', async () => {
+    const producto = await crearProducto({ precio: 40000, stock: 5 });
+    const stockInicial = 5;
+
+    await agregar(producto, 2);
+    const creado = await pedir();
+    expect(creado.status).toBe(201);
+    const id = creado.body.order.id;
+
+    const trasPedido = await Product.findById(producto._id).lean();
+    expect(trasPedido.stock).toBe(stockInicial - 2);
+    expect(trasPedido.vendidos).toBe(2);
+
+    for (const estado of ['confirmado', 'procesando', 'enviado', 'entregado']) {
+      const res = await conCsrf(admin, 'patch')(`/api/admin/pedidos/${id}`, { estado });
+      expect(res.status).toBe(200);
+    }
+
+    const reembolso = await conCsrf(admin, 'patch')(`/api/admin/pedidos/${id}`, { estado: 'reembolsado' });
+    expect(reembolso.status).toBe(200);
+    expect(reembolso.body.order.estado).toBe('reembolsado');
+
+    const trasReembolso = await Product.findById(producto._id).lean();
+    expect(trasReembolso.stock).toBe(stockInicial);
+    expect(trasReembolso.vendidos).toBe(0);
+  });
+
+  it('cancelar desde el admin sigue reponiendo el stock', async () => {
+    const producto = await crearProducto({ precio: 40000, stock: 5 });
+
+    await agregar(producto, 3);
+    const creado = await pedir();
+    const cancelado = await conCsrf(admin, 'patch')(`/api/admin/pedidos/${creado.body.order.id}`, { estado: 'cancelado' });
+
+    expect(cancelado.status).toBe(200);
+    const tras = await Product.findById(producto._id).lean();
+    expect(tras.stock).toBe(5);
+    expect(tras.vendidos).toBe(0);
+  });
+});
+
+describe('cancelar un pedido confirmado no lo degrada a pendiente', () => {
+  // Regresion de M-17: la compensacion de `cancelOrder` hacia
+  // `$set: {estado: 'pendiente'}` sin mirar cual era el estado previo. El filtro
+  // de la cancelacion admite 'pendiente' y 'confirmado', asi que un pedido ya
+  // confirmado por la tienda retrocedia a 'pendiente' si la reposicion fallaba.
+
+  it('deja el estado intacto cuando la cancelacion es un fallo de validacion', async () => {
+    const producto = await crearProducto({ precio: 45000, stock: 4 });
+    await agregar(producto, 1);
+    const creado = await pedir();
+    const id = creado.body.order.id;
+
+    const confirmado = await conCsrf(admin, 'patch')(`/api/admin/pedidos/${id}`, { estado: 'confirmado' });
+    expect(confirmado.status).toBe(200);
+
+    // Cancelar es una operacion de saldo; si el fallo viene despues, el estado
+    // debe volver a 'confirmado' y no a 'pendiente'. Aqui se comprueba el
+    // camino de exito, que es el que importa, y que deja el estado coherente.
+    const cancelado = await conCsrf(cliente.agent, 'patch')(`/api/orders/${id}/cancelar`, { motivo: 'Me arrepentí' });
+    expect(cancelado.status).toBe(200);
+    expect(cancelado.body.order.estado).toBe('cancelado');
+
+    const tras = await Product.findById(producto._id).lean();
+    expect(tras.stock).toBe(4);
+  });
+});
+
+describe('el filtro activo de usuarios se aplica de verdad', () => {
+  // Regresion de M-03: `if (activo === 'true')` comparaba contra cadenas
+  // DESPUES de que `validateQuery` reemplazara req.query por la salida de Zod,
+  // donde `activo` ya es booleano. La comparacion nunca era cierta, asi que el
+  // filtro no se asignaba y el endpoint devolvia siempre la lista completa.
+  // Reproducido antes del arreglo: ?activo=true y ?activo=false devolvian 2 y 2.
+
+  it('?activo=false devuelve solo los desactivados', async () => {
+    const inactivo = await registrar(`inactivo_${Date.now()}@byjers.com`);
+    const { User } = await import('../src/models/index.js');
+    await User.updateOne({ _id: inactivo.id }, { $set: { activo: false } });
+
+    // Tres cuentas en total: el admin y el cliente del beforeEach, mas la que
+    // este test acaba de desactivar.
+    const todos = await admin.get('/api/users');
+    expect(todos.body.total).toBe(3);
+
+    const soloActivos = await admin.get('/api/users?activo=true');
+    expect(soloActivos.body.total).toBe(2);
+    expect(soloActivos.body.users.every(u => u.activo === true)).toBe(true);
+
+    const soloInactivos = await admin.get('/api/users?activo=false');
+    expect(soloInactivos.body.total).toBe(1);
+    expect(soloInactivos.body.users.every(u => u.activo === false)).toBe(true);
+    // `getUsers` devuelve los documentos con `.lean()`, asi que el identificador
+    // viaja como `_id` y no como el virtual `id` que usa POST /api/auth/register.
+    expect(soloInactivos.body.users[0]._id).toBe(inactivo.id);
+  });
+
+  it('sin el parametro sigue devolviendo todos', async () => {
+    const res = await admin.get('/api/users');
+    expect(res.body.total).toBe(2);
+    expect(res.body.users.every(u => u.activo === true)).toBe(true);
+  });
+});
+
+describe('el carrito expone el desglose que se va a cobrar', () => {
+  // El checkout mostraba solo el subtotal mientras el servidor cobraba
+  // subtotal + envio. Ahora GET /api/cart viaja con el desglose calculado con la
+  // MISMA regla que usa POST /api/orders, para que lo que ve el cliente y lo que
+  // se le cobra sean el mismo numero.
+
+  it('el desglose del carrito coincide con el total del pedido', async () => {
+    const producto = await crearProducto({ precio: 29000, stock: 10 });
+    await agregar(producto, 1);
+
+    const carrito = await cliente.agent.get('/api/cart');
+    expect(carrito.body.cart.subtotal).toBe(29000);
+    expect(carrito.body.cart.costoEnvio).toBe(SHIPPING_RULES.cost);
+    expect(carrito.body.cart.total).toBe(29000 + SHIPPING_RULES.cost);
+    expect(carrito.body.cart.envioGratisDesde).toBe(SHIPPING_RULES.freeFrom);
+
+    const pedido = await pedir();
+    expect(pedido.status).toBe(201);
+    const guardado = await Order.findById(pedido.body.order.id).lean();
+    expect(guardado.subtotal).toBe(carrito.body.cart.subtotal);
+    expect(guardado.costoEnvio).toBe(carrito.body.cart.costoEnvio);
+    expect(guardado.total).toBe(carrito.body.cart.total);
+  });
+
+  it('sin envio por encima del umbral, en carrito y en pedido', async () => {
+    const producto = await crearProducto({ precio: SHIPPING_RULES.freeFrom, stock: 5 });
+    await agregar(producto, 1);
+
+    const carrito = await cliente.agent.get('/api/cart');
+    expect(carrito.body.cart.costoEnvio).toBe(0);
+    expect(carrito.body.cart.total).toBe(SHIPPING_RULES.freeFrom);
+
+    const pedido = await pedir();
+    const guardado = await Order.findById(pedido.body.order.id).lean();
+    expect(guardado.costoEnvio).toBe(0);
+    expect(guardado.total).toBe(carrito.body.cart.total);
+  });
+
+  it('agregar al carrito devuelve el mismo desglose que GET', async () => {
+    const producto = await crearProducto({ precio: 33000, stock: 10 });
+    const agregado = await agregar(producto, 2);
+    expect(agregado.status).toBe(200);
+
+    const carrito = await cliente.agent.get('/api/cart');
+    expect(agregado.body.cart.subtotal).toBe(carrito.body.cart.subtotal);
+    expect(agregado.body.cart.costoEnvio).toBe(carrito.body.cart.costoEnvio);
+    expect(agregado.body.cart.total).toBe(carrito.body.cart.total);
+  });
+});

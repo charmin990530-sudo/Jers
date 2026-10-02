@@ -137,6 +137,29 @@ export const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true' && NODE_ENV ==
 // Tope de espera al conectar a Redis. Sin esto el cliente reintenta y un
 // REDIS_URL inalcanzable deja el cold start colgado hasta el timeout de Vercel.
 export const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS) || 5000;
+
+// ==========================================
+// REGLAS DE ENVÍO
+// ==========================================
+// Importes enteros, igual que en `services/money.js` (peso = unidad mínima).
+// `freeFrom` es el subtotal a partir del cual el envío no se cobra; `cost` es lo
+// que se cobra por debajo de ese umbral.
+//
+// Estaban hardcodeados en `orderController.js` como constante de módulo, lo que
+// obligaba a un redeploy para cambiar el precio del envío y hacía imposible que
+// el checkout mostrase el total real: el cliente veía solo el subtotal y
+// descubría el envío al final, ya en el mensaje de WhatsApp.
+const parseMinorAmountEnv = (value, fallback, nombre) => {
+  const n = value === undefined ? fallback : Number(value);
+  if (!Number.isSafeInteger(n) || n < 0) {
+    throw new Error(`${nombre} debe ser un entero no negativo en unidades mínimas`);
+  }
+  return n;
+};
+
+export const SHIPPING_COST = parseMinorAmountEnv(process.env.SHIPPING_COST, 15000, 'SHIPPING_COST');
+export const SHIPPING_FREE_FROM = parseMinorAmountEnv(process.env.SHIPPING_FREE_FROM, 200000, 'SHIPPING_FREE_FROM');
+export const SHIPPING_RULES = Object.freeze({ freeFrom: SHIPPING_FREE_FROM, cost: SHIPPING_COST });
 export const TRUST_PROXY_HOPS = Number.parseInt(process.env.TRUST_PROXY_HOPS || '0', 10);
 if (!Number.isInteger(TRUST_PROXY_HOPS) || TRUST_PROXY_HOPS < 0 || TRUST_PROXY_HOPS > 5) {
   throw new Error('TRUST_PROXY_HOPS debe estar entre 0 y 5');

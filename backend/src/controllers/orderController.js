@@ -32,7 +32,7 @@ import { randomUUID } from 'crypto';
 import { Order, Cart, Product, User } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
-import { WHATSAPP_NUMBER } from '../config/env.js';
+import { WHATSAPP_NUMBER, SHIPPING_RULES } from '../config/env.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
 import {
   sendOrderConfirmationEmail,
@@ -46,8 +46,16 @@ import {
   formatMinorAmount,
 } from '../services/money.js';
 
-/** Reglas de envio. Todo en enteros; el umbral es la unidad minima (peso). */
-export const SHIPPING_RULES = Object.freeze({ freeFrom: 200000, cost: 15000 });
+/**
+ * Reglas de envio. Todo en enteros; el umbral es la unidad minima (peso).
+ *
+ * Reexportado desde `config/env.js` para que quien lo importe no tenga que
+ * saber de donde sale. Antes vivia aqui como constante de modulo: cambiar el
+ * umbral de envio gratis exigia un redeploy, y el checkout del frontend no
+ * tenia forma de conocerlo (mostraba solo el subtotal, y el cliente
+ * descubria los $15.000 de envio al final).
+ */
+export { SHIPPING_RULES } from '../config/env.js';
 
 const serializeOrder = order => ({
   ...order,
@@ -151,6 +159,15 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   const transactional = await detectTransactionSupport();
 
   let order;
+  // Id del pedido que llegara a crearse. La compensacion del catch solo puede
+  // borrar ESTE documento. Antes se borraba por
+  // `{usuario, idempotencyKey: idempotencyKey || null}` y Mongo trata
+  // `{campo: null}` como "el campo es null O no existe", asi que cuando el
+  // cliente no manda Idempotency-Key (que es lo normal) el filtro matcheaba
+  // TODOS los pedidos previos del usuario y los borraba. Con dos POST
+  // simultaneos sin cabecera, el que recibia el 409 se llevaba por delante el
+  // historial entero de compras.
+  let createdOrderId = null;
   try {
     const outcome = await withTransaction(async ({ session }) => {
       // 1) Tomar el carrito. El $or descarta un checkout vivo de otro intento, de
@@ -202,6 +219,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         metodoPago: 'whatsapp',
         ...(idempotencyKey ? { idempotencyKey } : {}),
       }], { session });
+      createdOrderId = created._id;
 
       // 4) Consumir el carrito. Si el borrado no ocurre, el pedido no sirve.
       const deletedCart = await Cart.deleteOne({ _id: cart._id, checkoutToken }, { session });
@@ -228,7 +246,12 @@ export const createOrder = asyncHandler(async (req, res, next) => {
           { _id: cart._id, checkoutToken },
           { $unset: { checkoutToken: 1, checkoutExpiresAt: 1 } },
         ),
-        Order.deleteMany({ usuario: req.userId, idempotencyKey: idempotencyKey || null }),
+        // Solo el pedido de ESTE intento. Si no llego a crearse (por ejemplo
+        // porque el stock se agoto en el paso 2), no hay nada que borrar y el
+        // `createdOrderId === null` lo omite.
+        createdOrderId
+          ? Order.deleteOne({ _id: createdOrderId })
+          : Promise.resolve({ deletedCount: 0 }),
       ]);
     }
     throw error;
@@ -381,9 +404,20 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
   const transactional = await detectTransactionSupport();
   let order;
   let motivoAplicado = false;
+  // Estado que tenia el pedido ANTES de la cancelacion. El catch lo necesita
+  // para deshacer: el filtro de arriba admite 'pendiente' y 'confirmado', y
+  // devolver siempre a 'pendiente' degradaba un pedido ya confirmado por la
+  // tienda. El admin si lo hacia bien (`adminController.js`), aqui no.
+  let estadoPrevio = null;
 
   try {
     const outcome = await withTransaction(async ({ session }) => {
+      const actual = await Order.findOne(
+        { _id: req.params.id, usuario: req.userId },
+        { estado: 1 }
+      ).session(session).lean();
+      if (actual) estadoPrevio = actual.estado;
+
       const cancelled = await Order.findOneAndUpdate(
         {
           _id: req.params.id,
@@ -422,7 +456,10 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
     // Solo sin transaccion real: con replica set el abort ya lo revierte.
     if (!transactional && motivoAplicado) {
       const pending = await Order.findOne({ _id: req.params.id, usuario: req.userId, estado: 'cancelado' }).lean();
-      if (pending) {
+      // Si no hay estado previo no se sabe a que estado volver: es preferible
+      // dejar constancia del cancelado a adivinar. No deberia ocurrir (el
+      // documento existe si `motivoAplicado` es true).
+      if (pending && estadoPrevio) {
         await Promise.allSettled([
           Product.bulkWrite(pending.items.map(item => ({
             updateOne: {
@@ -432,7 +469,7 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
           })), { ordered: false }),
           Order.updateOne(
             { _id: req.params.id },
-            { $set: { estado: 'pendiente' }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } },
+            { $set: { estado: estadoPrevio }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } },
           ),
         ]);
       }

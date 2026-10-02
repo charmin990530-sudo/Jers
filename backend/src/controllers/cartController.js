@@ -23,6 +23,13 @@
 
 import { Cart, Product } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { SHIPPING_RULES } from '../config/env.js';
+import {
+  sumMinorAmounts,
+  multiplyMinorAmount,
+  computeOrderTotal,
+  shippingCostFor,
+} from '../services/money.js';
 
 /**
  * GET /api/cart
@@ -46,7 +53,15 @@ export const getCart = asyncHandler(async (req, res) => {
 
   // Filtra items válidos (producto existe, activo, con stock)
   const validItems = cart.items.filter(item => item.producto && item.producto.activo && item.producto.stock > 0);
-  const subtotal = validItems.reduce((sum, item) => sum + (item.precioUnitario * item.cantidad), 0);
+  // Los importes salen de `services/money.js` con los mismos tipos que usa el
+  // checkout: enteros con control de rango. Sin esto, el carrito y el pedido
+  // podrían calcular importes distintos si algum dia cambia una regla.
+  const subtotal = sumMinorAmounts(
+    validItems.map(item => multiplyMinorAmount(item.precioUnitario, item.cantidad, 'subtotal')),
+    'subtotal',
+  );
+  const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
+  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, discount: 0 });
 
   res.status(200).json({
     success: true,
@@ -54,6 +69,13 @@ export const getCart = asyncHandler(async (req, res) => {
       items: validItems,
       totalItems: validItems.reduce((sum, item) => sum + item.cantidad, 0),
       subtotal,
+      // El desglose viaja con el carrito para que el checkout pueda mostrar el
+      // importe que REALMENTE se va a cobrar. Antes el frontend sumaba el
+      // subtotal y lo llamaba "Total", y el servidor cobraba subtotal + envío:
+      // el cliente descubria los $15.000 de envío al confirmar.
+      costoEnvio,
+      total,
+      envioGratisDesde: SHIPPING_RULES.freeFrom,
     },
   });
 });
@@ -93,7 +115,11 @@ export const addToCart = asyncHandler(async (req, res, next) => {
     .lean();
 
   const validItems = cart.items.filter(item => item.producto && item.producto.activo);
-  const subtotal = validItems.reduce((sum, item) => sum + (item.precioUnitario * item.cantidad), 0);
+  const subtotal = sumMinorAmounts(
+    validItems.map(item => multiplyMinorAmount(item.precioUnitario, item.cantidad, 'subtotal')),
+    'subtotal',
+  );
+  const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
 
   res.status(200).json({
     success: true,
@@ -102,6 +128,10 @@ export const addToCart = asyncHandler(async (req, res, next) => {
       items: validItems,
       totalItems: validItems.reduce((sum, item) => sum + item.cantidad, 0),
       subtotal,
+      // Mismo desglose que en GET /api/cart (ver la nota de ahi).
+      costoEnvio,
+      total: computeOrderTotal({ subtotal, shipping: costoEnvio, discount: 0 }),
+      envioGratisDesde: SHIPPING_RULES.freeFrom,
     },
   });
 });
