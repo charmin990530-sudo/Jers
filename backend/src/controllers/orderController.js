@@ -32,7 +32,7 @@ import { randomUUID } from 'crypto';
 import { Order, Cart, Product, User } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
-import { WHATSAPP_NUMBER, SHIPPING_RULES } from '../config/env.js';
+import { WHATSAPP_NUMBER, SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
 import {
   sendOrderConfirmationEmail,
@@ -43,6 +43,7 @@ import {
   sumMinorAmounts,
   computeOrderTotal,
   shippingCostFor,
+  taxFor,
   formatMinorAmount,
 } from '../services/money.js';
 
@@ -132,7 +133,12 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
   const subtotal = sumMinorAmounts(itemSubtotals, 'subtotal');
   const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
-  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, discount: 0 });
+  // Los precios del catálogo son sin impuestos. El IVA se suma aqui, en el
+  // servidor, sobre la base imponible (subtotal + envio) y con la tasa vigente
+  // en el momento del pedido. El cliente nunca envía importes: el esquema Zod
+  // solo acepta `direccionEnvio` y `notas`.
+  const impuestos = taxFor(subtotal + costoEnvio, TAX_RATE_BP);
+  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, tax: impuestos });
 
   // ==============================================================
   // SECCION TRANSACCIONAL
@@ -213,6 +219,8 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         items: validItems,
         subtotal,
         costoEnvio,
+        impuestos,
+        tasaImpuestosBp: TAX_RATE_BP,
         total,
         direccionEnvio,
         notas,
@@ -267,6 +275,7 @@ ${validItems.map(i => `• ${i.nombre} x${i.cantidad} - ${formatMinorAmount(i.su
 
 Subtotal: ${formatMinorAmount(subtotal)}
 Envío: ${costoEnvio === 0 ? 'Gratis' : formatMinorAmount(costoEnvio)}
+IVA (${(TAX_RATE_BP / 100).toFixed(TAX_RATE_BP % 100 === 0 ? 0 : 2)}%): ${formatMinorAmount(impuestos)}
 Total: ${formatMinorAmount(total)}
 
 Dirección de envío:
@@ -307,6 +316,8 @@ Orden: ${order.numeroOrden}
     items: validItems,
     subtotal,
     costoEnvio,
+    impuestos,
+    tasaImpuestosBp: TAX_RATE_BP,
     total,
     direccionEnvio,
     notas,
@@ -335,6 +346,10 @@ Orden: ${order.numeroOrden}
     order: {
       id: order._id,
       numeroOrden: order.numeroOrden,
+      subtotal,
+      costoEnvio,
+      impuestos,
+      tasaImpuestosBp: TAX_RATE_BP,
       total: order.total,
       estado: order.estado,
       whatsappUrl,

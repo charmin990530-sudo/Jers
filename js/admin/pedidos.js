@@ -262,8 +262,8 @@ function renderDetallePedido(order) {
         </div>
         <div class="form-grupo">
             <p>Subtotal: ${escapeHTML(formatearMoneda(order?.subtotal))}</p>
-            <p>Envío: ${escapeHTML(formatearMoneda(order?.costoEnvio))}</p>
-            <p>Descuento: ${escapeHTML(formatearMoneda(order?.descuento))}</p>
+            <p>Envío: ${Number(order?.costoEnvio) === 0 ? 'Gratis' : escapeHTML(formatearMoneda(order?.costoEnvio))}</p>
+            ${Number(order?.impuestos) > 0 ? `<p>IVA${order?.tasaImpuestosBp ? ` (${(Number(order.tasaImpuestosBp) / 100).toFixed(Number(order.tasaImpuestosBp) % 100 === 0 ? 0 : 2)}%)` : ''}: ${escapeHTML(formatearMoneda(order?.impuestos))}</p>` : ''}
             <p><strong>Total: ${escapeHTML(formatearMoneda(order?.total))}</strong></p>
         </div>
         ${order?.notas ? `<div class="form-grupo"><strong>Notas del pedido</strong><p>${escapeHTML(order.notas)}</p></div>` : ''}

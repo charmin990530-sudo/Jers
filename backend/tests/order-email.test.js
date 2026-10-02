@@ -258,14 +258,17 @@ describe('crear un pedido no depende del correo', () => {
     expect(res.status).toBe(201);
     expect(res.body.order.numeroOrden).toMatch(/^BJ-\d{6}-[A-Z0-9]{6}$/);
     // 2 x 29000 = 58000 de subtotal, por debajo del umbral de envio gratis
-    // (200000), asi que se cobran 15000 de envio: 73000 en total.
-    expect(res.body.order.total).toBe(73000);
+    // (200000), asi que se cobran 15000 de envio. La base imponible del IVA es
+    // subtotal + envio = 73000, y al 19% son 13870. Total: 86870.
+    expect(res.body.order.total).toBe(86870);
 
     // El pedido existe con los mismos importes que se avisaron por correo.
     const guardado = await Order.findOne({ _id: res.body.order.id }).lean();
     expect(guardado.subtotal).toBe(58000);
     expect(guardado.costoEnvio).toBe(15000);
-    expect(guardado.total).toBe(73000);
+    expect(guardado.impuestos).toBe(13870);
+    expect(guardado.tasaImpuestosBp).toBe(1900);
+    expect(guardado.total).toBe(guardado.subtotal + guardado.costoEnvio + guardado.impuestos);
 
     // El stock se descuenta, y eso es justamente lo que hace grave que el
     // correo no llegara: el inventario queda retenido por un pedido que el

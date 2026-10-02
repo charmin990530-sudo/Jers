@@ -15,7 +15,7 @@ import {
   multiplyMinorAmount,
   percentOfMinorAmount,
   discountPercentage,
-  applyDiscountPercentage,
+  taxFor,
   computeOrderTotal,
   shippingCostFor,
   formatMinorAmount,
@@ -181,17 +181,39 @@ describe('discountPercentage', () => {
   });
 });
 
-describe('applyDiscountPercentage', () => {
-  it('aplica el descuento sobre el importe', () => {
-    expect(applyDiscountPercentage(100000, 15)).toBe(85000);
+describe('taxFor (IVA)', () => {
+  it('aplica la tasa en puntos basicos', () => {
+    expect(taxFor(100000, 1900)).toBe(19000);
+    expect(taxFor(100000, 500)).toBe(5000);
   });
 
-  it('nunca produce un importe negativo', () => {
-    expect(applyDiscountPercentage(100, 150)).toBe(0);
+  it('redondea half-up a entero', () => {
+    // 19% de 12345 = 2345.55 -> 2346
+    expect(taxFor(12345, 1900)).toBe(2346);
+    // 19% de 10000 = 1900 exacto, sin desvio de coma flotante
+    expect(taxFor(10000, 1900)).toBe(1900);
   });
 
-  it('con 0% devuelve el importe original', () => {
-    expect(applyDiscountPercentage(100000, 0)).toBe(100000);
+  it('con tasa 0% no cobra nada (exento)', () => {
+    expect(taxFor(100000, 0)).toBe(0);
+  });
+
+  it('con base 0 no cobra nada', () => {
+    expect(taxFor(0, 1900)).toBe(0);
+  });
+
+  it('rechaza una tasa negativa o decimal', () => {
+    expect(() => taxFor(100000, -100)).toThrow(MoneyError);
+    expect(() => taxFor(100000, 19.5)).toThrow(MoneyError);
+  });
+
+  it('rechaza una base no entera', () => {
+    expect(() => taxFor(100.5, 1900)).toThrow(MoneyError);
+  });
+
+  it('representa tariffs que un porcentaje entero no podria', () => {
+    // 19,5% no cabe en un entero 0..100: habria que redondear a 20 y cobrar de mas.
+    expect(taxFor(100000, 1950)).toBe(19500);
   });
 });
 
@@ -200,23 +222,27 @@ describe('computeOrderTotal', () => {
     expect(computeOrderTotal({ subtotal: 186000, shipping: 15000 })).toBe(201000);
   });
 
-  it('resta el descuento', () => {
-    expect(computeOrderTotal({ subtotal: 100000, shipping: 0, discount: 15000 })).toBe(85000);
+  it('suma el IVA cuando se le pasa', () => {
+    expect(computeOrderTotal({ subtotal: 29000, shipping: 15000, tax: 8360 })).toBe(52360);
+  });
+
+  it('suma subtotal, envio e IVA a la vez', () => {
+    expect(computeOrderTotal({ subtotal: 186000, shipping: 15000, tax: 38190 })).toBe(239190);
   });
 
   it('maneja el caso limite de todo cero', () => {
-    expect(computeOrderTotal({ subtotal: 0, shipping: 0, discount: 0 })).toBe(0);
+    expect(computeOrderTotal({ subtotal: 0, shipping: 0, tax: 0 })).toBe(0);
   });
 
   it('rechaza un total negativo en vez de devolverlo', () => {
-    expect(() => computeOrderTotal({ subtotal: 100, shipping: 0, discount: 500 }))
+    expect(() => computeOrderTotal({ subtotal: 0, shipping: 0, tax: -500 }))
       .toThrow(/no puede ser negativo/);
   });
 
   it('rechaza decimales en cualquiera de los tres campos', () => {
     expect(() => computeOrderTotal({ subtotal: 100.5 })).toThrow(MoneyError);
     expect(() => computeOrderTotal({ subtotal: 100, shipping: 0.5 })).toThrow(MoneyError);
-    expect(() => computeOrderTotal({ subtotal: 100, discount: 0.5 })).toThrow(MoneyError);
+    expect(() => computeOrderTotal({ subtotal: 100, tax: 0.5 })).toThrow(MoneyError);
   });
 });
 

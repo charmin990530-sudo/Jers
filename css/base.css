@@ -65,6 +65,17 @@
     padding: 0;
 }
 
+/* El atributo `hidden` del navegador vale `display: none` en la hoja del user
+   agent, pero CUALQUIER regla de autor que fije `display` lo pisa sin necesidad
+   de ser más específica: `.checkout-totales__fila { display: flex }` hacía que
+   poner `hidden` en la fila del IVA no la ocultara, y el cliente veía una línea
+   con "$0" de impuestos en un pedido que sí los tiene.
+   `!important` es aquí la herramienta correcta, no un descuido: es la forma de
+   que el atributo semántico gane siempre a la maquetación. */
+[hidden] {
+    display: none !important;
+}
+
 html {
     scroll-behavior: smooth;
 

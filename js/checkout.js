@@ -28,6 +28,9 @@ const itemsElement = document.getElementById('checkout-items');
 const subtotalElement = document.getElementById('checkout-subtotal');
 const envioElement = document.getElementById('checkout-envio');
 const envioNotaElement = document.getElementById('checkout-envio-nota');
+const ivaElement = document.getElementById('checkout-impuestos');
+const ivaNotaElement = document.getElementById('checkout-iva-nota');
+const ivaFilaElement = document.getElementById('checkout-impuestos-fila');
 const totalElement = document.getElementById('checkout-total');
 const avisoElement = document.getElementById('checkout-aviso');
 const messageElement = document.getElementById('checkout-message');
@@ -109,6 +112,19 @@ const renderCart = (items, desglose = null) => {
         }
     } else if (envioElement) {
         envioElement.textContent = 'Se calcula al confirmar';
+    }
+
+    // IVA. Los precios del catálogo son sin impuestos: el IVA se suma en el
+    // servidor, no aquí. Si la API no lo trae, la fila se esconde en vez de
+    // pintar un "$0" que haría creer que el pedido no lleva impuestos.
+    const ivaApi = Number.isInteger(desglose?.impuestos) ? desglose.impuestos : null;
+    if (ivaFilaElement) ivaFilaElement.hidden = ivaApi === null || ivaApi === 0;
+    if (ivaApi !== null && ivaElement) {
+        ivaElement.textContent = formatearPrecio(ivaApi);
+        const bp = Number.isInteger(desglose?.tasaImpuestosBp) ? desglose.tasaImpuestosBp : null;
+        if (ivaNotaElement) {
+            ivaNotaElement.textContent = bp === null ? '' : `(${(bp / 100).toFixed(bp % 100 === 0 ? 0 : 2)}%)`;
+        }
     }
 
     if (totalElement) {
@@ -221,7 +237,7 @@ form?.addEventListener('submit', async event => {
 
         const order = response.data.order;
         form.reset();
-        renderCart([], { subtotal: 0, costoEnvio: 0, total: 0 });
+        renderCart([], { subtotal: 0, costoEnvio: 0, impuestos: 0, total: 0 });
         setMessage(`Pedido ${order.numeroOrden} creado correctamente.`, 'exito');
 
         const whatsappUrl = safeExternalUrl(order.whatsappUrl);
@@ -233,13 +249,22 @@ form?.addEventListener('submit', async event => {
         // El pedido queda `pendiente`: el stock ya se descontó, pero el pago se
         // confirma hablando con la tienda. El mensaje verde de arriba decía
         // "creado correctamente" sin mencionar que faltaba ese paso, y quien
-        // cerraba la pestaña dejaba la compra a medias sin saberlo. Ahora se dice
-        // de forma explícita, sin sacar al usuario de la web.
+        // cerraba la pestaña dejaba la compra a medias sin saberlo.
         if (avisoElement) {
             avisoElement.textContent = whatsappUrl
-                ? 'Tu pedido quedó registrado y el stock está reservado. Falta confirmar el pago con la tienda: pulsa "Confirmar por WhatsApp" o escríbenos al número que aparece en el chat. Tu pedido aparece en "Mis pedidos".'
+                ? 'Tu pedido quedó registrado y el stock está reservado. Falta confirmar el pago: te abrimos el chat de WhatsApp en una pestaña nueva. Si no se abrió, usa el enlace de abajo.'
                 : 'Tu pedido quedó registrado y el stock está reservado. Contacta a la tienda para confirmar el pago. Tu pedido aparece en "Mis pedidos".';
             avisoElement.hidden = false;
+        }
+
+        // WhatsApp en pestaña nueva, no en la misma: el usuario sigue viendo su
+        // número de pedido y el aviso. El temporizador deja terminar el render
+        // antes de que el bloqueador de ventanas emergentes pueda suspenderse; si aun
+        // así lo bloquea, el enlace manual sigue ahí.
+        if (whatsappUrl) {
+            window.setTimeout(() => {
+                window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            }, 600);
         }
 
         // El pedido ya está hecho y el carrito vacío: el botón NO vuelve a

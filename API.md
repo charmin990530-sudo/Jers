@@ -71,10 +71,12 @@ Cambiar la contraseña, hacer logout o restablecerla incrementa
 | Unidad | peso colombiano, entero. `58000`, nunca `58000.5`. |
 | Validación | `z.number().int()` en Zod y validador en los modelos Mongoose. `58000.5` → 400. |
 | Subtotal | `precioUnitario × cantidad`, entero exacto. |
-| Envío | gratis desde **200.000**, si no **15.000** (`SHIPPING_RULES`). |
-| Total | `subtotal + envío − descuento`, nunca negativo. |
-| Descuento | entero 0–100, redondeo half-up sobre división entera. |
+| Envío | gratis desde **200.000**, si no **15.000** (`SHIPPING_RULES`, configurable con `SHIPPING_COST` y `SHIPPING_FREE_FROM`). |
+| Base imponible | `subtotal + envío`. El flete también es una prestación sujeta a gravamen, así que excluirlo del IVA subgravaría la operación. |
+| IVA | `taxFor(base, TAX_RATE_BP)`. **19% = 1900 puntos básicos.** La tasa va en puntos básicos (la centésima de un porcentaje) y no en porcentaje entero porque en Colombia no todas las tarifas son la general: la cesta básica va al 5% (500 bp) y hay exenciones al 0%. Redondeo half-up a entero. Configurable con `TAX_RATE_BP`, rango 0–10000. |
+| Total | `subtotal + envío + IVA`, entero, nunca negativo. |
 | Umbral | envío gratis en el valor exacto (200.000 → gratis; 199.999 → 15.000). |
+| Sin descuentos | no hay campo de descuento ni cupones: el total nunca se reduce por debajo de esa suma. |
 
 El precio se **congela** en el carrito al agregar (`precioUnitario`), pero el
 checkout usa el precio vigente del producto en ese momento.
@@ -180,6 +182,22 @@ admin esas operaciones sobre sí mismo (`LAST_ADMIN`, `SELF_DELETE`,
 |---|---|---|
 | GET | `/cart` | — |
 | POST | `/cart` | `{productoId, cantidad}` (1–99) |
+
+Las dos devuelven `cart` con el desglose completo, para que el checkout pueda
+mostrar lo que se va a cobrar sin recalcularlo en el cliente:
+
+```json
+{
+  "items": [ ... ],
+  "totalItems": 2,
+  "subtotal": 82000,
+  "costoEnvio": 15000,
+  "impuestos": 18430,
+  "tasaImpuestosBp": 1900,
+  "total": 115430,
+  "envioGratisDesde": 200000
+}
+```
 | PATCH | `/cart/:itemId` | `{cantidad}` (1–99) |
 | DELETE | `/cart/:itemId` | — |
 | DELETE | `/cart` | vacía todo |
@@ -188,7 +206,7 @@ admin esas operaciones sobre sí mismo (`LAST_ADMIN`, `SELF_DELETE`,
 
 | Método | Ruta | Notas |
 |---|---|---|
-| POST | `/orders` | **Transaccional**. Acepta `Idempotency-Key`. Devuelve `whatsappUrl` con el pedido pre-rellenado. |
+| POST | `/orders` | **Transaccional**. Acepta `Idempotency-Key`. Devuelve `whatsappUrl` con el pedido pre-rellenado. El `order` de la respuesta lleva `subtotal`, `costoEnvio`, `impuestos`, `tasaImpuestosBp` y `total`. El pedido queda `pendiente` hasta que alguien marque `estadoPago: pagado` en el panel: el pago se confirma por WhatsApp, no hay pasarela. |
 | GET | `/orders` | `page, limit, estado` |
 | GET | `/orders/:id` | 404 si es de otro usuario |
 | PATCH | `/orders/:id/cancelar` | `{motivo?}`. Solo desde `pendiente`/`confirmado` y si no está pagado. Devuelve el stock. |

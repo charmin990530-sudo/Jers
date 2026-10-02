@@ -23,12 +23,13 @@
 
 import { Cart, Product } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
-import { SHIPPING_RULES } from '../config/env.js';
+import { SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
 import {
   sumMinorAmounts,
   multiplyMinorAmount,
   computeOrderTotal,
   shippingCostFor,
+  taxFor,
 } from '../services/money.js';
 
 /**
@@ -61,7 +62,8 @@ export const getCart = asyncHandler(async (req, res) => {
     'subtotal',
   );
   const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
-  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, discount: 0 });
+  const impuestos = taxFor(subtotal + costoEnvio, TAX_RATE_BP);
+  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, tax: impuestos });
 
   res.status(200).json({
     success: true,
@@ -74,6 +76,8 @@ export const getCart = asyncHandler(async (req, res) => {
       // subtotal y lo llamaba "Total", y el servidor cobraba subtotal + envío:
       // el cliente descubria los $15.000 de envío al confirmar.
       costoEnvio,
+      impuestos,
+      tasaImpuestosBp: TAX_RATE_BP,
       total,
       envioGratisDesde: SHIPPING_RULES.freeFrom,
     },
@@ -120,6 +124,7 @@ export const addToCart = asyncHandler(async (req, res, next) => {
     'subtotal',
   );
   const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
+  const impuestos = taxFor(subtotal + costoEnvio, TAX_RATE_BP);
 
   res.status(200).json({
     success: true,
@@ -130,7 +135,9 @@ export const addToCart = asyncHandler(async (req, res, next) => {
       subtotal,
       // Mismo desglose que en GET /api/cart (ver la nota de ahi).
       costoEnvio,
-      total: computeOrderTotal({ subtotal, shipping: costoEnvio, discount: 0 }),
+      impuestos,
+      tasaImpuestosBp: TAX_RATE_BP,
+      total: computeOrderTotal({ subtotal, shipping: costoEnvio, tax: impuestos }),
       envioGratisDesde: SHIPPING_RULES.freeFrom,
     },
   });
