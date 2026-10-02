@@ -14,6 +14,7 @@
 
 import { User } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../middleware/apiError.js';
 
 /**
  * GET /api/users
@@ -91,7 +92,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.id).select('-password');
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND'));
+    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
   }
   res.status(200).json({ success: true, user });
 });
@@ -104,15 +105,15 @@ export const getUser = asyncHandler(async (req, res, next) => {
 export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
   const { role } = req.body;
   if (!['user', 'admin'].includes(role)) {
-    return next(new AppError('Rol inválido', 400, 'INVALID_ROLE'));
+    return next(new AppError('Rol inválido', 400, ErrorCodes.INVALID_ROLE));
   }
 
   const user = await User.findById(req.params.id);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND'));
+    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
   }
   if (user.role === 'admin' && role !== 'admin' && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, 'LAST_ADMIN'));
+    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
   }
   user.role = role;
   await user.save();
@@ -135,7 +136,7 @@ export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMu
 export const toggleUserActive = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
   const user = await User.findById(req.params.id);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND'));
+    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
   }
 
   // Alternar es el comportamiento por defecto (cuerpo vacio), pero si el cliente
@@ -159,10 +160,10 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
   // estado actual, para que las dos guardas sirvan tambien cuando el cliente
   // fija `activo` en vez de alternar.
   if (!activar && user._id.toString() === req.userId.toString()) {
-    return next(new AppError('No puedes desactivar tu propia cuenta de administrador', 400, 'SELF_DEACTIVATE'));
+    return next(new AppError('No puedes desactivar tu propia cuenta de administrador', 400, ErrorCodes.SELF_DEACTIVATE));
   }
   if (!activar && user.role === 'admin' && user.activo && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, 'LAST_ADMIN'));
+    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
   }
 
   user.activo = activar;
@@ -198,15 +199,15 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
 export const deleteUser = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
   const user = await User.findById(req.params.id);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND'));
+    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
   }
 
   if (user._id.toString() === req.userId.toString()) {
-    return next(new AppError('No puedes eliminarte a ti mismo', 400, 'SELF_DELETE'));
+    return next(new AppError('No puedes eliminarte a ti mismo', 400, ErrorCodes.SELF_DELETE));
   }
 
   if (user.role === 'admin' && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, 'LAST_ADMIN'));
+    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
   }
 
   user.activo = false;

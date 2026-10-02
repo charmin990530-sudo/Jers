@@ -31,6 +31,25 @@ if (!['development', 'production', 'test'].includes(NODE_ENV)) {
 
 // URI de MongoDB (local por defecto)
 export const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/by-jers';
+
+// Pool de conexiones. Antes se leía con `Number(process.env.X) || 5`, que
+// aceptaba cualquier cosa: 'abc' daba 5 en silencio y '0' daba 0, un pool vacío
+// que degrada el throughput sin ningún aviso.
+const parsePoolSetting = (value, fallback, nombre, minimo) => {
+  const n = value === undefined ? fallback : Number(value);
+  if (!Number.isInteger(n) || n < minimo) {
+    throw new Error(`${nombre} debe ser un entero mayor o igual que ${minimo}`);
+  }
+  return n;
+};
+export const MONGO_MAX_POOL_SIZE = parsePoolSetting(process.env.MONGO_MAX_POOL_SIZE, 5, 'MONGO_MAX_POOL_SIZE', 1);
+// Cuánto esperar por una conexión antes de darla por caída. 10 s es mucho rato
+// para una tienda: con la base caída cada petición se quedaba colgada ese rato
+// antes de responder 503. En local 2 s distingue "Mongo no arranca" de "Mongo
+// tardó en arrancar".
+export const MONGO_SERVER_SELECTION_TIMEOUT_MS = parsePoolSetting(
+  process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS, 2000, 'MONGO_SERVER_SELECTION_TIMEOUT_MS', 100,
+);
 if (NODE_ENV === 'production' && MONGODB_URI.includes('localhost')) {
   throw new Error('MONGODB_URI no puede apuntar a localhost en producción');
 }
@@ -182,6 +201,42 @@ export const TRUST_PROXY_HOPS = Number.parseInt(process.env.TRUST_PROXY_HOPS || 
 if (!Number.isInteger(TRUST_PROXY_HOPS) || TRUST_PROXY_HOPS < 0 || TRUST_PROXY_HOPS > 5) {
   throw new Error('TRUST_PROXY_HOPS debe estar entre 0 y 5');
 }
+// Hay proxies delante cuando el despliegue es serverless (Vercel) o hay CDN. Sin
+// `trust proxy`, `req.ip` es la IP del socket y, tras el proxy, esa IP la
+// comparten todas las invocaciones de la región.
+export const TRAS_PROXY = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.CF_PAGES || process.env.HEROKU_REGION);
+// Token para ver el detalle de /api/health en producción. Vacío = la sonda solo
+// responde si el proceso vive, no qué variables de entorno faltan.
+export const HEALTH_DETAIL_TOKEN = process.env.HEALTH_DETAIL_TOKEN || '';
+
+// ==========================================
+// MONITOREO (Sentry)
+// ==========================================
+// Leídos de aquí y no de `process.env` en `instrument.js`: ese módulo se evalúa
+// ANTES que `env.js` en el orden de imports de ESM, así que al leerlos a mano
+// eran `undefined` y `Sentry.init()` nunca se llamaba en despliegues que no sean
+// Vercel. El fallo era silencioso.
+export const SENTRY_DSN = process.env.SENTRY_DSN || '';
+// Fracción de transacciones que se muestrean. El rango se valida porque un valor
+// fuera de 0..1 hace que el propio SDK avise por consola en cada transacción.
+const tracesRaw = process.env.SENTRY_TRACES_SAMPLE_RATE === undefined
+  ? 0.1
+  : Number(process.env.SENTRY_TRACES_SAMPLE_RATE);
+if (!Number.isFinite(tracesRaw) || tracesRaw < 0 || tracesRaw > 1) {
+  throw new Error('SENTRY_TRACES_SAMPLE_RATE debe ser un número entre 0 y 1');
+}
+export const SENTRY_TRACES_SAMPLE_RATE = tracesRaw;
+
+// ==========================================
+// SERVIDOR ESTÁTICO Y ARRANQUE
+// ==========================================
+// `SERVE_STATIC=false` sirve la API sin el sitio. Lo lee `app.js` directamente de
+// `process.env` sin pasar por aquí, así que no tenía validación ni documentación.
+export const SERVE_STATIC = process.env.SERVE_STATIC !== 'false';
+// `true` reinicia el proceso en bucle si Mongo no responde al arrancar. El modo
+// por defecto es NO hacerlo: la API se levanta igual y cada ruta que necesite la
+// base responde 503 y reintenta.
+export const FAIL_FAST_ON_DB_ERROR = process.env.FAIL_FAST_ON_DB_ERROR === 'true';
 
 // Cookie secure: true solo en producción (HTTPS)
 export const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true' || NODE_ENV === 'production';
@@ -241,6 +296,13 @@ export const validateSecurityEnvironment = () => {
   if (NODE_ENV === 'production') {
     if (process.env.JEST_WORKER_ID) errors.push('JEST_WORKER_ID');
     if (!REDIS_ENABLED) errors.push('REDIS_ENABLED');
+    // Sin esto el rate limiting colapsa a una sola clave: `req.ip` sería la IP
+    // del proxy, compartida por todas las invocaciones de la región, así que
+    // 100 peticiones de CUALQUIER usuario en 15 minutos bloquearían la tienda
+    // entera con 429 y el límite del login (5/min) sería inútil contra fuerza
+    // bruta. `validateSecurityEnvironment()` comprobaba que el valor fuera un
+    // entero 0-5, pero no que fuera >= 1 cuando SÍ hay un proxy delante.
+    if (TRAS_PROXY && TRUST_PROXY_HOPS < 1) errors.push('TRUST_PROXY_HOPS>=1');
     try {
       const envStats = statSync(envPath);
       if (!envStats.isFile() || (envStats.mode & 0o077) !== 0) errors.push('.env permissions');

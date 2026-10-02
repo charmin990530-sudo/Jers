@@ -91,7 +91,7 @@ export const register = asyncHandler(async (req, res, next) => {
   // Verificar email único (aunque unique index en BD lo garantiza, mejor error amigable)
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return next(new AppError('Este email ya está registrado', 400, 'EMAIL_EXISTS'));
+    return next(new AppError('Este email ya está registrado', 400, ErrorCodes.EMAIL_EXISTS));
   }
 
   // Crea usuario (password se hashea en pre-save middleware del modelo)
@@ -124,12 +124,12 @@ export const login = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
   if (!user || !user.activo) {
-    return next(new AppError('Credenciales inválidas', 401, 'INVALID_CREDENTIALS'));
+    return next(new AppError('Credenciales inválidas', 401, ErrorCodes.INVALID_CREDENTIALS));
   }
 
   const isMatch = await user.compararPassword(password);
   if (!isMatch) {
-    return next(new AppError('Credenciales inválidas', 401, 'INVALID_CREDENTIALS'));
+    return next(new AppError('Credenciales inválidas', 401, ErrorCodes.INVALID_CREDENTIALS));
   }
 
   await sendTokenResponse(user, 200, res, 'Inicio de sesión exitoso', rememberMe === true);
@@ -232,7 +232,7 @@ export const changePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.userId).select('+password');
   const isMatch = await user.compararPassword(currentPassword);
   if (!isMatch) {
-    return next(new AppError('Contraseña actual incorrecta', 400, 'WRONG_PASSWORD'));
+    return next(new AppError('Contraseña actual incorrecta', 400, ErrorCodes.WRONG_PASSWORD));
   }
 
   // Asigna nueva password (se hashea en pre-save)
@@ -284,7 +284,7 @@ export const updateAddress = asyncHandler(async (req, res, next) => {
   const addressIndex = user.direcciones.findIndex(d => d._id.toString() === req.params.addressId);
 
   if (addressIndex === -1) {
-    return next(new AppError('Dirección no encontrada', 404, 'ADDRESS_NOT_FOUND'));
+    return next(new AppError('Dirección no encontrada', 404, ErrorCodes.ADDRESS_NOT_FOUND));
   }
 
   // Si se marca principal, desmarca las demás
@@ -313,7 +313,7 @@ export const deleteAddress = asyncHandler(async (req, res, next) => {
   const addressIndex = user.direcciones.findIndex(d => d._id.toString() === req.params.addressId);
 
   if (addressIndex === -1) {
-    return next(new AppError('Dirección no encontrada', 404, 'ADDRESS_NOT_FOUND'));
+    return next(new AppError('Dirección no encontrada', 404, ErrorCodes.ADDRESS_NOT_FOUND));
   }
 
   const wasPrincipal = user.direcciones[addressIndex].esPrincipal;

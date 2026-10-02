@@ -60,6 +60,15 @@ export const ErrorCodes = Object.freeze({
   // `code` sin mirar la tabla.
   PASSWORDS_MISMATCH: 'PASSWORDS_MISMATCH',
   INVALID_RESET_TOKEN: 'INVALID_RESET_TOKEN',
+  // Antes estos códigos se emitían como cadenas literales desde los
+  // controladores, sin existir como clave aquí. El archivo declara que el
+  // contrato es auditable leyéndolo, y `API.md` publica la tabla: cualquiera
+  // que ramifique por `error.code` (el patrón que el propio proyecto
+  // recomienda) no podía tipar nada, y cinco de ellos ni siquiera estaban
+  // documentados. Ahora cada clave vale lo mismo que se llama.
+  WRONG_PASSWORD: 'WRONG_PASSWORD',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  EMAIL_EXISTS: 'EMAIL_EXISTS',
   // 401 / 403
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   INVALID_TOKEN: 'INVALID_TOKEN',
@@ -83,6 +92,8 @@ export const ErrorCodes = Object.freeze({
   ITEM_NOT_FOUND: 'ITEM_NOT_FOUND',
   ADDRESS_NOT_FOUND: 'ADDRESS_NOT_FOUND',
   CONTACT_NOT_FOUND: 'CONTACT_NOT_FOUND',
+  PRODUCT_UNAVAILABLE: 'PRODUCT_UNAVAILABLE',
+  EMPTY_CART: 'EMPTY_CART',
   // 405 / 415
   METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
   UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
@@ -92,6 +103,16 @@ export const ErrorCodes = Object.freeze({
   PAID_ORDER_REQUIRES_REFUND: 'PAID_ORDER_REQUIRES_REFUND',
   ORDER_STATE_CHANGED: 'ORDER_STATE_CHANGED',
   INVALID_ORDER_TRANSITION: 'INVALID_ORDER_TRANSITION',
+  CANNOT_CANCEL: 'CANNOT_CANCEL',
+  // 400 de negocio que son en realidad conflictos de estado. La tabla de
+  // `API.md` los documentaba como 400; se mantienen aquí el código de negocio
+  // y el estado, y la tabla se corrige en su sitio.
+  INSUFFICIENT_STOCK: 'INSUFFICIENT_STOCK',
+  LAST_ADMIN: 'LAST_ADMIN',
+  SELF_DEACTIVATE: 'SELF_DEACTIVATE',
+  SELF_DELETE: 'SELF_DELETE',
+  CATEGORY_HAS_PRODUCTS: 'CATEGORY_HAS_PRODUCTS',
+  BRAND_HAS_PRODUCTS: 'BRAND_HAS_PRODUCTS',
   // 413 / 415 / 429
   PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',

@@ -66,3 +66,50 @@ describe('contrato de codigos de error', () => {
     expect(llamadas).toBe(0);
   });
 });
+
+describe('todo codigo emitido existe en el registro', () => {
+  // Regresion de B-03: doce codigos viajaban al cliente como cadenas literales
+  // desde los controladores, sin existir como clave en `ErrorCodes`, y cinco de
+  // ellos ni siquiera estaban en la tabla de `API.md`. Quien ramificara por
+  // `error.code` no podia tiparlos, y dos cajas negras ni aparecian en la
+  // documentacion.
+  //
+  // El test lee los controladores y falla si alguien vuelve a emitir un literal.
+  it('ningun controlador emite un codigo fuera del registro', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const dir = join(process.cwd(), 'src', 'controllers');
+
+    const literales = [];
+    for (const archivo of readdirSync(dir).filter(f => f.endsWith('.js'))) {
+      const fuente = readFileSync(join(dir, archivo), 'utf8');
+      // El patrón de un código literal: new AppError('mensaje', 400, 'CODIGO')
+      const literal = /new AppError\(\s*(?:'[^']*'|`[^`]*`)\s*,\s*\d+\s*,\s*'([A-Z_]+)'/gs;
+      for (const coincidencia of fuente.matchAll(literal)) {
+        if (!(coincidencia[1] in ErrorCodes)) {
+          literales.push(`${archivo}: '${coincidencia[1]}'`);
+        }
+      }
+    }
+    expect(literales).toEqual([]);
+  });
+
+  it('ninguna referencia ErrorCodes.X apunta a una clave inexistente', async () => {
+    const { readdirSync, readFileSync, statSync } = await import('node:fs');
+    const { join } = await import('node:path');
+
+    const recorrer = dir => readdirSync(dir).flatMap(nombre => {
+      const ruta = join(dir, nombre);
+      return statSync(ruta).isDirectory() ? recorrer(ruta) : (ruta.endsWith('.js') ? [ruta] : []);
+    });
+
+    const referidas = new Set();
+    for (const archivo of recorrer(join(process.cwd(), 'src'))) {
+      for (const m of readFileSync(archivo, 'utf8').matchAll(/ErrorCodes\.([A-Z_]+)/g)) {
+        referidas.add(m[1]);
+      }
+    }
+    const huerfanas = [...referidas].filter(c => !(c in ErrorCodes));
+    expect(huerfanas).toEqual([]);
+  });
+});

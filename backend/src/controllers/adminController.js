@@ -44,7 +44,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
-    return next(new AppError('Producto no encontrado', 404, 'PRODUCT_NOT_FOUND'));
+    return next(new AppError('Producto no encontrado', 404, ErrorCodes.PRODUCT_NOT_FOUND));
   }
   Object.assign(product, req.body);
   await product.save();
@@ -69,7 +69,7 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
 export const deleteProduct = asyncHandler(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
-    return next(new AppError('Producto no encontrado', 404, 'PRODUCT_NOT_FOUND'));
+    return next(new AppError('Producto no encontrado', 404, ErrorCodes.PRODUCT_NOT_FOUND));
   }
   product.activo = false;
   await product.save();
@@ -93,7 +93,7 @@ export const createCategory = asyncHandler(async (req, res) => {
 export const updateCategory = asyncHandler(async (req, res, next) => {
   const category = await Category.findById(req.params.id);
   if (!category) {
-    return next(new AppError('Categoría no encontrada', 404, 'CATEGORY_NOT_FOUND'));
+    return next(new AppError('Categoría no encontrada', 404, ErrorCodes.CATEGORY_NOT_FOUND));
   }
   Object.assign(category, req.body);
   await category.save();
@@ -108,11 +108,11 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
 export const deleteCategory = asyncHandler(async (req, res, next) => {
   const productsCount = await Product.countDocuments({ categoria: req.params.id });
   if (productsCount > 0) {
-    return next(new AppError('No se puede eliminar una categoría con productos asociados', 400, 'CATEGORY_HAS_PRODUCTS'));
+    return next(new AppError('No se puede eliminar una categoría con productos asociados', 400, ErrorCodes.CATEGORY_HAS_PRODUCTS));
   }
   const category = await Category.findById(req.params.id);
   if (!category) {
-    return next(new AppError('Categoría no encontrada', 404, 'CATEGORY_NOT_FOUND'));
+    return next(new AppError('Categoría no encontrada', 404, ErrorCodes.CATEGORY_NOT_FOUND));
   }
   category.activo = false;
   await category.save();
@@ -135,7 +135,7 @@ export const createBrand = asyncHandler(async (req, res) => {
 export const updateBrand = asyncHandler(async (req, res, next) => {
   const brand = await Brand.findById(req.params.id);
   if (!brand) {
-    return next(new AppError('Marca no encontrada', 404, 'BRAND_NOT_FOUND'));
+    return next(new AppError('Marca no encontrada', 404, ErrorCodes.BRAND_NOT_FOUND));
   }
   Object.assign(brand, req.body);
   await brand.save();
@@ -149,11 +149,11 @@ export const updateBrand = asyncHandler(async (req, res, next) => {
 export const deleteBrand = asyncHandler(async (req, res, next) => {
   const productsCount = await Product.countDocuments({ marca: req.params.id });
   if (productsCount > 0) {
-    return next(new AppError('No se puede eliminar una marca con productos asociados', 400, 'BRAND_HAS_PRODUCTS'));
+    return next(new AppError('No se puede eliminar una marca con productos asociados', 400, ErrorCodes.BRAND_HAS_PRODUCTS));
   }
   const brand = await Brand.findById(req.params.id);
   if (!brand) {
-    return next(new AppError('Marca no encontrada', 404, 'BRAND_NOT_FOUND'));
+    return next(new AppError('Marca no encontrada', 404, ErrorCodes.BRAND_NOT_FOUND));
   }
   brand.activo = false;
   await brand.save();
@@ -297,7 +297,7 @@ export const getAdminOrder = asyncHandler(async (req, res, next) => {
   const order = await Order.findById(req.params.id)
     .populate('usuario', 'nombre apellido email telefono')
     .lean({ virtuals: true });
-  if (!order) return next(new AppError('Pedido no encontrado', 404, 'ORDER_NOT_FOUND'));
+  if (!order) return next(new AppError('Pedido no encontrado', 404, ErrorCodes.ORDER_NOT_FOUND));
   res.status(200).json({ success: true, order });
 });
 

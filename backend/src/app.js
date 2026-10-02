@@ -5,7 +5,7 @@
 import './instrument.js';
 import express from 'express';
 import mongoose from 'mongoose';
-import { randomBytes } from 'crypto';
+import crypto, { randomBytes } from 'crypto';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, resolve, join } from 'path';
 import cookieParser from 'cookie-parser';
@@ -35,7 +35,11 @@ import {
   TRUST_PROXY_HOPS,
   CSP_NONCE_ENABLED,
   CSP_REPORT_ONLY,
-  CSP_REPORT_URI
+  CSP_REPORT_URI,
+  SENTRY_DSN,
+  SERVE_STATIC,
+  FAIL_FAST_ON_DB_ERROR,
+  HEALTH_DETAIL_TOKEN,
 } from './config/env.js';
 import { routes } from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
@@ -81,12 +85,25 @@ let redisError = null;
 if (REDIS_ENABLED) {
   redisClient = createClient({
     url: REDIS_URL,
-    // Sin esto el cliente reintenta para siempre y un REDIS_URL inalcanzable
-    // deja el cold start colgado hasta que Vercel lo corta por timeout.
     socket: {
       connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
-      reconnectStrategy: retries => (retries > 3 ? false : Math.min(retries * 200, 1000)),
+      // Reconexión indefinida con espera creciente y techo.
+      //
+      // Antes era `retries => retries > 3 ? false : ...`: devolviendo `false`,
+      // node-redis deja de reintentar PARA SIEMPRE. Un corte de red de cinco
+      // segundos en Upstash bastaba para que `isOpen` quedara en `false` de
+      // forma permanente, y con el store lanzando excepción eso significaba 500
+      // en todo `/api/*` hasta el siguiente despliegue.
+      //
+      // `Math.min` sin tope es un problema aparte: 6 reintentos ya son 12 s de
+      // espera por reintento y se convierte en una suma de horas al día. El
+      // techo de 5 s mantiene la recuperación rápida sin martillear a Redis.
+      reconnectStrategy: retries => Math.min(retries * 200, 5000),
     },
+    // Sin esto, con Redis inalcanzable los comandos se encolan sin límite y la
+    // petición se queda colgada hasta el timeout del servidor en vez de fallar
+    // rápido y degradar.
+    disableOfflineQueue: true,
   });
   redisClient.on('error', err => console.error('Redis Client Error', { name: err.name }));
   try {
@@ -269,16 +286,43 @@ app.use(csrfProtection);
 // No depende de la base a proposito: sirve como sonda de vida del proceso.
 // `database`, `redis` y `configured` reflejan el estado real para poder
 // diagnosticar un despliegue sin tener que mirar los logs.
+//
+// En producción el detalle va tras autenticación. Antes cualquiera, sin sesión y
+// sin límite de peticiones, obtenía la lista exacta de variables de entorno que
+// faltaban (`Configuración de seguridad inválida: JWT_SECRET, REDIS_ENABLED,
+// MONGODB_URI_TLS, COOKIE_SECURE, .env permissions`) más el estado de Redis y del
+// entorno. No son secretos, pero es reconocimiento gratuito de la topología de
+// despliegue, y la redacción que existe (`redactConfig`) no se aplicaba aquí.
+//
+// Por defecto `HEALTH_DETAIL_TOKEN` es vacío, así que en producción no se publica
+// nada sin el token. Si no se define, la sonda solo responde "vivo o no vivo",
+// que es lo que necesitan por igual Vercel, un balanceador o un uptime monitor.
+const healthToken = HEALTH_DETAIL_TOKEN;
+const healthConDetalle = req => {
+  if (NODE_ENV !== 'production') return true;
+  if (!healthToken) return false;
+  const supplied = String(req.get('x-health-token') || '');
+  // Comparación en tiempo constante: comparar con `===` filtra information por
+  // temporización, y un token de sonda no merece ser adivinable.
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(healthToken);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
 app.get('/api/health', (req, res) => {
+  const conDetalle = healthConDetalle(req);
   res.json({
     success: true,
     message: 'API By Jers funcionando',
     timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
-    database: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown',
-    redis: redisClient?.isOpen ? 'connected' : (REDIS_ENABLED ? 'unavailable' : 'disabled'),
-    configured: !configError,
-    ...(configError ? { configError: configError.message } : {}),
+    ...(conDetalle ? {
+      environment: NODE_ENV,
+      database: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown',
+      redis: redisClient?.isOpen ? 'connected' : (REDIS_ENABLED ? 'unavailable' : 'disabled'),
+      configured: !configError,
+      // Redactado, no crudo: la función existe para esto y no se aplicaba.
+      ...(configError ? { configError: redactConfig(configError.message) } : {}),
+    } : { environment: NODE_ENV }),
   });
 });
 
@@ -346,7 +390,7 @@ app.use('/api/admin', routes.admin);
 // limita a /api/* para que el resto de rutas las atienda la pagina 404 del sitio.
 const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../public');
 const STATIC_DENY = /\.(?:env|log|json|lock)$|^\.|^node_modules\//i;
-const SERVE_STATIC = process.env.SERVE_STATIC !== 'false';
+
 
 // 404 de la API: JSON, como espera cualquier cliente de API.
 app.use('/api', notFound);
@@ -402,7 +446,7 @@ if (SERVE_STATIC) {
 }
 
 // Sentry error handler (debe ir después de las rutas, antes del errorHandler propio)
-if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
+if (SENTRY_DSN && NODE_ENV === 'production') {
   app.use(Sentry.setupExpressErrorHandler(app));
 }
 
@@ -484,7 +528,7 @@ export const startServer = async () => {
     process.exit(1);
   }
 
-  const failFast = process.env.FAIL_FAST_ON_DB_ERROR === 'true';
+  const failFast = FAIL_FAST_ON_DB_ERROR;
   try {
     await connectDB();
     await syncModelIndexes();

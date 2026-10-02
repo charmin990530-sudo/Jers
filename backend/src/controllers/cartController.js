@@ -23,6 +23,7 @@
 
 import { Cart, Product } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../middleware/apiError.js';
 import { SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
 import {
   sumMinorAmounts,
@@ -95,7 +96,7 @@ export const addToCart = asyncHandler(async (req, res, next) => {
 
   const producto = await Product.findById(productoId);
   if (!producto || !producto.activo) {
-    return next(new AppError('Producto no encontrado o no disponible', 404, 'PRODUCT_NOT_FOUND'));
+    return next(new AppError('Producto no encontrado o no disponible', 404, ErrorCodes.PRODUCT_NOT_FOUND));
   }
 
   let cart = await Cart.findOne({ usuario: req.userId });
@@ -104,7 +105,7 @@ export const addToCart = asyncHandler(async (req, res, next) => {
   const itemExistente = cart.items.find(item => item.producto.toString() === productoId);
   const cantidadActual = itemExistente?.cantidad || 0;
   if (producto.stock < cantidadActual + cantidad) {
-    return next(new AppError(`Stock insuficiente. Disponible: ${producto.stock}`, 400, 'INSUFFICIENT_STOCK'));
+    return next(new AppError(`Stock insuficiente. Disponible: ${producto.stock}`, 400, ErrorCodes.INSUFFICIENT_STOCK));
   }
 
   await cart.agregarItem(producto, cantidad);
@@ -155,23 +156,23 @@ export const updateCartItem = asyncHandler(async (req, res, next) => {
 
   let cart = await Cart.findOne({ usuario: req.userId });
   if (!cart) {
-    return next(new AppError('Carrito no encontrado', 404, 'CART_NOT_FOUND'));
+    return next(new AppError('Carrito no encontrado', 404, ErrorCodes.CART_NOT_FOUND));
   }
 
   // Busca subdocumento por _id (Mongoose document.id())
   const item = cart.items.id(itemId);
   if (!item) {
-    return next(new AppError('Producto no encontrado en el carrito', 404, 'ITEM_NOT_FOUND'));
+    return next(new AppError('Producto no encontrado en el carrito', 404, ErrorCodes.ITEM_NOT_FOUND));
   }
 
   // Verifica producto actual (puede haber cambiado desde que se agregó)
   const producto = await Product.findById(item.producto);
   if (!producto || !producto.activo) {
-    return next(new AppError('Producto no disponible', 400, 'PRODUCT_UNAVAILABLE'));
+    return next(new AppError('Producto no disponible', 400, ErrorCodes.PRODUCT_UNAVAILABLE));
   }
 
   if (producto.stock < cantidad) {
-    return next(new AppError(`Stock insuficiente. Disponible: ${producto.stock}`, 400, 'INSUFFICIENT_STOCK'));
+    return next(new AppError(`Stock insuficiente. Disponible: ${producto.stock}`, 400, ErrorCodes.INSUFFICIENT_STOCK));
   }
 
   // Modelo maneja: actualiza cantidad o elimina si < 1
@@ -209,12 +210,12 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
 
   let cart = await Cart.findOne({ usuario: req.userId });
   if (!cart) {
-    return next(new AppError('Carrito no encontrado', 404, 'CART_NOT_FOUND'));
+    return next(new AppError('Carrito no encontrado', 404, ErrorCodes.CART_NOT_FOUND));
   }
 
   const item = cart.items.id(itemId);
   if (!item) {
-    return next(new AppError('Producto no encontrado en el carrito', 404, 'ITEM_NOT_FOUND'));
+    return next(new AppError('Producto no encontrado en el carrito', 404, ErrorCodes.ITEM_NOT_FOUND));
   }
 
   await cart.eliminarItem(item.producto);
