@@ -1,7 +1,7 @@
 import { api, handleApiError } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import { formatearPrecio, formatearFecha } from '../config.js';
-import { iniciarAplicacion, setBtnLoading, mostrarToast } from '../../js/app.js';
+import { iniciarAplicacion, setBtnLoading, mostrarToast, abrirModal, cerrarModal } from '../../js/app.js';
 import { escapeHTML, safeAssetUrl } from '../../js/sanitize.js';
 
 let paginaActual = 1;
@@ -186,8 +186,7 @@ async function abrirDetallePedido(pedidoId) {
     $('pedidoId').value = pedidoId;
     detalle.innerHTML = '<div class="loading-row"><div class="spinner"></div> Cargando pedido...</div>';
     titulo.textContent = 'Detalle del pedido';
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    abrirModal(modal);
 
     try {
         const response = await api.getAdminOrder(encodeURIComponent(pedidoId));
@@ -302,9 +301,7 @@ async function guardarPedido(event) {
 }
 
 function cerrarDetallePedido() {
-    const modal = $('modalPedido');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal($('modalPedido'));
 
     const url = new URL(window.location.href);
     url.searchParams.delete('id');

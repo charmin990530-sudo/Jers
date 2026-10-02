@@ -10,6 +10,15 @@
     --color-fondo: #fbf3ee;
     --color-rosa: #e8a9a0;
     --color-mauve: #c97b82;
+    /* Versión de `--color-mauve` para TEXTO sobre fondo claro. El rosa base da
+       3.16:1 sobre blanco, por debajo del 4.5:1 que WCAG AA exige para texto
+       normal: el botón de acción principal de todo el sitio ("Iniciar sesión",
+       "Crear mi cuenta", "Crear pedido") era el de menor contraste de la web.
+       Este tono da 4.88:1 y se parece lo suficiente al original como para que no
+       se note un cambio de identidad. `--color-mauve` se mantiene intacto para
+       bordes, fondos y elementos decorativos, donde el contraste de texto no
+       aplica. */
+    --color-mauve-texto: #a85a62;
     --color-texto: #4a3535;
     --color-dorado: #d4af87;
     --color-blanco: #ffffff;
@@ -254,7 +263,7 @@ html {
 /* Cada letra entra desde arriba, con retardo escalonado */
 .loader-inicial {
   display: inline-block;
-  color: var(--color-mauve);
+  color: var(--color-mauve-texto);
   opacity: 0;
   transform: translateY(-0.35em) rotate(-6deg);
   animation: loader-letra 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
@@ -576,7 +585,7 @@ h3 {
 }
 
 .buscador__precio {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-size: .8rem;
     font-weight: 600;
 }
@@ -629,7 +638,7 @@ h3 {
 
 .menuitem a:hover,
 .menuitem a.pagina-actual {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
 }
 
 .menuitem a.pagina-actual {
@@ -653,7 +662,7 @@ h3 {
 }
 
 .menu-logout:hover {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
 }
 
 .menu-toggle {
@@ -683,7 +692,7 @@ h3 {
 
 .carrito-contador {
     align-items: center;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border-radius: 50%;
     color: white;
     display: flex;
@@ -752,7 +761,7 @@ h3 {
 
 .tab-btn:hover,
 .tab-btn.tab-activo {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border-color: var(--color-mauve);
     color: white;
 }
@@ -869,7 +878,7 @@ h3 {
 }
 
 .cardprecio {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 15px;
@@ -877,7 +886,7 @@ h3 {
 
 .cardbtn,
 .contact-btn {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border: 0;
     border-radius: 25px;
     color: white;
@@ -948,7 +957,7 @@ h3 {
 .quitar-item {
     background: none;
     border: 0;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     cursor: pointer;
     font-size: 1.2rem;
 }
@@ -1035,7 +1044,7 @@ h3 {
 }
 
 .carrito-item__precio {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     font-size: .85rem;
     font-weight: 600;
 }
@@ -1106,7 +1115,7 @@ h3 {
 }
 
 .finalizar-pedido {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border: 0;
     border-radius: 25px;
     color: white;
@@ -1384,7 +1393,7 @@ body.modal-abierto {
 
 /* Chatbot académico que se crea desde app.js. */
 .chatbot-boton {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border: 0;
     border-radius: 50%;
     bottom: max(24px, env(safe-area-inset-bottom, 0px));
@@ -1419,7 +1428,7 @@ body.modal-abierto {
 
 .chatbot-cabecera {
     align-items: center;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
     display: flex;
     justify-content: space-between;
@@ -1465,7 +1474,7 @@ body.modal-abierto {
 
 .chatbot-msg.usuario {
     align-self: flex-end;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
 }
 
@@ -1507,7 +1516,7 @@ body.modal-abierto {
 }
 
 .chatbot-enviar {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border: 0;
     border-radius: 50%;
     color: white;
@@ -1657,7 +1666,7 @@ body.modal-abierto {
 }
 
 .btn-reintentar {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border: 0;
     border-radius: 25px;
     color: white;

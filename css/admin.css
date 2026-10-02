@@ -84,7 +84,7 @@
 
 .btn-secundario {
     background: transparent;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     border: 1px solid var(--color-mauve);
     padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-md);
@@ -94,7 +94,7 @@
 }
 
 .btn-secundario:hover {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
 }
 

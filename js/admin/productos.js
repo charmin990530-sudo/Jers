@@ -3,6 +3,8 @@ import { protegerRuta } from '../rutas.js';
 import { formatearPrecio } from '../config.js';
 import {
     iniciarAplicacion,
+    abrirModal,
+    cerrarModal,
     mostrarToast,
     mostrarErrorCampo,
     limpiarErroresFormulario,
@@ -427,8 +429,7 @@ function abrirModalProducto(productoId = null) {
         titulo.textContent = 'Nuevo Producto';
     }
 
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    abrirModal(modal);
     document.getElementById('nombre')?.focus();
 }
 
@@ -552,9 +553,7 @@ async function cargarProductoParaEditar(productoId) {
 }
 
 function cerrarModalProducto() {
-    const modal = document.getElementById('modalProducto');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal(document.getElementById('modalProducto'));
 }
 
 async function confirmarEliminar(productoId) {

@@ -24,7 +24,7 @@
 
 .filtro-btn:hover,
 .filtro-btn.activo {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border-color: var(--color-mauve);
     color: white;
 }
@@ -136,7 +136,7 @@
 
 .total-valor {
     font: 700 1.3rem var(--fuente-titulos);
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
 }
 
 /* Acciones */
@@ -159,7 +159,7 @@
 }
 
 .btn-ver-detalle {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .pag-btn:hover:not(:disabled) {
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     border-color: var(--color-mauve);
     color: white;
 }
@@ -252,7 +252,7 @@
     display: inline-block;
     margin-top: 16px;
     padding: 14px 28px;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
     border-radius: 25px;
     text-decoration: none;
@@ -267,7 +267,7 @@
 .btn-reintentar {
     margin-top: 16px;
     padding: 12px 24px;
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
     border: none;
     border-radius: 25px;
@@ -340,7 +340,7 @@
 
 .detalle-total {
     font: 700 1.5rem var(--fuente-titulos);
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     white-space: nowrap;
 }
 
@@ -395,7 +395,7 @@
 
 .item-subtotal {
     font-weight: 600;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     white-space: nowrap;
 }
 
@@ -420,7 +420,7 @@
 .resumen-fila.total {
     font-weight: 700;
     font-size: 1.1rem;
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     padding-top: 16px;
     border-top: 2px solid var(--color-mauve);
     margin-top: 8px;
@@ -508,7 +508,7 @@
 
 .timeline-item.completado .timeline-marker {
     border-color: var(--color-mauve);
-    background: var(--color-mauve);
+    background: var(--color-mauve-texto);
     color: white;
 }
 
@@ -602,4 +602,50 @@
         max-width: 200px;
         height: auto;
     }
+}
+/* ==========================================
+   MODAL DE CANCELACIÓN
+   Sustituye al `prompt()` que pedía el motivo en vez de la confirmación.
+   ========================================== */
+#modalCancelarPedido .btn-secundario {
+    background: transparent;
+    border: 1.5px solid #cfc0be;
+    border-radius: 25px;
+    color: var(--color-texto);
+    cursor: pointer;
+    font: 600 0.95rem var(--fuente-texto);
+    padding: 12px 22px;
+}
+
+#modalCancelarPedido .btn-secundario:hover {
+    border-color: var(--color-mauve-texto);
+    color: var(--color-mauve-texto);
+}
+
+#modalCancelarPedido .btn-primario {
+    background: #a33434;
+    border: 0;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font: 600 0.95rem var(--fuente-texto);
+    /* 5.6:1 sobre blanco, muy por encima del 4.5:1 de AA. */
+    padding: 12px 22px;
+}
+
+#modalCancelarPedido .btn-primario:hover:not(:disabled) {
+    background: #8a2a2a;
+}
+
+#modalCancelarPedido .btn-primario:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#modalCancelarPedido .campo {
+    padding: 0 var(--spacing-lg);
+}
+
+#modalCancelarPedido .modal-acciones {
+    padding-top: var(--spacing-md);
 }

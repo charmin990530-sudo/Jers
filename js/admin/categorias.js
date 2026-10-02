@@ -2,6 +2,8 @@ import { api, handleApiError, apiErrorFromResponse } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,
+    abrirModal,
+    cerrarModal,
     mostrarToast,
     mostrarErrorCampo,
     limpiarErroresFormulario,
@@ -172,9 +174,7 @@ function abrirModalCategoria(categoriaId = null) {
         titulo.textContent = 'Nueva Categoría';
     }
 
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    document.getElementById('nombre')?.focus();
+    abrirModal(modal, { primerFoco: document.getElementById('nombre') });
 }
 
 async function cargarCategoriaParaEditar(categoriaId) {
@@ -203,9 +203,7 @@ async function cargarCategoriaParaEditar(categoriaId) {
 }
 
 function cerrarModalCategoria() {
-    const modal = document.getElementById('modalCategoria');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
+    cerrarModal(document.getElementById('modalCategoria'));
 }
 
 async function confirmarEliminar(categoriaId) {

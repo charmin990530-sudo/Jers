@@ -701,10 +701,18 @@ function pintarRelacionados(relacionados) {
  */
 function mostrarError(mensaje) {
     const contenedor = document.getElementById('productoContenido');
+    // `contenedor` puede no existir si el HTML cambia, y antes un null aquí
+    // reventaba con TypeError, ocultando el mensaje que se quería mostrar.
+    if (!contenedor) return;
+    // Escapa el texto: hoy solo se llama con un literal ('Producto no
+    // especificado'), así que no hay XSS explotable, pero es el ÚNICO punto de
+    // todo el proyecto que inyectaba en `innerHTML` sin pasar por `escapeHTML`
+    // (los ~60 restantes sí lo hacen). Si mañana el mensaje incluyera el `?id=`
+    // de la URL, sería un XSS reflejado.
     contenedor.innerHTML = `
         <div class="producto-error">
-            <p>${mensaje}</p>
-            <a href="index.html" class="btn-volver">← Volver al inicio</a>
+            <p>${escapeHTML(mensaje)}</p>
+            <a href="/index.html" class="btn-volver">← Volver al inicio</a>
         </div>
     `;
 }

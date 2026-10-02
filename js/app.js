@@ -27,6 +27,8 @@ import {
     textoFortaleza,
     passwordsCoinciden,
     inicializarTogglePassword,
+    abrirModal,
+    cerrarModal,
 } from './auth.js';
 
 export {
@@ -41,6 +43,10 @@ export {
     textoFortaleza,
     passwordsCoinciden,
     inicializarTogglePassword,
+    // Reexportados para que los módulos del panel y de las páginas de cuenta
+    // importen todo desde aquí, igual que el resto de utilidades.
+    abrirModal,
+    cerrarModal,
 };
 
 // Número de WhatsApp desde config (se puede sobrescribir via meta tag o variable global)
@@ -796,11 +802,23 @@ export function iniciarChatbot() {
 
     panel.className = 'chatbot-panel';
 
+    // Era un <aside> sin `role`, sin `aria-modal` y sin gestión de foco: al
+    // abrirlo el foco se quedaba en el botón lanzador, detrás del panel, y al
+    // cerrarlo con ✕ se quedaba en un elemento que pasa a `display: none`,
+    // dejando al usuario de teclado en el <body> obligado a tabular desde el
+    // principio en cada apertura. Afecta a las 21 páginas que llaman a
+    // `iniciarAplicacion()`. Ahora es un diálogo con nombre y con foco dentro,
+    // como el panel del carrito ya hacía bien.
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'chatbotTitulo');
+    panel.setAttribute('aria-hidden', 'true');
+
     panel.innerHTML = `
         <div class="chatbot-cabecera">
 
             <div>
-                <h3>Asesora By Jers</h3>
+                <h3 id="chatbotTitulo">Asesora By Jers</h3>
 
                 <p>
                     Pregúntame sobre nuestros productos
@@ -911,9 +929,21 @@ export function iniciarChatbot() {
 
     boton.addEventListener('click', () => {
 
-        panel.classList.toggle('abierto');
+        const abrir = !panel.classList.contains('abierto');
+        panel.classList.toggle('abierto', abrir);
+        panel.setAttribute('aria-hidden', abrir ? 'false' : 'true');
 
-        if (!saludado) {
+        if (abrir) {
+            // El foco entra en el chat: si no, `Tab` sigue recorriendo el
+            // contenido de la página mientras el panel está encima.
+            panel.querySelector('.chatbot-input')?.focus({ preventScroll: true });
+        } else {
+            // Y vuelve al botón que lo abrió, para no perder al usuario de
+            // teclado en un punto cualquiera del documento.
+            boton.focus({ preventScroll: true });
+        }
+
+        if (abrir && !saludado) {
 
             agregarMensaje(
                 '¡Hola! Soy tu asesora virtual 💄',
@@ -930,8 +960,20 @@ export function iniciarChatbot() {
         .addEventListener('click', () => {
 
             panel.classList.remove('abierto');
+            panel.setAttribute('aria-hidden', 'true');
+            boton.focus({ preventScroll: true });
 
         });
+
+    // Escape cierra el chat. Sin esto, un usuario de teclado lo abría y no
+    // tenía forma de cerrarlo.
+    panel.addEventListener('keydown', evento => {
+        if (evento.key === 'Escape') {
+            panel.classList.remove('abierto');
+            panel.setAttribute('aria-hidden', 'true');
+            boton.focus({ preventScroll: true });
+        }
+    });
 
 
     panel

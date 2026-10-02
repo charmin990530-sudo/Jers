@@ -12,7 +12,7 @@
 import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './api.js';
 import { protegerRuta } from './rutas.js';
 import { formatearPrecio, formatearFecha as formatearFechaGlobal } from './config.js';
-import { iniciarAplicacion, mostrarToast } from './app.js';
+import { iniciarAplicacion, mostrarToast, abrirModal, cerrarModal } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
 // Estado
@@ -23,11 +23,33 @@ let pedidosCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     iniciarAplicacion();
+    // El modal de cancelación se conecta antes de la red: es UI pura y no
+    // depende de que la lista de pedidos haya cargado.
+    inicializarModalCancelar();
     await verificarAuthYCargar();
     inicializarFiltros();
     inicializarPaginacion();
     inicializarModal();
 });
+
+/**
+ * Modal de confirmación de cancelación.
+ *
+ * Sustituye al `prompt()`, que pedía el motivo en vez de la confirmación: un
+ * clic en "Aceptar" cancelaba el pedido de inmediato, con restauración de stock
+ * incluida, sin ningún "¿estás seguro?".
+ */
+function inicializarModalCancelar() {
+    const volver = document.getElementById('cancelarVolver');
+    const confirmar = document.getElementById('cancelarConfirmar');
+    if (!volver || !confirmar) return;
+
+    volver.addEventListener('click', () => cerrarModal(document.getElementById('modalCancelarPedido')));
+    confirmar.addEventListener('click', () => {
+        const id = confirmar.dataset.id;
+        if (id) ejecutarCancelacion(id);
+    });
+}
 
 /**
  * Verifica autenticación y carga pedidos
@@ -229,8 +251,10 @@ async function abrirModalDetalle(pedidoId) {
             <p>Cargando detalle...</p>
         </div>
     `;
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    // El foco entra antes de la petición de red: si el modal se abre al terminar
+    // el fetch, hay una ventana en la que está visible con el foco todavía en el
+    // botón de la lista, y el Tab recorre el fondo.
+    abrirModal(modal);
 
     const response = await getOrder(pedidoId);
     if (!response.ok) {
@@ -368,7 +392,7 @@ function renderizarModalDetalle(pedido, contenedor) {
     const btnCancelarModal = contenedor.querySelector('.btn-cancelar-modal');
     if (btnCancelarModal) {
         btnCancelarModal.addEventListener('click', () => {
-            cerrarModal();
+            cerrarModalDetalle();
             confirmarCancelacion(btnCancelarModal.dataset.id, btnCancelarModal.dataset.orden);
         });
     }
@@ -415,29 +439,67 @@ function renderizarTimeline(pedido) {
 }
 
 /**
- * Confirma y ejecuta cancelación de pedido
+ * Abre el modal de confirmación de cancelación.
  * @param {string} pedidoId
  * @param {string} numeroOrden
  */
-async function confirmarCancelacion(pedidoId, numeroOrden) {
-    const motivo = prompt(`¿Cancelar pedido ${numeroOrden}?\nEscribe el motivo (opcional):`);
-    if (motivo === null) return; // Usuario canceló el prompt
+function confirmarCancelacion(pedidoId, numeroOrden) {
+    const modal = document.getElementById('modalCancelarPedido');
+    if (!modal) return;
+    const orden = document.getElementById('modalCancelarOrden');
+    if (orden) orden.textContent = numeroOrden || '';
+    const mensaje = document.getElementById('cancelarMensaje');
+    if (mensaje) {
+        mensaje.textContent = '';
+        mensaje.className = 'formulario-mensaje';
+    }
+    const motivo = document.getElementById('cancelarMotivo');
+    if (motivo) motivo.value = '';
+    const boton = document.getElementById('cancelarConfirmar');
+    if (boton) {
+        boton.dataset.id = pedidoId;
+        boton.disabled = false;
+    }
+    abrirModal(modal);
+}
+
+/** Ejecuta la cancelación con el motivo escrito en el modal de confirmación. */
+async function ejecutarCancelacion(pedidoId) {
+    const mensaje = document.getElementById('cancelarMensaje');
+    const boton = document.getElementById('cancelarConfirmar');
+    const motivoInput = document.getElementById('cancelarMotivo');
+    const motivo = motivoInput?.value.trim() || '';
+
+    if (boton) boton.disabled = true;
+    if (mensaje) {
+        mensaje.textContent = 'Cancelando...';
+        mensaje.className = 'formulario-mensaje';
+    }
 
     const response = await cancelOrder(pedidoId, motivo || 'Cancelado por el usuario');
-    
+
+    if (boton) boton.disabled = false;
+
     if (!response.ok) {
         // Antes solo se escribía en la consola: el `prompt` se cerraba, el
         // pedido seguía en la lista y no pasaba nada visible. Si el estado había
         // cambiado a `procesando` entre medias, el backend responde
         // CANNOT_CANCEL y el usuario veía el mismo fallo una y otra vez sin
-        // ninguna explicación.
+        // ninguna explicación. Ahora el motivo del rechazo se queda en el modal.
         handleApiError({ message: response.msg, status: response.data?.status }, 'cancelar-pedido');
+        if (mensaje) {
+            mensaje.textContent = response.msg || 'No se pudo cancelar el pedido.';
+            mensaje.className = 'formulario-mensaje error';
+        }
         mostrarToast(response.msg || 'No se pudo cancelar el pedido.', { tipo: 'error' });
         return;
     }
 
+    if (mensaje) mensaje.textContent = '';
+    if (motivoInput) motivoInput.value = '';
+    cerrarModal(document.getElementById('modalCancelarPedido'));
     mostrarToast('Pedido cancelado correctamente');
-    cerrarModal();
+    cerrarModalDetalle();
     cargarPedidos(paginaActual); // Recargar lista
 }
 
@@ -449,23 +511,22 @@ function inicializarModal() {
     
     modal?.addEventListener('click', (e) => {
         if (e.target === modal || e.target.matches('.modal-cerrar')) {
-            cerrarModal();
+            cerrarModalDetalle();
         }
     });
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal && !modal.hidden) {
-            cerrarModal();
+            cerrarModalDetalle();
         }
     });
 }
 
-function cerrarModal() {
-    const modal = document.getElementById('modalDetallePedido');
-    if (modal) {
-        modal.hidden = true;
-        document.body.style.overflow = '';
-    }
+// Envoltura con el nombre que usan los listeners de esta página: el helper
+// centralizado se llama `cerrarModal`, y una función local con el mismo nombre
+// lo habría sombreado.
+function cerrarModalDetalle() {
+    cerrarModal(document.getElementById('modalDetallePedido'));
 }
 
 /**

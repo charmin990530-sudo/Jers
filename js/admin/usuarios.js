@@ -1,7 +1,7 @@
 import { api, handleApiError } from '../../js/api.js';
 import { formatearFecha } from '../config.js';
 import { protegerRuta } from '../rutas.js';
-import { iniciarAplicacion, mostrarToast } from '../../js/app.js';
+import { iniciarAplicacion, mostrarToast, abrirModal, cerrarModal } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
 
 let paginaActual = 1;
@@ -47,10 +47,10 @@ function inicializarControles() {
     });
     $('modalRol')?.addEventListener('click', event => {
         if (event.target === $('modalRol') || event.target.matches('.modal-cerrar')) {
-            cerrarModal();
+            cerrarModalRol();
         }
     });
-    $('btnCancelarRol')?.addEventListener('click', cerrarModal);
+    $('btnCancelarRol')?.addEventListener('click', cerrarModalRol);
     $('formRol')?.addEventListener('submit', guardarRol);
 }
 
@@ -141,7 +141,7 @@ function renderUsuarios(usuarios) {
     }).join('');
 
     body.querySelectorAll('.btn-editar').forEach(button => {
-        button.addEventListener('click', () => abrirModal(button.dataset.id, button.dataset.role));
+        button.addEventListener('click', () => abrirModalRol(button.dataset.id, button.dataset.role));
     });
     body.querySelectorAll('.btn-toggle').forEach(button => {
         button.addEventListener('click', () => alternarEstado(button.dataset.id));
@@ -151,20 +151,16 @@ function renderUsuarios(usuarios) {
     });
 }
 
-function abrirModal(id, role) {
+function abrirModalRol(id, role) {
     if (!$('usuarioIdRol') || !$('formRol') || !$('modalRol')) return;
     $('usuarioIdRol').value = id;
     $('nuevoRol').value = role === 'admin' ? 'admin' : 'user';
     $('formRol').querySelector('.formulario-mensaje').textContent = '';
-    $('modalRol').hidden = false;
-    document.body.style.overflow = 'hidden';
-    $('nuevoRol').focus();
+    abrirModal($('modalRol'), { primerFoco: $('nuevoRol') });
 }
 
-function cerrarModal() {
-    const modal = $('modalRol');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
+function cerrarModalRol() {
+    cerrarModal($('modalRol'));
 }
 
 async function guardarRol(event) {
@@ -183,7 +179,7 @@ async function guardarRol(event) {
             throw new Error(response.msg || 'No se pudo actualizar el rol');
         }
         message.textContent = response.msg || 'Rol actualizado';
-        cerrarModal();
+        cerrarModalRol();
         await cargarUsuarios(paginaActual);
     } catch (error) {
         message.textContent = error.message || 'No se pudo actualizar el rol';

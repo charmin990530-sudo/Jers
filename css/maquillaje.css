@@ -23,7 +23,7 @@
 }
 
 .maquillaje-page .marca-nombre::before {
-    color: var(--color-mauve);
+    color: var(--color-mauve-texto);
     content: '✦ ';
 }
 
