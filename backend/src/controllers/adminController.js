@@ -323,7 +323,14 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     return next(new AppError('Un pedido pagado debe reembolsarse, no cancelarse', 409, ErrorCodes.PAID_ORDER_REQUIRES_REFUND));
   }
 
-  if (nextEstado === 'cancelado' && previousEstado !== 'cancelado') {
+  // Estados que devuelven la mercancia al inventario. Cancelar lo hacia desde
+  // la rama de abajo, pero `entregado -> reembolsado` caia en el `else` final,
+  // que solo guardaba el estado: el stock se quedaba descontado y `vendidos`
+  // seguia contando una venta que ya se devolvio, para siempre.
+  const revierteStock = nextEstado !== previousEstado
+    && (nextEstado === 'cancelado' || nextEstado === 'reembolsado');
+
+  if (revierteStock) {
     // Cancelar desde admin devuelve el stock al inventario. Es una operacion de
     // saldo, asi que el cambio de estado y el bulkWrite de stock van en la misma
     // transaccion. El filtro `estado: previousEstado` evita que dos admins
@@ -331,14 +338,20 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     const transactional = await detectTransactionSupport();
     try {
       const outcome = await withTransaction(async ({ session }) => {
+        const cancelacion = nextEstado === 'cancelado';
         const updated = await Order.findOneAndUpdate(
           { _id: order._id, estado: previousEstado },
           {
             $set: {
               ...req.body,
-              estado: 'cancelado',
-              canceladoEn: new Date(),
-              motivoCancelacion: 'Cancelado por administración',
+              estado: nextEstado,
+              // Solo una cancelacion lleva motivo y fecha; un reembolso no.
+              ...(cancelacion
+                ? {
+                  canceladoEn: new Date(),
+                  motivoCancelacion: req.body.motivoCancelacion || 'Cancelado por administración',
+                }
+                : {}),
             },
           },
           { new: true, runValidators: true, session },
@@ -361,7 +374,7 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     } catch (error) {
       // Con replica set el abort ya revierto el cambio de estado y el stock.
       if (!transactional) {
-        const stillOpen = await Order.findOne({ _id: order._id, estado: 'cancelado' }).lean();
+        const stillOpen = await Order.findOne({ _id: order._id, estado: nextEstado }).lean();
         if (stillOpen) {
           await Promise.allSettled([
             Product.bulkWrite(stillOpen.items.map(item => ({
@@ -371,8 +384,10 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
               },
             })), { ordered: false }),
             Order.updateOne(
-              { _id: order._id, estado: 'cancelado' },
-              { $set: { estado: previousEstado }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } },
+              { _id: order._id, estado: nextEstado },
+              cancelacion
+                ? { $set: { estado: previousEstado }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } }
+                : { $set: { estado: previousEstado } },
             ),
           ]);
         }
