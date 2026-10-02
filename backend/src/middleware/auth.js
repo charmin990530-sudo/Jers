@@ -72,9 +72,19 @@ export const authenticate = async (req, res, next) => {
     req.userId = user._id;     // ObjectId para queries rápidas
     next();
   } catch (error) {
-    // Manejo específico de errores JWT
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return sendError(res, 401, ErrorCodes.INVALID_TOKEN, 'Sesión expirada o inválida. Inicia sesión nuevamente.');
+    // Manejo específico de errores JWT.
+    //
+    // Los dos casos se separan porque son decisiones distintas para el cliente:
+    // un token caducado se resuelve iniciando sesión otra vez, mientras que uno
+    // corrupto o malfirmado significa que hay que limpiar la cookie. Antes los
+    // dos devolvían INVALID_TOKEN, así que la rama TOKEN_EXPIRED del
+    // `errorHandler` era código muerto y `API.md` publicaba una distinción que
+    // nunca se emitía.
+    if (error.name === 'TokenExpiredError') {
+      return sendError(res, 401, ErrorCodes.TOKEN_EXPIRED, 'Tu sesión expiró. Inicia sesión nuevamente.');
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return sendError(res, 401, ErrorCodes.INVALID_TOKEN, 'Sesión inválida. Inicia sesión nuevamente.');
     }
     // Otros errores -> errorHandler global
     next(error);

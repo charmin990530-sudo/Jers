@@ -7,7 +7,7 @@
  * el pool de conexiones y la API empieza a fallar por timeouts.
  */
 import mongoose from 'mongoose';
-import { MONGODB_URI } from './env.js';
+import { MONGODB_URI, MONGO_MAX_POOL_SIZE, MONGO_SERVER_SELECTION_TIMEOUT_MS, NODE_ENV } from './env.js';
 
 // Evita que Mongoose reintente eternamente cuando la base no responde.
 mongoose.set('bufferCommands', false);
@@ -27,15 +27,15 @@ export const connectDB = async ({ allowRetry = false } = {}) => {
     globalThis.__byJersMongoPromise = mongoose
       .connect(MONGODB_URI, {
         // Atlas necesita reutilizar conexiones en Lambdas en frío.
-        maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 5,
-        // Configurable porque 10 s es mucho rato para una tienda: con la base
-        // caida, cada peticion a la API se quedaba 10 s colgada antes de
-        // responder 503. En local 2 s es de sobra para distinguir "Mongo no
-        // arranca" de "Mongo tardo en arrancar".
-        serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 2000,
+        maxPoolSize: MONGO_MAX_POOL_SIZE,
+        serverSelectionTimeoutMS: MONGO_SERVER_SELECTION_TIMEOUT_MS,
       })
       .then((conn) => {
-        console.log(`MongoDB conectado: ${conn.connection.host}`);
+        // Se enmascara el host: en producción es el nombre del cluster, que es
+        // topología de infraestructura en los logs. Con el despliegue local se
+        // sigue viendo el host real, que es lo que sirve para diagnosticar.
+        const host = NODE_ENV === 'production' ? String(conn.connection.host).split('.')[0] + '.***' : conn.connection.host;
+        console.log(`MongoDB conectado: ${host}`);
         return conn.connection;
       })
       .catch((error) => {

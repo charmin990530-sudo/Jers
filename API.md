@@ -26,10 +26,21 @@ Forma única, sin excepciones. `details` solo aparece en errores de validación.
 El `code` es estable: se decide por código, nunca por texto. El `requestId` sale
 también en la cabecera `X-Request-ID` y sirve para buscar el registro en el log.
 
+**Todos los códigos están declarados en `backend/src/middleware/apiError.js`** y hay
+un test (`tests/error-codes.test.js`) que falla si algún controlador emite un
+código que no exista como clave ahí, o si algún `ErrorCodes.X` apunta a una clave
+inexistente. Esa es la única forma de que la promesa de "el contrato es auditable
+leyendo un archivo" se cumpla de verdad.
+
 | HTTP | Códigos |
 |---|---|
-| **400** | `VALIDATION_ERROR` `INVALID_ID` `INVALID_PATH` `INVALID_ROLE` `INVALID_IDEMPOTENCY_KEY` `DUPLICATE_FIELD` `EMPTY_CART` `INSUFFICIENT_STOCK` `PRODUCT_UNAVAILABLE` `CANNOT_CANCEL` `WRONG_PASSWORD` `PASSWORDS_MISMATCH` `EMAIL_EXISTS` |
+| **400** | `VALIDATION_ERROR` `INVALID_ID` `INVALID_PATH` `INVALID_ROLE` `INVALID_IDEMPOTENCY_KEY` `DUPLICATE_FIELD` `EMPTY_CART` `INSUFFICIENT_STOCK` `PRODUCT_UNAVAILABLE` `CANNOT_CANCEL` `WRONG_PASSWORD` `PASSWORDS_MISMATCH` `EMAIL_EXISTS` `LAST_ADMIN` `SELF_DEACTIVATE` `SELF_DELETE` `CATEGORY_HAS_PRODUCTS` `BRAND_HAS_PRODUCTS` |
 | **401** | `UNAUTHENTICATED` `INVALID_TOKEN` `TOKEN_EXPIRED` `TOKEN_REVOKED` `USER_NOT_FOUND` `INVALID_CREDENTIALS` `INVALID_RESET_TOKEN` |
+
+`INVALID_TOKEN` y `TOKEN_EXPIRED` se distinguen a propósito: el primero significa
+que el token está corrupto o mal firmado y hay que limpiar la cookie; el segundo,
+que simplemente caducó y basta con iniciar sesión otra vez. El frontend puede
+reaccionar distinto a los dos.
 | **403** | `FORBIDDEN` `CSRF_TOKEN_INVALID` `ORIGIN_NOT_ALLOWED` `ORIGIN_REQUIRED` |
 | **404** | `NOT_FOUND` `PRODUCT_NOT_FOUND` `CATEGORY_NOT_FOUND` `BRAND_NOT_FOUND` `ORDER_NOT_FOUND` `CART_NOT_FOUND` `ITEM_NOT_FOUND` `ADDRESS_NOT_FOUND` `CONTACT_NOT_FOUND` `USER_NOT_FOUND` |
 | **405 / 413 / 415** | `METHOD_NOT_ALLOWED` `PAYLOAD_TOO_LARGE` `UNSUPPORTED_MEDIA_TYPE` |

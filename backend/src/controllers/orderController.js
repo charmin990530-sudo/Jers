@@ -73,7 +73,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   const { direccionEnvio, notas } = req.body;
   const idempotencyKey = req.get('Idempotency-Key')?.trim();
   if (idempotencyKey && !/^[A-Za-z0-9._:-]{8,100}$/.test(idempotencyKey)) {
-    return next(new AppError('Idempotency-Key inválida', 400, 'INVALID_IDEMPOTENCY_KEY'));
+    return next(new AppError('Idempotency-Key inválida', 400, ErrorCodes.INVALID_IDEMPOTENCY_KEY));
   }
   if (idempotencyKey) {
     const existingOrder = await Order.findOne({ usuario: req.userId, idempotencyKey }).select('+idempotencyKey');
@@ -97,7 +97,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     .populate('items.producto');
 
   if (!cart || cart.items.length === 0) {
-    return next(new AppError('El carrito está vacío', 400, 'EMPTY_CART'));
+    return next(new AppError('El carrito está vacío', 400, ErrorCodes.EMPTY_CART));
   }
 
   // ==============================================================
@@ -112,10 +112,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   for (const item of cart.items) {
     const producto = item.producto;
     if (!producto || !producto.activo) {
-      return next(new AppError(`El producto ${item.nombreSnapshot} ya no está disponible`, 400, 'PRODUCT_UNAVAILABLE'));
+      return next(new AppError(`El producto ${item.nombreSnapshot} ya no está disponible`, 400, ErrorCodes.PRODUCT_UNAVAILABLE));
     }
     if (producto.stock < item.cantidad) {
-      return next(new AppError(`Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}`, 400, 'INSUFFICIENT_STOCK'));
+      return next(new AppError(`Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}`, 400, ErrorCodes.INSUFFICIENT_STOCK));
     }
 
     // Snapshot con el PRECIO ACTUAL (puede haber cambiado desde que se agrego).
@@ -210,7 +210,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       );
       const reservedCount = reservation.modifiedCount ?? 0;
       if (reservedCount !== validItems.length) {
-        throw new AppError('Stock insuficiente para uno o más productos del carrito', 400, 'INSUFFICIENT_STOCK');
+        throw new AppError('Stock insuficiente para uno o más productos del carrito', 400, ErrorCodes.INSUFFICIENT_STOCK);
       }
 
       // 3) Crear el pedido con el snapshot de precios ya calculado.
@@ -396,7 +396,7 @@ export const getOrder = asyncHandler(async (req, res, next) => {
   const order = await Order.findOne({ _id: req.params.id, usuario: req.userId }).lean({ virtuals: true });
 
   if (!order) {
-    return next(new AppError('Pedido no encontrado', 404, 'ORDER_NOT_FOUND'));
+    return next(new AppError('Pedido no encontrado', 404, ErrorCodes.ORDER_NOT_FOUND));
   }
 
   res.status(200).json({
@@ -502,7 +502,7 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
     if (existing.estadoPago === 'pagado') {
       return next(new AppError('Un pedido pagado requiere reembolso de administración', 409, ErrorCodes.PAID_ORDER_REQUIRES_REFUND));
     }
-    return next(new AppError('Este pedido no se puede cancelar en su estado actual', 400, 'CANNOT_CANCEL'));
+    return next(new AppError('Este pedido no se puede cancelar en su estado actual', 400, ErrorCodes.CANNOT_CANCEL));
   }
 
   res.status(200).json({
