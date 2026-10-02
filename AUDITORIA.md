@@ -28,11 +28,13 @@ Estado real que verifiqué levantando el proyecto:
 | Lint / typecheck / formateo | **No existen.** Ningún tooling, ningún `lint` en package.json |
 | Suite de tests de frontend | **No existe.** Cero cobertura del código donde están todos los bugs |
 
-### 1.1 Bloqueante de arranque que conviene saber
+### 1.1 Base de datos local (resuelto)
 
-`backend/.env` (archivo real, permisos `600`) contiene una `MONGODB_URI` de Atlas que responde `bad auth : authentication failed`. Con esa configuración el proceso **arranca pero la API devuelve 503 en todo `/api/*`** y el catálogo no carga. No es un bug del código: es una credencial caducada en el entorno local. Para poder auditar tuve que arrancar con `MONGODB_URI=mongodb://127.0.0.1:27017/...` (el `mongod` local está activo y sin auth).
+**Resuelto durante la auditoría.** `backend/.env` tenía comentada la `MONGODB_URI` local y activa la de Atlas, que responde `bad auth : authentication failed`. Con esa configuración el proceso **arrancaba pero la API devolvía 503 en todo `/api/*`** y el catálogo no cargaba. No era un bug del código: era una línea de `.env` en el estado equivocado tras ensayar con Atlas.
 
-**Consecuencia:** cualquiera que clone el repo hoy ve la web sin productos y sin explicación, porque el mensaje del 503 sí viaja pero el navegador no lo muestra en el home.
+Se cambió `backend/.env` a `mongodb://127.0.0.1:27017/by-jers` y la línea de Atlas quedó comentada con una nota para volver atrás. Verificado: `database: "connected"`, 16 productos, 6 categorías, 6 marcas y 2 usuarios desde la base local.
+
+Lo que sí queda como deuda: si Mongo está apagado, el home muestra el catálogo vacío sin explicar por qué, porque el mensaje del 503 viaja en la respuesta pero el frontend no lo enseña.
 
 ### 1.2 Puntaje por área
 
@@ -864,7 +866,6 @@ Lo que depende de decisiones de negocio o de contenido. Ver §6.
 5. **M-13 — Cupones.** El campo existe y siempre vale 0. ¿Se implementan o se limpia el campo?
 6. **M-01 — Límite de cantidad.** El frontend limita a 99 por item, el backend valida 99 por llamada pero no sobre el acumulado. ¿Cuál es el límite real?
 7. **Legal.** Faltan datos de empresa, política de cookies y política de devoluciones/reembolsos. Los modales de términos y privacidad **existen y funcionan**, pero el contenido es de 4 viñetas. ¿Tienes los datos para completarlos, o los dejo marcados como pendientes con la estructura lista?
-8. **`backend/.env`.** La `MONGODB_URI` de Atlas responde `bad auth : authentication failed`. ¿La credencial caducó, o la sustituyo por la local para que el repo funcione?
 
 ---
 
