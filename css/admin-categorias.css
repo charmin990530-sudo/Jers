@@ -279,23 +279,6 @@
     border-top: 1px solid var(--color-cream);
 }
 
-.toast {
-    position: fixed;
-    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
-    left: 50%;
-    transform: translateX(-50%);
-    box-sizing: border-box;
-    max-width: calc(100vw - 32px);
-    text-align: center;
-    background: var(--color-mauve);
-    color: white;
-    padding: 14px 24px;
-    border-radius: 25px;
-    font: 600 0.9rem var(--fuente-texto);
-    box-shadow: 0 6px 20px rgb(0 0 0 / 20%);
-    z-index: 1000;
-    animation: slideUp 0.3s ease;
-}
 
 @keyframes slideUp {
     from { opacity: 0; transform: translateX(-50%) translateY(20px); }

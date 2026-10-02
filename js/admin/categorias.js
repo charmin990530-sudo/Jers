@@ -2,6 +2,7 @@ import { api, handleApiError, apiErrorFromResponse } from '../../js/api.js';
 import { protegerRuta } from '../rutas.js';
 import {
     iniciarAplicacion,
+    mostrarToast,
     mostrarErrorCampo,
     limpiarErroresFormulario,
     mostrarMensajeGlobal,
@@ -311,33 +312,25 @@ function inicializarFormulario() {
             await cargarCategorias();
         } catch (error) {
             handleApiError({ message: error.message, data: error.data }, 'guardar-categoria');
+            let pintadoEnUnCampo = false;
             if (error.data?.errors && Array.isArray(error.data.errors)) {
                 error.data.errors.forEach(item => {
-                    const input = form.elements.namedItem(item.field);
-                    if (input) mostrarErrorCampo(input, item.message);
+                    const input = form.elements.namedItem(item.field)
+                        || form.querySelector(`[name="${CSS.escape(item.field)}"]`);
+                    if (input) {
+                        mostrarErrorCampo(input, item.message);
+                        pintadoEnUnCampo = true;
+                    }
                 });
+            }
+            // `handleApiError` solo registra en consola: sin este `else`, un
+            // fallo sin errores por campo (un 500, un 429) era invisible y el
+            // admin creia que el guardado habia funcionado.
+            if (!pintadoEnUnCampo) {
+                mostrarMensajeGlobal(form, error.message || 'No se pudo guardar.');
             }
         } finally {
             setBtnLoading(btnGuardar, false);
         }
     });
-}
-
-function mostrarToast(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = mensaje;
-    toast.style.cssText = `
-        position: fixed; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
-            box-sizing: border-box; max-width: calc(100vw - 32px); text-align: center;
-        background: var(--color-mauve); color: white; padding: 14px 24px;
-        border-radius: 25px; font: 600 0.9rem var(--fuente-texto);
-        box-shadow: 0 6px 20px rgb(0 0 0 / 20%); z-index: 1000;
-        animation: slideUp 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'slideUp 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
 }

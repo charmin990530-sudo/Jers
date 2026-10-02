@@ -3,6 +3,7 @@ import { protegerRuta } from '../rutas.js';
 import { formatearPrecio } from '../config.js';
 import {
     iniciarAplicacion,
+    mostrarToast,
     mostrarErrorCampo,
     limpiarErroresFormulario,
     mostrarMensajeGlobal,
@@ -22,11 +23,18 @@ let productosCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     iniciarAplicacion();
-    await verificarAdminYCargar();
+    // La UI se inicializa ANTES de tocar la red. `inicializarModal()` es lo que
+    // registra el botón "➕ Nuevo Producto" y `inicializarFormulario()` lo que
+    // permite guardar; antes los cuatro inicializadores iban detrás de un
+    // `await` a la carga de categorías y marcas, así que un 500 o un 429 en
+    // cualquiera de esas dos requests dejaba la tabla congelada en "Cargando…",
+    // el botón sin hacer nada y los filtros sin responder, sin un solo mensaje
+    // en pantalla. Que la red falle no puede romper la interfaz de edición.
     inicializarFiltros();
     inicializarPaginacion();
     inicializarModal();
     inicializarFormulario();
+    await verificarAdminYCargar();
 });
 
 async function verificarAdminYCargar() {
@@ -37,9 +45,37 @@ async function verificarAdminYCargar() {
     // '../index.html' en una app que ya no tiene esa estructura.
     const { ok } = await protegerRuta({ requiereAdmin: true, pantalla: 'admin-productos' });
     if (!ok) return;
-    await cargarCategorias();
-    await cargarMarcas();
+
+    // Cada carga falla por separado: que no haya categorías (por ejemplo) no
+    // impide cargar los productos. Antes `cargarCategorias()` hacia `throw` y
+    // abortaba toda la cadena, así que un fallo de red en una request
+    // secundaria tumbaba el catálogo entero.
+    const [categorias, marcas] = await Promise.allSettled([
+        cargarCategorias(),
+        cargarMarcas(),
+    ]);
+    if (categorias.status === 'rejected') {
+        console.error('[admin-productos] No se pudieron cargar las categorías:', categorias.reason);
+        avisarEnTabla('No se pudieron cargar las categorías. Revisa la conexión y vuelve a cargar.');
+    }
+    if (marcas.status === 'rejected') {
+        console.error('[admin-productos] No se pudieron cargar las marcas:', marcas.reason);
+        avisarEnTabla('No se pudieron cargar las marcas. Revisa la conexión y vuelve a cargar.');
+    }
+
     await cargarProductos();
+}
+
+/**
+ * Mensaje de estado dentro de la tabla, para que el fallo se vea donde el
+ * usuario está mirando y no solo en la consola.
+ */
+function avisarEnTabla(mensaje) {
+    const cuerpo = document.getElementById('productosBody');
+    if (!cuerpo) return;
+    // La tabla tiene 9 columnas: Imagen, Producto, SKU, Categoría, Marca,
+    // Precio, Stock, Estado y Acciones.
+    cuerpo.innerHTML = `<tr><td colspan="9" class="empty-state">${escapeHTML(mensaje)}</td></tr>`;
 }
 
 async function cargarCategorias() {
@@ -221,15 +257,21 @@ function inicializarFiltros() {
         const element = document.getElementById(id);
         if (!element) return;
 
-        element.addEventListener('change', () => {
-            paginaActual = 1;
-            cargarProductos(1);
-        });
+        // Un `<input>` recibía los DOS listeners: `change` y `input` con debounce.
+        // Al escribir y pulsar Enter salían dos peticiones, y como
+        // `cargarProductos` no cancela la anterior, dos respuestas podían llegar
+        // en orden inverso y la antigua pintarse encima de la nueva. Ahora cada
+        // control tiene exactamente una vía.
         if (element.tagName === 'INPUT') {
             element.addEventListener('input', debounce(() => {
                 paginaActual = 1;
                 cargarProductos(1);
             }, 500));
+        } else {
+            element.addEventListener('change', () => {
+                paginaActual = 1;
+                cargarProductos(1);
+            });
         }
     });
 }
@@ -611,35 +653,33 @@ function inicializarFormulario() {
             await cargarProductos(paginaActual);
         } catch (error) {
             handleApiError({ message: error.message, data: error.data }, 'guardar-producto');
+            let pintadoEnUnCampo = false;
             if (error.data?.errors && Array.isArray(error.data.errors)) {
                 error.data.errors.forEach(item => {
-                    const input = form.elements.namedItem(item.field);
-                    if (input) mostrarErrorCampo(input, item.message);
+                    // `form.elements.namedItem()` no encuentra los campos de los
+                    // grupos repetidos: Zod devuelve la ruta con puntos
+                    // ('imagenes.0.url') y `name` no puede contener esa ruta.
+                    // Antes el error se descartaba en silencio y el admin veía
+                    // pulsar "Guardar" sin que pasara absolutamente nada.
+                    const input = form.elements.namedItem(item.field)
+                        || form.querySelector(`[name="${CSS.escape(item.field)}"]`)
+                        || form.querySelector(`[name^="${CSS.escape(item.field.split('.')[0])}"]`);
+                    if (input) {
+                        mostrarErrorCampo(input, item.message);
+                        pintadoEnUnCampo = true;
+                    }
                 });
+            }
+            // Sin errores por campo, el mensaje tiene que aparecer en el
+            // formulario. `handleApiError` solo escribe en la consola, así que
+            // sin este `else` el fallo era completamente invisible.
+            if (!pintadoEnUnCampo) {
+                mostrarMensajeGlobal(form, error.message || 'No se pudo guardar el producto.');
             }
         } finally {
             setBtnLoading(btnGuardar, false);
         }
     });
-}
-
-function mostrarToast(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = mensaje;
-    toast.style.cssText = `
-        position: fixed; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
-            box-sizing: border-box; max-width: calc(100vw - 32px); text-align: center;
-        background: var(--color-mauve); color: white; padding: 14px 24px;
-        border-radius: 25px; font: 600 0.9rem var(--fuente-texto);
-        box-shadow: 0 6px 20px rgb(0 0 0 / 20%); z-index: 1000;
-        animation: slideUp 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'slideUp 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
 }
 
 function formatearMoneda(valor) {

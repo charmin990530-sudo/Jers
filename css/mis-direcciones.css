@@ -318,10 +318,6 @@
     background: #ead6d3;
 }
 
-/* Toast */
-.toast {
-    animation: slideUp 0.3s ease;
-}
 
 /* Estados vacío/error/loading */
 .direcciones-vacio,

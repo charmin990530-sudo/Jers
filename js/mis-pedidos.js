@@ -12,7 +12,7 @@
 import { getMe, getOrders, getOrder, cancelOrder, handleApiError } from './api.js';
 import { protegerRuta } from './rutas.js';
 import { formatearPrecio, formatearFecha as formatearFechaGlobal } from './config.js';
-import { iniciarAplicacion } from './app.js';
+import { iniciarAplicacion, mostrarToast } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
 // Estado
@@ -426,11 +426,17 @@ async function confirmarCancelacion(pedidoId, numeroOrden) {
     const response = await cancelOrder(pedidoId, motivo || 'Cancelado por el usuario');
     
     if (!response.ok) {
+        // Antes solo se escribía en la consola: el `prompt` se cerraba, el
+        // pedido seguía en la lista y no pasaba nada visible. Si el estado había
+        // cambiado a `procesando` entre medias, el backend responde
+        // CANNOT_CANCEL y el usuario veía el mismo fallo una y otra vez sin
+        // ninguna explicación.
         handleApiError({ message: response.msg, status: response.data?.status }, 'cancelar-pedido');
+        mostrarToast(response.msg || 'No se pudo cancelar el pedido.', { tipo: 'error' });
         return;
     }
 
-    alert('Pedido cancelado correctamente');
+    mostrarToast('Pedido cancelado correctamente');
     cerrarModal();
     cargarPedidos(paginaActual); // Recargar lista
 }

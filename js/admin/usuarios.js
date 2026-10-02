@@ -1,7 +1,7 @@
 import { api, handleApiError } from '../../js/api.js';
 import { formatearFecha } from '../config.js';
 import { protegerRuta } from '../rutas.js';
-import { iniciarAplicacion } from '../../js/app.js';
+import { iniciarAplicacion, mostrarToast } from '../../js/app.js';
 import { escapeHTML } from '../../js/sanitize.js';
 
 let paginaActual = 1;
@@ -201,6 +201,7 @@ async function alternarEstado(id) {
         await cargarUsuarios(paginaActual);
     } catch (error) {
         handleApiError({ message: error.message }, 'toggle-usuario');
+        mostrarToast(error.message || 'No se pudo cambiar el estado.', { tipo: 'error' });
     }
 }
 
@@ -214,6 +215,7 @@ async function eliminarUsuario(id) {
         await cargarUsuarios(paginaActual);
     } catch (error) {
         handleApiError({ message: error.message }, 'desactivar-usuario');
+        mostrarToast(error.message || 'No se pudo desactivar el usuario.', { tipo: 'error' });
     }
 }
 
