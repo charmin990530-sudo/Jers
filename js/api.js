@@ -320,6 +320,21 @@ export const getBrands = () => request('/products/marcas', { requiereCsrf: false
 export const getProductsByCategory = (slug, params = {}) =>
     request(conQuery(`/products/categoria/${encodeURIComponent(slug)}`, params), { requiereCsrf: false });
 
+/**
+ * Búsqueda de productos con índice de texto completo del servidor.
+ *
+ * El backend ya exponía `GET /api/products/buscar` con orden por `textScore`
+ * desde antes de que existiera este wrapper, así que la función estaba pagada y
+ * nadie la llamaba. Devuelve `{ok, data: {products, total, page, pages}}` con la
+ * misma forma que el resto del catálogo.
+ *
+ * @param {string} q - Texto buscado. El servidor exige 2 caracteres o más y
+ *   devuelve una lista vacía por debajo de eso, en vez de un 400.
+ * @param {{page?: number, limit?: number}} [params]
+ */
+export const searchProducts = (q, params = {}) =>
+    request(conQuery('/products/buscar', { q, ...params }), { requiereCsrf: false });
+
 // ---------------------------------------------------------------
 // Carrito
 // ---------------------------------------------------------------
@@ -407,7 +422,7 @@ export const api = {
     register, login, logout, getMe, forgotPassword, resetPassword,
     updateProfile, changePassword, addAddress, updateAddress, deleteAddress,
     getProducts, getProduct, getFeaturedProducts, getPromoProducts,
-    getBrands, getProductsByCategory,
+    getBrands, getProductsByCategory, searchProducts,
     getCart, addToCart, updateCartItem, removeFromCart, clearCart,
     createOrder, getOrders, getOrder, cancelOrder, createContact,
     getAdminProducts, getAdminCategories, getAdminBrands,
