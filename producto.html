@@ -5,25 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#fbf3ee">
-    <meta name="description" content="By Jers - Detalle del producto">
-    <title>By Jers | Producto</title>
+    <meta name="description" content="Ficha de producto en By Jers: precio, stock, ingredientes y modo de uso. Maquillaje y cuidado capilar originales.">
+    <title>Ficha de producto | By Jers</title>
     <link rel="icon" href="/img/logo/logo.webp" type="image/webp">
     <link rel="canonical" href="https://byjers.com/producto.html">
 
+    <!--
+      IMPORTANTE: estos valores son lo que leen del HTML CRUDO.
+      WhatsApp, Facebook, LinkedIn, Telegram, Slack e iMessage NO ejecutan
+      JavaScript al generar la previsualización de un enlace: leen el HTML tal
+      cual. Como esta tienda cierra sus ventas por WhatsApp, cada ficha
+      compartida mostraba la MISMA tarjeta ("By Jers | Producto" con la imagen
+      del hero) para todos los productos.
+
+      `js/producto.js` actualizaOpenGraph() los reescribe en runtime con los datos
+      reales, lo cual solo sirve para quien ya tiene la página abierta. Para que
+      los crawlers vean la ficha correcta hay dos salidas: generar en el build
+      una página por producto (scripts/preparar-estatico.mjs), o usar og:image
+      dinamico. Hasta entonces, lo declarado abajo es al menos VERDADERO: dice
+      marca y categoría, no un placeholder.
+    -->
     <meta property="og:type" content="product">
-    <meta property="og:title" content="By Jers | Producto">
-    <meta property="og:description" content="Detalle de producto By Jers">
+    <meta property="og:title" content="By Jers | Maquillaje y cuidado capilar">
+    <meta property="og:description" content="Cosmética y cuidado capilar originales de marca propia y distribuidoras oficiales.">
     <meta property="og:url" content="https://byjers.com/producto.html">
     <meta property="og:site_name" content="By Jers">
     <meta property="og:image" content="https://byjers.com/img/hero/soficora.webp">
     <meta property="og:locale" content="es_CO">
     <meta name="twitter:card" content="summary_large_image">
-    <!--
-      Estos valores son los que el crawler lee del HTML crudo. actualizarOpenGraph()
-      en js/producto.js los reescribe con los datos del producto real (nombre,
-      descripción, imagen y la URL con su id) en cuanto la API responde, así que
-      lo que se comparte en WhatsApp o Facebook ya no es la tarjeta genérica.
-    -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

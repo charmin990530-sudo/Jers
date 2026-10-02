@@ -72,11 +72,73 @@ async function cargarEstadisticas() {
     if (productosRes.ok && productosRes.data?.total) {
       contadorProductos.textContent = `+${productosRes.data.total}`;
     }
-    if (marcasRes.ok && Array.isArray(marcasRes.data)) {
-      contadorMarcas.textContent = `+${marcasRes.data.length}`;
+    // `getBrands()` devuelve `{success, count, brands}`, no un array. La rama
+    // comparaba `Array.isArray(marcasRes.data)` contra ese objeto, así que
+    // nunca era cierta y el contador se quedaba congelado en su valor del HTML
+    // ("+20") mientras la base tenía 6. Dos cifras contiguas con idéntico
+    // estilo, una verdadera y otra falsa.
+    const marcas = marcasRes.data?.brands;
+    if (marcasRes.ok && Array.isArray(marcas)) {
+      contadorMarcas.textContent = `+${marcas.length}`;
     }
   } catch {
     // Si falla, se mantienen los valores por defecto
+  }
+  pintarMarcas();
+}
+
+/**
+ * Rellena el carrusel de marcas con las de la base de datos.
+ *
+ * Estaba escrito a mano en el HTML con NYX, Revlon y Wella, que no existen en el
+ * catálogo, y con las tres marcas propias (Atenea, L'Bel, Jorge de la Garza)
+ * ausentes. El error era doble: se anunciaban distribuidoras que no venden y se
+ * escondían las marcas de la casa, que es justo lo contrario de lo que necesita
+ * una marca propia. El texto "Más de 20 marcas disponibles" también mentía.
+ *
+ * Si la API falla se deja lo que hubiera: es mejor mostrar los nombres del HTML
+ * que un carrusel vacío.
+ */
+async function pintarMarcas() {
+  const track = document.getElementById('marcasTrack');
+  if (!track || track.dataset.pintado === '1') return;
+
+  let marcas = null;
+  try {
+    const res = await getBrands();
+    if (res.ok && Array.isArray(res.data?.brands) && res.data.brands.length) {
+      marcas = res.data.brands;
+    }
+  } catch {
+    marcas = null;
+  }
+  if (!marcas) return;
+
+  const celda = (marca) => {
+    const item = document.createElement('div');
+    item.className = 'marca-item';
+    const nombre = document.createElement('span');
+    nombre.className = 'marca-nombre';
+    nombre.textContent = marca.nombre;
+    item.append(nombre);
+    return item;
+  };
+
+  // El loop infinito del carrusel necesita el grupo duplicado para que el
+  // reinicio no se vea como un corte.
+  track.replaceChildren();
+  marcas.forEach(marca => track.append(celda(marca)));
+  marcas.forEach(marca => track.append(celda(marca)));
+  track.dataset.pintado = '1';
+
+  // El texto de confianza decía "Más de 20 marcas disponibles" con 6 en la base.
+  // Ahora se cuenta lo que hay, y si la API falla se queda la frase sin cifra en
+  // lugar de una afirmación que no se sostiene.
+  const textoMarcas = document.getElementById('heroMarcasTexto');
+  if (textoMarcas) {
+    textoMarcas.textContent = marcas.length > 1
+      ? `${marcas.length} marcas originales disponibles.`
+      : `${marcas.length} marca original disponible.`;
   }
 }
 

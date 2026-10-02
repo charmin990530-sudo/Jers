@@ -173,7 +173,7 @@
                         <span class="hero-card-icono">⭐</span>
                         <div>
                             <h4>Productos originales</h4>
-                            <p>Más de 20 marcas disponibles.</p>
+                            <p id="heroMarcasTexto">Marcas originales, seleccionados.</p>
                         </div>
                     </div>
                 </div>
@@ -190,22 +190,12 @@
             <p class="marcas-titulo">Trabajamos con las marcas que amas</p>
 
             <div class="marcas-carrusel" id="marcasCarrusel">
-                <div class="marcas-track" id="marcasTrack">
-                    <!-- Grupo 1 -->
-                    <div class="marca-item"><span class="marca-nombre">Maybelline</span></div>
-                    <div class="marca-item"><span class="marca-nombre">L'Oréal Paris</span></div>
-                    <div class="marca-item"><span class="marca-nombre">MAC</span></div>
-                    <div class="marca-item"><span class="marca-nombre">NYX</span></div>
-                    <div class="marca-item"><span class="marca-nombre">Revlon</span></div>
-                    <div class="marca-item"><span class="marca-nombre">Wella</span></div>
-                    <!-- Grupo 2 (duplicado idéntico, para el loop infinito sin cortes) -->
-                    <div class="marca-item"><span class="marca-nombre">Maybelline</span></div>
-                    <div class="marca-item"><span class="marca-nombre">L'Oréal Paris</span></div>
-                    <div class="marca-item"><span class="marca-nombre">MAC</span></div>
-                    <div class="marca-item"><span class="marca-nombre">NYX</span></div>
-                    <div class="marca-item"><span class="marca-nombre">Revlon</span></div>
-                    <div class="marca-item"><span class="marca-nombre">Wella</span></div>
-                </div>
+                <!-- El contenido lo pinta js/index.js desde GET /api/products/marcas.
+                     Estaba escrito a mano con NYX, Revlon y Wella, que no existen en
+                     el catálogo, y sin las tres marcas propias (Atenea, L'Bel y
+                     Jorge de la Garza). Si la API falla, `pintarMarcas()` deja el
+                     carrusel vacío en vez de inventar nombres. -->
+                <div class="marcas-track" id="marcasTrack"></div>
             </div>
         </section>
 

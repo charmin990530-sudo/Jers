@@ -54,8 +54,27 @@ export const NUMERO_WHATSAPP = CONFIG.WHATSAPP_NUMBER;
 /**
  * Devuelve el nombre del archivo HTML abierto en este momento.
  */
+/**
+ * Normaliza una ruta a la misma forma en ambos lados de la comparación.
+ *
+ * En producción Vercel sirve con `cleanUrls: true`, así que la URL canónica de
+ * la página de maquillaje es `/maquillaje`, y `pathname.split('/').pop()` devuelve
+ * `"maquillaje"`. El enlace del menú, en cambio, es `href="maquillaje.html"`, que
+ * devuelve `"maquillaje.html"`. La comparación nunca era cierta y el enlace de la
+ * página activa no se resaltaba nunca en producción, solo en local según cómo se
+ * escribiera la URL. Comparando sin extensión el problema desaparece en ambos
+ * entornos.
+ */
+const normalizarRuta = valor => String(valor || '')
+    .split(/[?#]/)[0]
+    .replace(/\/+$/, '')
+    .split('/')
+    .pop()
+    .replace(/\.html?$/i, '')
+    .toLowerCase();
+
 export function obtenerPaginaActual() {
-    return window.location.pathname.split('/').pop() || 'index.html';
+    return normalizarRuta(window.location.pathname) || 'index';
 }
 
 
@@ -134,7 +153,7 @@ export function resaltarPaginaActual() {
     const paginaActual = obtenerPaginaActual();
 
     document.querySelectorAll('.menuitem a').forEach(enlace => {
-        const archivoEnlace = enlace.getAttribute('href').split('#')[0];
+        const archivoEnlace = normalizarRuta(enlace.getAttribute('href'));
 
         enlace.classList.toggle(
             'pagina-actual',
@@ -464,6 +483,7 @@ export function renderizarPromociones(
 // reventaría con ReferenceError en todas las páginas. Por eso se importa y
 // además se reexporta, que es lo que necesitan las páginas que usan app.js.
 import { iniciarCarrito } from './carrito.js';
+import { iniciarBusqueda } from './busqueda.js';
 import { formatearPrecio } from './config.js';
 
 export { iniciarCarrito, formatearPrecio };
@@ -1018,6 +1038,7 @@ export function iniciarAplicacion() {
 
     iniciarMenuMovil();
     resaltarPaginaActual();
+    iniciarBusqueda();
     iniciarCarrito().catch(error => {
         console.error('[Carrito] No se pudo inicializar:', error);
     });
