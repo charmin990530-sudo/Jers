@@ -287,10 +287,62 @@
     padding: 10px 0;
 }
 
-.checkout-total {
-    font-size: 1.1rem;
-    margin-bottom: 0;
-    text-align: right;
+/* Desglose del importe antes de pagar.
+   Antes solo existía `.checkout-total`, que pintaba el SUBTOTAL con la palabra
+   "Total". El servidor cobraba subtotal + envío, así que el cliente descubría
+   el envío al confirmar. Ahora el resumen dice exactamente lo que se cobra. */
+.checkout-totales {
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0 0;
+    padding-top: 14px;
+}
+
+.checkout-totales__fila {
+    align-items: baseline;
+    display: flex;
+    font-size: 0.95rem;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.checkout-totales__fila dt,
+.checkout-totales__fila dd {
+    margin: 0;
+}
+
+.checkout-totales__fila dd {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.checkout-totales__nota {
+    color: #5c4a4b;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.checkout-totales__fila--total {
+    border-top: 1px solid #eee;
+    font-size: 1.15rem;
+    margin-top: 4px;
+    padding-top: 12px;
+}
+
+.checkout-totales__fila--total dd {
+    font-weight: 700;
+}
+
+/* Aviso de que el pedido queda pendiente de confirmar por WhatsApp. */
+.checkout-aviso {
+    background: #fff6e5;
+    border-left: 4px solid #c97b82;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin: 16px 0 0;
+    padding: 12px 14px;
 }
 
 .checkout-page .auth-btn {

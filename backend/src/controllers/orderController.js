@@ -327,7 +327,11 @@ Orden: ${order.numeroOrden}
 
   res.status(201).json({
     success: true,
-    message: 'Pedido creado exitosamente. Serás redirigido a WhatsApp para confirmar.',
+    // El mensaje tiene que decir la verdad. Decía "Serás redirigido a WhatsApp
+    // para confirmar" y el frontend no redirige nunca (muestra un enlace), así
+    // que el cliente leía que el pago ya estaba en camino cuando en realidad
+    // faltaba el paso que confirma la venta.
+    message: 'Pedido creado. Falta confirmar el pago con la tienda por WhatsApp.',
     order: {
       id: order._id,
       numeroOrden: order.numeroOrden,

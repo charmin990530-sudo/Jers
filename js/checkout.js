@@ -25,7 +25,11 @@ import { protegerRuta } from './rutas.js';
 
 const form = document.getElementById('checkout-form');
 const itemsElement = document.getElementById('checkout-items');
+const subtotalElement = document.getElementById('checkout-subtotal');
+const envioElement = document.getElementById('checkout-envio');
+const envioNotaElement = document.getElementById('checkout-envio-nota');
 const totalElement = document.getElementById('checkout-total');
+const avisoElement = document.getElementById('checkout-aviso');
 const messageElement = document.getElementById('checkout-message');
 const addressSelect = document.getElementById('saved-address');
 const submitButton = document.getElementById('checkout-submit');
@@ -51,15 +55,26 @@ const setMessage = (text, type = 'error') => {
     messageElement.className = `formulario-mensaje ${type}`;
 };
 
-const renderCart = cart => {
+/**
+ * Pinta el resumen del pedido.
+ *
+ * Los importes NO se calculan aquí. Vienen de la API (`subtotal`, `costoEnvio`,
+ * `total`), que los calcula con la misma regla que usa `POST /api/orders`. Antes
+ * esta función sumaba `precio * cantidad` y lo escribía en el hueco de "Total":
+ * el cliente veía el subtotal y el servidor cobraba subtotal + envío, así que
+ * los $15.000 de envío aparecían por sorpresa al confirmar.
+ *
+ * Si la API no troujera el desglose (por ejemplo, una versión antigua), se
+ * calcula aquí el subtotal y se marca el envío como pendiente de confirmar, en
+ * vez de mentir con un total incompleto.
+ */
+const renderCart = (items, desglose = null) => {
     if (!itemsElement) return;
     itemsElement.replaceChildren();
-    let total = 0;
-    for (const item of cart || []) {
+    for (const item of items || []) {
         const precio = item.precioUnitario ?? item.precio ?? 0;
         const cantidad = item.cantidad ?? 1;
         const subtotal = precio * cantidad;
-        total += subtotal;
 
         const li = document.createElement('li');
         const nombre = document.createElement('span');
@@ -71,7 +86,35 @@ const renderCart = cart => {
         li.append(nombre, valor);
         itemsElement.append(li);
     }
-    if (totalElement) totalElement.textContent = formatearPrecio(total);
+
+    const subtotalApi = Number.isInteger(desglose?.subtotal) ? desglose.subtotal : null;
+    const envioApi = Number.isInteger(desglose?.costoEnvio) ? desglose.costoEnvio : null;
+    const totalApi = Number.isInteger(desglose?.total) ? desglose.total : null;
+
+    const subtotal = subtotalApi
+        ?? (items || []).reduce(
+            (sum, item) => sum + (item.precioUnitario ?? item.precio ?? 0) * (item.cantidad ?? 1),
+            0,
+        );
+
+    if (subtotalElement) subtotalElement.textContent = formatearPrecio(subtotal);
+
+    if (envioApi !== null) {
+        if (envioElement) envioElement.textContent = formatearPrecio(envioApi);
+        const umbral = Number.isInteger(desglose?.envioGratisDesde) ? desglose.envioGratisDesde : null;
+        if (envioNotaElement) {
+            envioNotaElement.textContent = envioApi === 0 && umbral
+                ? `(gratis desde ${formatearPrecio(umbral)})`
+                : '';
+        }
+    } else if (envioElement) {
+        envioElement.textContent = 'Se calcula al confirmar';
+    }
+
+    if (totalElement) {
+        totalElement.textContent = formatearPrecio(totalApi ?? subtotal);
+    }
+    return { subtotal, envioApi, totalApi };
 };
 
 const fillAddress = address => {
@@ -130,7 +173,7 @@ const main = async () => {
         return;
     }
 
-    renderCart(cart);
+    renderCart(cart, response.data?.cart);
     direccionesUsuario = user?.direcciones || [];
     loadAddresses(direccionesUsuario);
 };
@@ -178,13 +221,25 @@ form?.addEventListener('submit', async event => {
 
         const order = response.data.order;
         form.reset();
-        renderCart([]);
+        renderCart([], { subtotal: 0, costoEnvio: 0, total: 0 });
         setMessage(`Pedido ${order.numeroOrden} creado correctamente.`, 'exito');
 
         const whatsappUrl = safeExternalUrl(order.whatsappUrl);
         if (whatsappUrl && whatsappLink) {
             whatsappLink.href = whatsappUrl;
             whatsappLink.hidden = false;
+        }
+
+        // El pedido queda `pendiente`: el stock ya se descontó, pero el pago se
+        // confirma hablando con la tienda. El mensaje verde de arriba decía
+        // "creado correctamente" sin mencionar que faltaba ese paso, y quien
+        // cerraba la pestaña dejaba la compra a medias sin saberlo. Ahora se dice
+        // de forma explícita, sin sacar al usuario de la web.
+        if (avisoElement) {
+            avisoElement.textContent = whatsappUrl
+                ? 'Tu pedido quedó registrado y el stock está reservado. Falta confirmar el pago con la tienda: pulsa "Confirmar por WhatsApp" o escríbenos al número que aparece en el chat. Tu pedido aparece en "Mis pedidos".'
+                : 'Tu pedido quedó registrado y el stock está reservado. Contacta a la tienda para confirmar el pago. Tu pedido aparece en "Mis pedidos".';
+            avisoElement.hidden = false;
         }
 
         // El pedido ya está hecho y el carrito vacío: el botón NO vuelve a
