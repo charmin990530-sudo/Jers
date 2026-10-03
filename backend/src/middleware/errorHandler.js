@@ -34,10 +34,28 @@ export const notFound = (req, res, next) => {
  * Oculta secretos que puedan aparecer dentro de un mensaje de error antes de
  * escribirlo en el log o devolverlo. Cubre tokens en query strings y pares
  * clave:valor tipo Authorization/Cookie/JWT.
+ *
+ * El tercer patrón es para credenciales dentro de una URL
+ * (`rediss://user:clave@host`). B-32 lo daba por posible, sin confirmar, y se
+ * comprobó que los drivers de Mongo y Redis NO ponen la URL ni la clave en sus
+ * mensajes de error: se probaron cuatro caminos reales —conexión rechazada,
+ * autenticación fallida, protocolo inválido y host inalcanzable— y en ninguno sale
+ * la contraseña. Aun así se cubre el patrón, porque `redact` se aplica a TODO
+ * mensaje de error, incluidos los de terceros, y una sola línea evita que el día
+ * que un driver o una dependencia sí lo incluya, no haya nada que arreglar ese día.
  */
 const redact = value => String(value ?? '')
   .replace(/([?&](?:token|code|email|password|secret|access_token|refresh_token)=)[^&\s]*/gi, '$1[REDACTED]')
-  .replace(/(authorization|cookie|set-cookie|jwt|password|secret)(\s*[:=]\s*)[^\s,;]+/gi, '$1$2[REDACTED]');
+  // Cabeceras cuyo valor entero es secreto: se corta al fin de línea, no al primer
+  // espacio. Antes el patrón era `[^\s,;]+`, o sea que de
+  // `Authorization: Bearer eyJhbGci...` solo salía "Bearer" y el JWT entero se
+  // quedaba en el log. Con Cookie pasaba igual: de `Cookie: session=abc; otra=def`
+  // solo se tapaba el primer valor.
+  .replace(/(authorization|proxy-authorization|cookie|set-cookie)(\s*[:=]\s*)[^\n]+/gi, '$1$2[REDACTED]')
+  // El resto son valores de una sola palabra: basta con cortar en espacio o coma.
+  .replace(/(jwt|password|secret|api[-_]?key)(\s*[:=]\s*)[^\s,;]+/gi, '$1$2[REDACTED]')
+  // El usuario puede ir vacío, que es la forma habitual de las URLs de Redis.
+  .replace(/([a-z][a-z0-9+.-]*:\/\/)([^/\s:@]*):([^/\s@]+)@/gi, '$1$2:[REDACTED]@');
 
 const requestPath = req => String(req.originalUrl || '').split('?')[0];
 
