@@ -23,6 +23,24 @@
  * sirve el frontend desde otro host a proposito.
  */
 
+/**
+ * Lee el `content` de un `<meta name="...">` del HTML.
+ *
+ * Antes el numero de WhatsApp hacia la misma consulta dos veces (una con `?.` y
+ * otra sin) y `querySelector` devolvia `Element`, que no declara `content`. El
+ * cast a `HTMLMetaElement` de abajo resuelve lo segundo para el type-check.
+ *
+ * @param {string} nombre
+ * @returns {string|null}
+ */
+const leerMeta = (nombre) => {
+    if (typeof document === 'undefined') return null;
+    const meta = /** @type {HTMLMetaElement|null} */ (
+        document.querySelector(`meta[name="${nombre}"]`)
+    );
+    return meta?.content ?? null;
+};
+
 const normalizar = valor => {
     try {
         const url = new URL(valor);
@@ -128,24 +146,6 @@ export const formatearFecha = (valor, estilo = 'corta') => {
     if (estilo === 'larga') return FECHA_LARGA.format(fecha);
     if (estilo === 'hora') return FECHA_HORA.format(fecha);
     return FECHA_CORTA.format(fecha);
-};
-
-/**
- * Lee el `content` de un `<meta name="...">` del HTML.
- *
- * Antes el numero de WhatsApp hacia la misma consulta dos veces (una con `?.` y
- * otra sin) y `querySelector` devolvia `Element`, que no declara `content`. El
- * cast a `HTMLMetaElement` de abajo resuelve lo segundo para el type-check.
- *
- * @param {string} nombre
- * @returns {string|null}
- */
-const leerMeta = (nombre) => {
-    if (typeof document === 'undefined') return null;
-    const meta = /** @type {HTMLMetaElement|null} */ (
-        document.querySelector(`meta[name="${nombre}"]`)
-    );
-    return meta?.content ?? null;
 };
 
 export const CONFIG = {

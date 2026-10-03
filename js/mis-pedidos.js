@@ -15,6 +15,18 @@ import { formatearPrecio, formatearFecha as formatearFechaGlobal } from './confi
 import { iniciarAplicacion, mostrarToast, abrirModal, cerrarModal } from './app.js';
 import { escapeHTML, safeAssetUrl } from './sanitize.js';
 
+// Las tres funciones locales de fecha se sustituyen por formatearFecha de
+// js/config.js, que valida antes de formatear. Con createdAt nulo o en un
+// formato inesperado, `new Date(x).toLocaleDateString()` pintaba "Invalid Date"
+// en la tabla de pedidos; ahora sale "—".
+//
+// Se declaran aqui arriba, y no al final del archivo, porque se usan mas abajo y
+// en funciones que se invocan mientras el modulo se evalua: una `const` llamada
+// antes de su declaracion da ReferenceError (no-use-before-define).
+const formatearFecha = fecha => formatearFechaGlobal(fecha, 'corta');
+const formatearFechaCompleta = fecha => formatearFechaGlobal(fecha, 'hora');
+const formatearFechaHora = fecha => formatearFechaGlobal(fecha, 'hora');
+
 // Estado
 let paginaActual = 1;
 let estadoFiltro = '';
@@ -560,11 +572,3 @@ function formatearMonto(valor) {
     const monto = Number(valor);
     return formatearPrecio(monto);
 }
-
-// Las tres funciones locales de fecha se sustituyen por formatearFecha de
-// js/config.js, que valida antes de formatear. Con createdAt nulo o en un
-// formato inesperado, `new Date(x).toLocaleDateString()` pintaba "Invalid Date"
-// en la tabla de pedidos; ahora sale "—".
-const formatearFecha = fecha => formatearFechaGlobal(fecha, 'corta');
-const formatearFechaCompleta = fecha => formatearFechaGlobal(fecha, 'hora');
-const formatearFechaHora = fecha => formatearFechaGlobal(fecha, 'hora');

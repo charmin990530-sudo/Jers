@@ -133,20 +133,6 @@ const productSchema = new mongoose.Schema({
   toObject: { virtuals: true },
 });
 
-productSchema.pre('validate', function () {
-  if (!this.slug && this.nombre) {
-    this.slug = this.nombre
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  }
-  if (!this.sku && this.nombre) {
-    this.sku = generarSku(this.nombre);
-  }
-});
-
 /**
  * SKU único: "BJ-BAS-3F2A9C" (3 letras del nombre + sufijo aleatorio).
  *
@@ -162,6 +148,20 @@ const generarSku = nombre => {
   const prefijo = String(nombre || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'GEN';
   return `BJ-${prefijo}-${randomUUID().slice(0, 6).toUpperCase()}`;
 };
+
+productSchema.pre('validate', function () {
+  if (!this.slug && this.nombre) {
+    this.slug = this.nombre
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+  if (!this.sku && this.nombre) {
+    this.sku = generarSku(this.nombre);
+  }
+});
 
 // Virtual: % descuento calculado dinámicamente
 // Ej: precioAnterior=100, precio=80 -> 20%

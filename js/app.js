@@ -13,7 +13,7 @@
  * - index.js     -> GET /api/products/featured + /api/products/promociones
  */
 
-import { CONFIG } from './config.js';
+import { CONFIG, formatearPrecio } from './config.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
 import {
     mostrarErrorCampo,
@@ -488,9 +488,12 @@ export function renderizarPromociones(
 // así que aquí dentro `iniciarCarrito` sería undefined y `iniciarAplicacion()`
 // reventaría con ReferenceError en todas las páginas. Por eso se importa y
 // además se reexporta, que es lo que necesitan las páginas que usan app.js.
+//
+// `formatearPrecio` se importa arriba, con el resto de imports, y no aquí: una
+// `const` usada antes de su declaración da ReferenceError cuando la función que
+// la contiene se invoca durante la evaluación del módulo (no-use-before-define).
 import { iniciarCarrito } from './carrito.js';
 import { iniciarBusqueda } from './busqueda.js';
-import { formatearPrecio } from './config.js';
 
 export { iniciarCarrito, formatearPrecio };
 

@@ -124,6 +124,9 @@ let avisoTimer = null;
  * nueva lo recibe solo. `role="status"` (no `alert`) para no interrumpir al
  * lector de pantalla a mitad de una tarea.
  */
+/** El panel lateral del carrito. Se declara antes de su primer uso, en `avisar()` y `abrirCarrito()`. */
+const panelCarrito = () => document.getElementById('carritoPanel') || document.querySelector('.carrito-panel');
+
 const asegurarAviso = () => {
     const panel = panelCarrito();
     if (!panel || document.getElementById('carritoAviso')) return;
@@ -219,7 +222,6 @@ function pintar() {
 // Por eso el HTML lo marca `aria-hidden="true" inert` y aqui se quita al abrir.
 // `inert` es lo que de verdad saca los descendientes del foco en los navegadores
 // que lo soportan; `aria-hidden` cubre el resto.
-const panelCarrito = () => document.getElementById('carritoPanel') || document.querySelector('.carrito-panel');
 const botonCarrito = () => document.querySelector('.carrito-icono');
 let ultimoFocoEnCarrito = null;
 
