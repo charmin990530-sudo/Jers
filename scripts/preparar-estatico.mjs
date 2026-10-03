@@ -38,6 +38,10 @@ const copiar = (desde, hasta) => {
     }
     return 1;
   }
+  // Las declaraciones de tipo (.d.ts) solo existen para el type-check en local.
+  // El navegador no las carga, y este script copia la carpeta `js/` entera, asi
+  // que sin esto cada despliegue subia el archivo a `public/js/`.
+  if (/\.d\.ts$/i.test(desde)) return 0;
   fs.mkdirSync(path.dirname(hasta), { recursive: true });
   fs.copyFileSync(desde, hasta);
   return 1;
