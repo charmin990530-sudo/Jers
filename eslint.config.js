@@ -131,11 +131,9 @@ export default [
     rules: baseRules,
   },
 
-  // ---- Tests ---------------------------------------------------------------
+  // ---- Tests del backend ---------------------------------------------------
   {
-    // Los del backend viven en backend/tests y los del frontend en
-    // tests/frontend (arbol distinto: los segundos importan `js/`, no `backend/src`).
-    files: ['backend/tests/**/*.js', 'tests/frontend/**/*.js'],
+    files: ['backend/tests/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -147,6 +145,31 @@ export default [
     rules: {
       ...baseRules,
       // Los fixtures de test declaran variables que no siempre se usan.
+      'no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none',
+      }],
+    },
+  },
+
+  // ---- Tests del frontend --------------------------------------------------
+  {
+    // Van en su propio bloque y no con los de backend porque necesitan los dos
+    // entornos: un test de frontend sustituye el `fetch` de Node Y usa el DOM
+    // (jsdom), y con un solo `globals` faltan la mitad de los identificadores.
+    files: ['tests/frontend/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+        ...globals.jest,
+      },
+    },
+    rules: {
+      ...baseRules,
       'no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
