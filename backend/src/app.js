@@ -146,9 +146,15 @@ app.use((req, res, next) => {
 // despliegue y da errores de consola en el otro.
 //
 // - cdn.jsdelivr.net: GSAP y ScrollTrigger, que carga bienvenida.html.
-// - fonts.googleapis.com: los CSS de las tipografías (eso va en style-src).
+//
+// Ya no está fonts.googleapis.com: las tipografías se sirven desde el repo
+// (font/, declaradas en css/fuentes.css). Ver B-35 en css/fuentes.css, que
+// explica por qué el arreglo clásico con onload= no valía aquí: la CSP bloquea
+// los manejadores inline. Por eso CDN_STYLES se queda vacío; si algún día
+// vuelve a hacer falta un CSS externo, hay que volver a añadir el dominio AQUÍ y
+// en vercel.json, porque las dos CSP tienen que seguir coincidiendo.
 const CDN_SCRIPTS = ['https://cdn.jsdelivr.net'];
-const CDN_STYLES = ['https://fonts.googleapis.com'];
+const CDN_STYLES = [];
 
 // ==========================================
 // CSP — por que hay otra en vercel.json (B-26)
@@ -182,7 +188,8 @@ const cspDirectives = nonce => ({
   defaultSrc: ["'self'"],
   scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`, ...CDN_SCRIPTS] : ["'self'", ...CDN_SCRIPTS],
   styleSrc: ["'self'", "'unsafe-inline'", ...CDN_STYLES],
-  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+  // Sin fonts.gstatic.com: las tipografías son del mismo origen (B-35).
+  fontSrc: ["'self'", 'data:'],
   imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
   connectSrc: ["'self'", API_ORIGIN, ...FRONTEND_ALLOWED_ORIGINS],
   frameSrc: ["'none'"],
