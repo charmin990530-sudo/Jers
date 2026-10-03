@@ -40,6 +40,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # B-06. El linter y el type-check van ANTES que los tests: son mas rapidos
+      # y si algo esta mal tipado conviene enterarse antes de esperar 90 s.
+      #
+      # El type-check no cubre todo `js/`, y no por descuido: activarlo en los
+      # controladores de pagina daria cientos de errores de estrechamiento DOM
+      # que no son bugs. El alcance y el motivo estan en jsconfig.json.
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check frontend (checkJs)
+        run: npm run typecheck
+
       - name: Run tests
         run: npm test
         env:

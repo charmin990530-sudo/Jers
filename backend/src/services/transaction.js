@@ -37,28 +37,6 @@
 
 import mongoose from 'mongoose';
 
-/** Claves de error de Mongo/Servidor que significan "no hay soporte de transacciones". */
-const NO_TRANSACTION_CODES = new Set([
-  20,    // IllegalOperation: Transaction numbers are only allowed on a replica set member or mongos
-  263,   // OperationNotSupportedInTransaction
-  303,   // TransactionTooOldForHistory
-  251,   // NoSuchTransaction
-]);
-
-/**
- * Codigos que un despliegue puede devolver cuando un cliente intenta usar
- * transacciones sin replica set. Se lookout de mas de uno porque cambian entre
- * versiones del servidor y de la topologia (sharded devuelve otros).
- */
-const isMissingTransactionSupport = error => {
-  if (!error) return false;
-  if (NO_TRANSACTION_CODES.has(error.code)) return true;
-  if (typeof error.codeName === 'string' && /NotSupported|NoSuchTransaction|IllegalOperation/.test(error.codeName)) {
-    return /transaction/i.test(error.message || '') || error.code === 20;
-  }
-  return false;
-};
-
 let supportPromise = null;
 let warnedAboutNoSupport = false;
 

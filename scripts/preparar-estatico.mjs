@@ -55,19 +55,18 @@ const contar = dir => {
 fs.rmSync(DESTINO, { recursive: true, force: true });
 fs.mkdirSync(DESTINO, { recursive: true });
 
-let copiados = 0;
 const faltantes = [];
 
 for (const pagina of PAGINAS) {
   const origen = path.join(RAIZ, pagina);
   if (!fs.existsSync(origen)) { faltantes.push(pagina); continue; }
-  copiados += copiar(origen, path.join(DESTINO, pagina));
+  copiar(origen, path.join(DESTINO, pagina));
 }
 
 for (const carpeta of CARPETAS) {
   const origen = path.join(RAIZ, carpeta);
   if (!fs.existsSync(origen)) { faltantes.push(carpeta); continue; }
-  copiados += copiar(origen, path.join(DESTINO, carpeta));
+  copiar(origen, path.join(DESTINO, carpeta));
 }
 
 console.log(`Estático preparado en public/ -> ${contar(DESTINO)} archivos`);

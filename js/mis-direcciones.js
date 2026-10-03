@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function verificarAuthYCargar() {
     // Proteccion centralizada (js/rutas.js): sin sesion se va al login
     // conservando esta URL para volver aqui al entrar.
-    const { ok } = await protegerRuta({ pantalla: 'mis-direcciones' });
+    const { ok } = await protegerRuta();
     if (!ok) return;
     const response = await getMe();
     if (!response.ok) {
@@ -131,7 +131,7 @@ function renderizarDirecciones() {
     });
 
     contenedor.querySelectorAll('.btn-eliminar-direccion').forEach(btn => {
-        btn.addEventListener('click', () => abrirModalEliminar(btn.dataset.id, btn.dataset.alias));
+        btn.addEventListener('click', () => abrirModalEliminar(btn.dataset.id));
     });
 }
 
@@ -247,9 +247,8 @@ function inicializarModalEliminar() {
 /**
  * Abre modal confirmar eliminar
  * @param {string} addressId
- * @param {string} alias
  */
-function abrirModalEliminar(addressId, alias) {
+function abrirModalEliminar(addressId) {
     direccionAEliminar = addressId;
     abrirModal(document.getElementById('modalEliminar'));
 }
@@ -416,7 +415,7 @@ function validarCampoDireccion(input) {
         alias: { min: 2, max: 30, msg: 'El alias debe tener entre 2 y 30 caracteres' },
         nombreCompleto: { min: 2, max: 100, msg: 'El nombre debe tener entre 2 y 100 caracteres' },
         telefono: { 
-            validator: (v) => /^[\d\s\-\+\(\)]{7,20}$/.test(v), 
+            validator: (v) => /^[\d\s\-+()]{7,20}$/.test(v), 
             msg: 'Teléfono inválido' 
         },
         direccion: { min: 5, max: 200, msg: 'La dirección debe tener entre 5 y 200 caracteres' },
@@ -427,7 +426,7 @@ function validarCampoDireccion(input) {
     const regla = reglas[name];
     if (!regla) return true;
 
-    let valido = true;
+    let valido;
     if (regla.validator) {
         valido = regla.validator(value);
     } else {

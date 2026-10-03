@@ -20,7 +20,7 @@ const CATEGORIAS_CABELLO = {
 };
 
 // Estado de la página
-let catalogoCache = {}; // Cache simple para no recargar al cambiar pestaña
+const catalogoCache = {}; // Cache simple para no recargar al cambiar pestaña
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Inicializa componentes compartidos (menú, carrito, chatbot, etc.)

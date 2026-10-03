@@ -201,7 +201,7 @@ export async function request(endpoint, options = {}) {
         return { ok: true, msg: 'Operación exitosa', data: null };
     }
 
-    let datos = null;
+    let datos;
     try {
         datos = await respuesta.json();
     } catch {
@@ -399,10 +399,16 @@ export const deleteUser = id => request(`/users/${id}`, { method: 'DELETE' });
  *
  * @param {object} respuesta - La respuesta de `request()`, ya normalizada.
  * @param {string} [porDefecto='Error en la petición']
- * @returns {Error} Con `.data`, `.status` y `.message`.
+ * @returns {Error & {data: object|null, status: number|null}} Con `.data`,
+ *   `.status` y `.message`.
  */
 export const apiErrorFromResponse = (respuesta, porDefecto = 'Error en la petición') => {
-    const error = new Error(respuesta?.msg || porDefecto);
+    // El cast va en la creacion, no solo en el `@returns`: TS valida el cuerpo
+    // contra el valor de aqui, y `new Error()` no trae `.data` ni `.status`.
+    // En runtime no cambia nada: el objeto sigue siendo un Error normal.
+    const error = /** @type {Error & {data: object|null, status: number|null}} */ (
+        new Error(respuesta?.msg || porDefecto)
+    );
     error.data = respuesta?.data ?? null;
     error.status = respuesta?.data?.status ?? null;
     return error;

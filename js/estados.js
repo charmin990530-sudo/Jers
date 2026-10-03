@@ -97,6 +97,7 @@ export const renderError = (contenedor, mensaje = 'No pudimos cargar los product
  * @param {Function} opciones.alReintentar
  * @param {string} [opciones.vacio]
  * @param {Function} [opciones.alRecibir] - Recibe la lista y la pinta.
+ * @param {number} [opciones.intento=1] - Numero de reintento, para el mensaje.
  * @returns {Array} La lista de productos, o [] si no hubo datos válidos.
  */
 export const resolverCatalogo = (contenedor, respuesta, opciones) => {

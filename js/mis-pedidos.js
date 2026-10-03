@@ -19,7 +19,6 @@ import { escapeHTML, safeAssetUrl } from './sanitize.js';
 let paginaActual = 1;
 let estadoFiltro = '';
 let totalPaginas = 1;
-let pedidosCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     iniciarAplicacion();
@@ -57,7 +56,7 @@ function inicializarModalCancelar() {
 async function verificarAuthYCargar() {
     // Proteccion centralizada (js/rutas.js). Sin sesion, api.js lleva al login
     // conservando esta URL; no hace falta un "sin sesion" dibujado a mano.
-    const { ok } = await protegerRuta({ pantalla: 'mis-pedidos' });
+    const { ok } = await protegerRuta();
     if (!ok) return;
     const response = await getMe();
     if (!response.ok) {
@@ -98,7 +97,6 @@ async function cargarPedidos(page = 1) {
     paginaActual = Number(response.data?.page) || page;
     totalPaginas = Number(response.data?.pages) || 1;
 
-    pedidosCache = pedidos;
     renderizarPedidos(pedidos);
     actualizarPaginacion(paginaActual, totalPaginas, Number(response.data?.total) || pedidos.length);
 }

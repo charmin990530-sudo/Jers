@@ -32,10 +32,9 @@ const RESUELTO = new WeakMap();
 /**
  * @param {object} [opciones]
  * @param {boolean} [opciones.requiereAdmin=false]
- * @param {string}   [opciones.pantalla] - Etiqueta para el log.
  * @returns {Promise<{ok: boolean, user: object|null}>}
  */
-export const protegerRuta = async ({ requiereAdmin = false, pantalla = 'ruta' } = {}) => {
+export const protegerRuta = async ({ requiereAdmin = false } = {}) => {
     // Idempotente: si la pantalla ya se resolvió, se devuelve el mismo usuario
     // sin volver a preguntar. Evita dos viajes de red al cargar la misma vista.
     if (RESUELTO.has(document.body)) return RESUELTO.get(document.body);

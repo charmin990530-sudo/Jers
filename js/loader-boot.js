@@ -13,32 +13,32 @@
 (function () {
   'use strict';
 
-  var MINIMO_MS = 700;
-  var MAXIMO_MS = 4000;
-  var inicio = Date.now();
-  var oculto = false;
+  const MINIMO_MS = 700;
+  const MAXIMO_MS = 4000;
+  const inicio = Date.now();
+  let oculto = false;
 
   function construirMarca() {
-    var marca = document.createElement('div');
+    const marca = document.createElement('div');
     marca.className = 'loader-marca';
 
-    var letras = ['J', 'e', 'r', 's'];
-    for (var i = 0; i < letras.length; i++) {
-      var letra = document.createElement('span');
+    const letras = ['J', 'e', 'r', 's'];
+    for (let i = 0; i < letras.length; i++) {
+      const letra = document.createElement('span');
       letra.className = 'loader-inicial';
       letra.style.setProperty('--i', i);
       letra.textContent = letras[i];
       marca.appendChild(letra);
     }
 
-    var texto = document.createElement('span');
+    const texto = document.createElement('span');
     texto.className = 'loader-texto';
     texto.textContent = 'By Jers';
     marca.appendChild(texto);
 
-    var barra = document.createElement('span');
+    const barra = document.createElement('span');
     barra.className = 'loader-barra';
-    var progreso = document.createElement('span');
+    const progreso = document.createElement('span');
     progreso.className = 'loader-progreso';
     barra.appendChild(progreso);
     marca.appendChild(barra);
@@ -47,7 +47,7 @@
   }
 
   function crearLoader() {
-    var loader = document.createElement('div');
+    const loader = document.createElement('div');
     loader.id = 'page-loader';
     loader.className = 'page-loader';
     loader.setAttribute('role', 'status');
@@ -65,7 +65,7 @@
 
   function ocultar() {
     if (oculto) return;
-    var loader = document.getElementById('page-loader');
+    const loader = document.getElementById('page-loader');
     if (!loader) {
       oculto = true;
       return;
@@ -80,8 +80,8 @@
   }
 
   function ocultarRespetandoMinimo() {
-    var transcurrido = Date.now() - inicio;
-    var restante = Math.max(0, MINIMO_MS - transcurrido);
+    const transcurrido = Date.now() - inicio;
+    const restante = Math.max(0, MINIMO_MS - transcurrido);
     if (window.setTimeout) window.setTimeout(ocultar, restante);
     else ocultar();
   }

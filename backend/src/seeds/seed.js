@@ -1,7 +1,6 @@
-import mongoose from 'mongoose';
 import { User, Category, Brand, Product } from '../models/index.js';
 import { connectDB } from '../config/db.js';
-import { MONGODB_URI, NODE_ENV } from '../config/env.js';
+import { NODE_ENV } from '../config/env.js';
 
 const categoriesData = [
   { nombre: 'rostro', slug: 'rostro', descripcion: 'Bases, correctores, polvos y primers', orden: 1 },

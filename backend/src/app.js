@@ -6,7 +6,7 @@ import './instrument.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import crypto, { randomBytes } from 'crypto';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { dirname, resolve, join } from 'path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -20,7 +20,6 @@ import {
   PORT,
   HOST,
   NODE_ENV,
-  FRONTEND_URL,
   FRONTEND_ALLOWED_ORIGINS,
   API_ORIGIN,
   RATE_LIMIT_WINDOW_MS, 
@@ -80,7 +79,6 @@ let redisClient = null;
 let redisGeneralStore = null;
 let redisAuthStore = null;
 let redisContactStore = null;
-let redisError = null;
 
 if (REDIS_ENABLED) {
   redisClient = createClient({
@@ -114,7 +112,6 @@ if (REDIS_ENABLED) {
   } catch (error) {
     // Sin Redis se cae al store en memoria: menos estricto, pero la API
     // sigue respondiendo en vez de desaparecer por completo.
-    redisError = error;
     // `disconnect()` es async y lanza ClientClosedError cuando el socket nunca
     // llegó a abrir (justo este caso, el de Redis caído). Sin await el
     // try/catch no lo captura, el rechazo queda sin manejar y tumba el proceso
