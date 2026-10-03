@@ -1,9 +1,13 @@
 /**
  * register.js - Lógica específica de la página de registro
  * Importa utilidades compartidas de auth.js y maneja el formulario de registro
+ *
+ * El registro NO deja conectado ni sincroniza el carrito: desde B-02,
+ * /api/auth/register responde igual exista o no la cuenta, y si solo autenticara en
+ * el caso real, una llamada a /api/auth/me volvería a delatarlo. El flujo acaba
+ * redirigiendo al login con el correo puesto.
  */
 
-import { sincronizar } from './carrito.js';
 import {
     validarEmail,
     validarTelefono,
@@ -16,7 +20,6 @@ import {
     mostrarMensajeGlobal,
     setBtnLoading,
     apiRegister,
-    redirigirTrasAuth,
     inicializarAuthComun,
 } from './auth.js';
 
@@ -222,10 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const primerError = form.querySelector('[aria-invalid="true"]');
                 primerError?.focus();
-            } else if (response.data?.code === 'EMAIL_EXISTS' || response.data?.status === 400) {
-                // Email ya registrado
-                mostrarErrorCampo(inputs.email, 'Este email ya está registrado');
-                inputs.email.focus();
+            } else if (response.data?.status === 400 && response.data?.code !== 'VALIDATION_ERROR') {
+                // Un 400 que no sea de validación ya no puede significar "el email
+                // está registrado": /api/auth/register responde IGUAL exista o no
+                // la cuenta (B-02), porque si no el endpoint serviría para montar un
+                // listado de clientes. Así que aquí no se puede (ni se debe) decir
+                // que el correo existe.
+                mostrarMensajeGlobal(form, response.msg || 'No se pudo crear la cuenta. Intenta de nuevo.', 'error');
             } else {
                 // Error genérico
                 mostrarMensajeGlobal(form, response.msg || 'Error al crear la cuenta. Intenta de nuevo.', 'error');
@@ -234,14 +240,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 6. Sincronizar carrito local → API
-        await sincronizar();
-
-        // 7. Notificar al carrito que cambió el estado de auth
-        window.dispatchEvent(new Event('auth-cambio'));
-
-        // 8. Éxito
-        mostrarMensajeGlobal(form, response.msg || '¡Cuenta creada con éxito! Bienvenida a By Jers 💕', 'exito');
+        // 6. Éxito.
+        //
+        // YA NO SE ENTRA AUTOMÁTICAMENTE, y no es un capricho: el registro no
+        // manda cookie de sesión (B-02). Si lo hiciera solo cuando la cuenta se
+        // crea de verdad, bastaría pedir /api/auth/me después para volver a saber
+        // si el correo existía. Sin cookie, la contraseña que el usuario acaba de
+        // escribir es lo único que distingue los dos casos, y para eso está el
+        // límite de 5 intentos del login.
+        //
+        // Por eso el carrito NO se sincroniza aquí: todavía no hay sesión.
+        mostrarMensajeGlobal(form, response.msg || 'Si esa cuenta no existía, la creamos. Ya puedes iniciar sesión.', 'exito');
 
         // Reset formulario visual
         form.reset();
@@ -256,8 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             setBtnLoading(btnRegister, false);
-            redirigirTrasAuth();
-        }, 1000);
+            // Al login, con el correo puesto: es el paso siguiente natural y
+            // ahorra que lo escriban a mano.
+            const destino = `/login?email=${encodeURIComponent(data.email)}`;
+            window.location.href = destino;
+        }, 2500);
     });
 
     // ==========================================

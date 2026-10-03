@@ -37,6 +37,9 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/auth/register', () => {
+    // El contrato del registro cambió con B-02: ya no devuelve `user`, ya no manda
+    // cookie y ya no dice si el correo existía. Ver register-enumeracion.test.js
+    // para por qué las tres cosas hacen falta.
     it('debe registrar un usuario nuevo exitosamente', async () => {
       const res = await request(app)
         .post('/api/auth/register')
@@ -44,15 +47,27 @@ describe('Auth API', () => {
         .expect(201);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.message).toBe('Registro exitoso. ¡Bienvenido a By Jers!');
-      expect(res.body.user).toBeDefined();
-      expect(res.body.user.email).toBe(testUser.email);
-      expect(res.body.user.nombre).toBe(testUser.nombre);
-      expect(res.body.user.password).toBeUndefined();
-      expect(res.headers['set-cookie']).toBeDefined();
+      expect(res.body.message).toContain('iniciar sesión');
+      // Ni datos del usuario ni sesión: responder distinto según el caso sería la
+      // forma de enumerar los correos de los clientes.
+      expect(res.body.user).toBeUndefined();
+      expect(res.headers['set-cookie']).toBeUndefined();
+
+      // La cuenta existe de verdad y se puede entrar con la contraseña.
+      const guardado = await User.findOne({ email: testUser.email });
+      expect(guardado).not.toBeNull();
+      expect(guardado.password).not.toBe(testUser.password);
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: testUser.email, password: testUser.password })
+        .expect(200);
+      expect(login.body.user.email).toBe(testUser.email);
+      expect(login.body.user.password).toBeUndefined();
+      expect(login.headers['set-cookie']).toBeDefined();
     });
 
-    it('debe fallar si el email ya existe', async () => {
+    it('responde IGUAL si el email ya existe, y no crea nada', async () => {
       await User.create({
         ...testUser,
         password: await bcrypt.hash(testUser.password, 12)
@@ -61,11 +76,14 @@ describe('Auth API', () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send(testUser)
-        .expect(400);
+        .expect(201);
 
-      expect(res.body.error).toBeDefined();
-      expect(res.body.success).toBeUndefined();
-      expect(res.body.error.code).toBe('EMAIL_EXISTS');
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('iniciar sesión');
+      expect(res.body.error).toBeUndefined();
+      expect(res.body.user).toBeUndefined();
+      expect(res.headers['set-cookie']).toBeUndefined();
+      await expect(User.countDocuments({ email: testUser.email })).resolves.toBe(1);
     });
 
     it('debe fallar con datos inválidos (validación Zod)', async () => {
@@ -83,7 +101,8 @@ describe('Auth API', () => {
 
   describe('POST /api/auth/login', () => {
     beforeEach(async () => {
-      // Use register endpoint to create user properly (handles password hashing)
+      // Use register + login to create an authenticated user properly (the
+      // register endpoint hashes the password but no longer logs you in, B-02)
       await request(app)
         .post('/api/auth/register')
         .send(testUser);

@@ -27,7 +27,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/index.js';
 import { JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER, JWT_AUDIENCE, JWT_EXPIRES_IN, SESSION_EXPIRES_IN, REMEMBER_ME_EXPIRES_IN, getDurationMs, JWT_COOKIE_NAME, COOKIE_SECURE, COOKIE_SAME_SITE, FRONTEND_URL } from '../config/env.js';
-import { sendPasswordResetEmail } from '../services/emailService.js';
+import { sendPasswordResetEmail, sendDuplicateRegistrationEmail } from '../services/emailService.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
 
@@ -82,20 +82,56 @@ const sendTokenResponse = async (user, statusCode, res, message = 'Operación ex
 
 /**
  * POST /api/auth/register
- * Registra nuevo usuario, hashea password, setea cookie JWT
- * Body validado por schemas.register (Zod)
+ * Registra nuevo usuario. Body validado por schemas.register (Zod)
+ *
+ * POR QUÉ NO HAY "ESTE EMAIL YA ESTÁ REGISTRADO" (B-02)
+ * ---------------------------------------------------
+ * Este endpoint es público y sin sesión. Responder con un error distinto cuando el
+ * correo existe convierte `/api/auth/register` en un oracle: cualquiera que pueda
+ * mandar peticiones.POST puede escribir un script que recorra una lista de correos
+ * y quedarse con los que son clientes de la tienda. Es enumeración de clientes, y
+ * el propio proyecto lo llama en otro sitio: `forgotPassword`, unas líneas más
+ * abajo, sí responde siempre igual exista o no la cuenta. Aquí se aplica lo mismo.
+ *
+ * Las dos reglas que hay que respetar para que de verdad no se pueda distinguir:
+ *
+ *  1. **La respuesta es la misma**, con el mismo status, el mismo mensaje y sin
+ *     datos del usuario. Si una trae `user` y la otra no, se sigue viendo.
+ *  2. **Ninguna de las dos autentica.** Antes este endpoint ponía cookie de sesión
+ *     al registrarse, y si el caso duplicado no la pone, basta una llamada a
+ *     `/api/auth/me` para volver a distinguir los dos casos. Por eso el registro ya
+ *     no deja conectado: hay que iniciar sesión, y el login sí está limitado a 5
+ *     intentos por ventana (`AUTH_RATE_LIMIT_MAX_REQUESTS`), que es lo que hace
+ *     que el método de descubrimiento sea adivinar la contraseña, no leer un
+ *     endpoint.
+ *
+ * Cuando el correo ya existe se avisa a quien tiene la cuenta por correo, para que
+ * el cambio no sea un muro seco y para que pueda recuperar la clave si se le olvidó
+ * que ya estaba registrado.
  */
 export const register = asyncHandler(async (req, res, next) => {
   const { nombre, apellido, email, password, telefono, aceptoTerminos, aceptoPrivacidad } = req.body;
 
-  // Verificar email único (aunque unique index en BD lo garantiza, mejor error amigable)
+  // Idéntico en los dos casos, a propósito. Ver la nota de arriba.
+  const MENSAJE = 'Si esa cuenta no existía, la creamos. Ya puedes iniciar sesión con tu correo.';
+
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return next(new AppError('Este email ya está registrado', 400, ErrorCodes.EMAIL_EXISTS));
+    try {
+      await sendDuplicateRegistrationEmail({
+        to: existingUser.email,
+        nombre: existingUser.nombre,
+      });
+    } catch (error) {
+      // Que falle el aviso NO puede cambiar la respuesta: si el aviso falla solo
+      // unas veces, ese fallo es la señal que permite enumerar. Se registra y ya.
+      console.error('No se pudo avisar del intento de registro duplicado:', error.message);
+    }
+    return res.status(201).json({ success: true, message: MENSAJE });
   }
 
   // Crea usuario (password se hashea en pre-save middleware del modelo)
-  const user = await User.create({
+  await User.create({
     nombre,
     apellido,
     email,
@@ -107,8 +143,10 @@ export const register = asyncHandler(async (req, res, next) => {
     fechaAceptacionPrivacidad: new Date(),
   });
 
-  // 201 Created + cookie + user data
-  await sendTokenResponse(user, 201, res, 'Registro exitoso. ¡Bienvenido a By Jers!');
+  // Sin cookie a propósito: es la condición 2 de la nota de arriba. La contraseña
+  // con la que se acaba de registrarse es la única forma de distinguir el caso
+  // real, y eso ya lo protege el límite de intentos del login.
+  res.status(201).json({ success: true, message: MENSAJE });
 });
 
 /**

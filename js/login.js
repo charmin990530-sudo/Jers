@@ -34,6 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailInput = form.querySelector('#email');
     const passwordInput = form.querySelector('#password');
 
+    // El registro redirige aquí con ?email=..., porque desde B-02 el registro no
+    // deja conectado y el paso siguiente es iniciar sesión. Se rellena y se centra
+    // para que el usuario solo tenga que escribir la contraseña.
+    const emailDeLaUrl = new URLSearchParams(window.location.search).get('email');
+    if (emailDeLaUrl && emailInput && validarEmail(emailDeLaUrl)) {
+        emailInput.value = emailDeLaUrl;
+        passwordInput?.focus();
+    }
+
     // Validar email al salir del campo
     emailInput?.addEventListener('blur', () => {
         if (emailInput.value && !validarEmail(emailInput.value)) {

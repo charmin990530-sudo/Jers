@@ -46,14 +46,22 @@ const conCsrf = (agent, method) => (url, body, headers = {}) => {
   return req;
 };
 
+// Registra Y entra. Desde B-02 el registro ya no deja conectado: hace falta el
+// login aparte para tener cookie de sesión. Además el registro ya no devuelve
+// `user`, así que el id sale de la respuesta del login.
 const registrar = async email => {
   const agent = await nuevoAgente();
-  const res = await conCsrf(agent, 'post')('/api/auth/register', {
+  const alta = await conCsrf(agent, 'post')('/api/auth/register', {
     nombre: 'Cli', apellido: 'Prueba', email, password: 'ClaveSegura123',
     aceptoTerminos: true, aceptoPrivacidad: true,
   });
-  expect(res.status).toBe(201);
-  return { agent, id: res.body.user.id };
+  expect(alta.status).toBe(201);
+
+  const login = await conCsrf(agent, 'post')('/api/auth/login', {
+    email, password: 'ClaveSegura123',
+  });
+  expect(login.status).toBe(200);
+  return { agent, id: login.body.user.id };
 };
 
 let admin;
@@ -86,12 +94,18 @@ beforeEach(async () => {
   ]);
 
   admin = await nuevoAgente();
+  const correoAdmin = `admin_${Date.now()}_${Math.random()}@byjers.com`;
   const alta = await conCsrf(admin, 'post')('/api/auth/register', {
-    nombre: 'Admin', apellido: 'Fin', email: `admin_${Date.now()}_${Math.random()}@byjers.com`,
+    nombre: 'Admin', apellido: 'Fin', email: correoAdmin,
     password: 'ClaveSegura123', aceptoTerminos: true, aceptoPrivacidad: true,
   });
   expect(alta.status).toBe(201);
-  await User_setRole(alta.body.user.id, 'admin');
+  // El registro no deja conectado desde B-02, así que el id sale del login.
+  const sesionAdmin = await conCsrf(admin, 'post')('/api/auth/login', {
+    email: correoAdmin, password: 'ClaveSegura123',
+  });
+  expect(sesionAdmin.status).toBe(200);
+  await User_setRole(sesionAdmin.body.user.id, 'admin');
 
   cliente = await registrar(`cliente_${Date.now()}_${Math.random()}@byjers.com`);
 });
