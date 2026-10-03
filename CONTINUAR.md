@@ -6,7 +6,8 @@ hace falta para seguir sin tener que releer 15.000 líneas de código.
 - **Fecha de corte:** 3 de octubre de 2026, tras la segunda sesión (cerró los bloques 8 y 9).
 - **Rama:** `audit/fixes` (creada desde `master` @ `e19cdba`, árbol limpio).
 - **Base de datos:** `mongodb://127.0.0.1:27017/by-jers` (local, sin réplica).
-- **Estado:** 199 tests pasan, lint y type-check en verde, el backend corre y sirve la web.
+- **Estado:** 295 tests pasan (252 backend + 43 frontend), lint y type-check en
+verde, el backend corre y sirve la web.
 
 Si solo puedes leer una sección, lee **§1**. Si solo vas a hacer una cosa, haz **§4.1**.
 
@@ -107,7 +108,9 @@ regenerar `public/`.
 ## 3. Comandos de verificación
 
 ```bash
-npm test                    # 199 tests, 13 suites, ~90 s
+npm test                    # backend (252) + frontend (43), ~95 s
+npm run test:frontend       # solo los 43 del frontend, ~2 s
+npm run test:backend        # solo los del backend, ~90 s
 npm run check               # lint + type-check, lo que corre el CI
 npm run lint                # ESLint 10 sobre todo el repo
 npm run typecheck           # tsc -p jsconfig.json (checkJs del núcleo del front)
@@ -149,40 +152,40 @@ Si algún día hay que volver a Atlas: descomentar la de Atlas y comentar la loc
 Lo que sigue es lo único abierto. Todo lo de los bloques 8 y 9 está cerrado; el
 estado completo, hallazgo por hallazgo, está en `AUDITORIA.md` §9.
 
-### 4.1 B-05 — tests de frontend (lo más rentable que queda)
+### 4.1 B-05 — ampliar los tests de frontend
 
-Cero cobertura del código donde están todos los bugs. Y hay una razón nueva para
-atenderlo: el `ReferenceError` de `js/config.js` (`e8d11df`) estuvo vivo dos
-commits con **los 199 tests en verde**, porque ningún test carga los módulos del
-navegador. Un `const` usado antes de su declaración es justo la clase de fallo de
-A-03 y A-08, y no lo ve nadie hasta que se abre la página.
+Hay suite: 43 tests sobre `js/api.js` (el contrato de red), `js/carrito.js` (la
+lógica que decide cuánto se cobra, incluida la defensa contra el envenenamiento y
+el invariante que rompió C-02) y `setBtnLoading`. Corre con `npm run test:frontend`
+y la arranca `npm test` también.
 
-Ahora hay dos caminos y la segunda es mejor que la que se planteaba aquí:
+Lo que **no** está cubierto:
 
-1. **jsdom**, como decía este documento. Barato, pero `jsdom` no ejecuta el
-   layout ni el ciclo real de carga de módulos.
-2. **Firefox headless**, que ya está en la máquina y se usó en la segunda sesión.
-   Carga la página de verdad y escribe los errores de JavaScript en stderr, así que
-   un test puede afirmar "esta página carga sin errores", que es exactamente lo
-   que faltaba. La receta está en §3.
+- Los controladores de página: `producto.js`, `checkout.js`, `mis-pedidos.js`,
+  `mi-perfil.js` y el resto. Son unos 25 módulos de DOM.
+- `js/api.js` contra la API de verdad: los tests usan un `fetch` simulado, así que
+  un cambio en el contrato del backend no lo detecta esa suite (lo detectan los
+  tests de backend, pero no el vínculo entre ambos).
+- El pago, que además depende de M-15.
+
+La vía para seguir es un test de integración con Firefox headless, no jsdom: el
+arnés ya funciona (receta en §3), carga la página de verdad y escribe los errores
+de JavaScript en stderr, así que un test puede afirmar "el flujo de compra
+completo carga sin errores y pinta el total", que es lo que de verdad falta.
 
 ### 4.2 Lo demás que queda abierto
 
-- **B-02:** `EMAIL_EXISTS` confirma la existencia del email en un endpoint público,
-  lo que permite construir un listado de clientes. La mitigación ya existe en
-  `forgotPassword` y no se aplica en `register`.
-- **B-21:** 13 formularios con `method="post"` y sin `action`. Con JS el
-  `preventDefault()` lo evita, pero si un módulo ES falla al cargar, el formulario
-  hace POST a la página actual y `login.html` muestra JSON crudo.
-- **B-22:** el formulario de contacto no tiene estado de carga: `setBtnLoading()`
-  busca `.btn-texto` y `.btn-loader`, y su botón no tiene ninguno.
-- **B-32:** el hostname del cluster ya se enmascara en producción; falta aplicar
-  `redact()` a los mensajes de los drivers de Redis y Mongo en los logs.
-- **B-33:** el shim de `api/index.js` reconstruye `req.url` con la subruta de
-  `req.query.path` sin validarla. Hoy no hay bypass, el impacto real es un 404 en
-  vez de un 400, pero conviene validar con un patrón estricto.
+- **B-02, y este es el único que queda abierto de verdad:** `EMAIL_EXISTS`
+  confirma la existencia del email en un endpoint público, lo que permite construir
+  un listado de clientes. La mitigación ya existe en el mismo archivo
+  (`forgotPassword` responde siempre lo mismo) y no se aplica en `register`.
+  Arreglarlo **cambia lo que ve el usuario al registrarse**, así que es decisión
+  tuya y está pendiente.
 - **B-01:** quedan algunos conflictos de estado que devuelven 400 donde 409 sería
   lo correcto. Cosmético para el frontend actual, mejora el contrato.
+
+Cerrados en la tercera sesión, con su commit en `AUDITORIA.md` §9: B-05 (a medias,
+ver §4.1), B-21, B-22, B-32 y B-33.
 
 ---
 

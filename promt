@@ -18,9 +18,9 @@ El proyecto es una tienda de cosméticos (Node/Express + MongoDB + frontend
 HTML/CSS/JS vanilla) en:
 /home/juandagamer/Escritorio/Desarollo2026-20260903T192909Z-1-001/Desarollo 2026
 
-Estado: rama `audit/fixes`, 23 commits desde master, árbol limpio, 199 tests en
-verde, `npm run check` en verde, el backend se autoarranca con systemd de usuario
-(npm run autostart).
+Estado: rama `audit/fixes`, 28 commits desde master, árbol limpio, 295 tests en
+verde (252 backend + 43 frontend), `npm run check` en verde, el backend se
+autoarranca con systemd de usuario (npm run autostart).
 
 Empieza así:
 1. `git status` y `git log --oneline master..HEAD` para confirmar dónde estamos.
@@ -30,25 +30,30 @@ Empieza así:
 3. `npm run autostart:status` y `curl -s localhost:3000/api/health`.
 
 Los bloques 8 y 9 de CONTINUAR.md §4 están CERRADOS. No los rehagas: B-06,
-M-12/B-07, B-26, B-27 y B-35 están hechos, y B-23, B-24 y B-25 se cerraron sin
-tocar código porque decidiste dejarlos así.
+M-12/B-07, B-26, B-27, B-35, B-21, B-22, B-32 y B-33 están hechos, y B-23, B-24 y
+B-25 se cerraron sin tocar código porque decidiste dejarlos así.
 
-Queda esto, todo de prioridad baja (CONTINUAR.md §4.1 y §4.2 tienen el detalle):
+Queda esto (CONTINUAR.md §4.1 y §4.2 tienen el detalle):
 
-a) B-05, lo más rentable que queda: cero tests de frontend. Y hay un argumento
-   nuevo para hacerlo: el ReferenceError de js/config.js vivió dos commits con
-   los 199 tests en verde, porque ningún test carga los módulos del navegador.
-   No uses jsdom: hay Firefox headless en la máquina y la receta está en
-   CONTINUAR.md §3. Un test que afirme "esta página carga sin errores de
-   JavaScript" habría atrapado ese fallo.
+a) B-05, a medias: ya hay 43 tests de frontend (api.js, carrito.js, auth.js) y
+   corren en `npm test`. Falta lo importante: los ~25 controladores de página y
+   el flujo de compra completo. No uses jsdom: hay Firefox headless en la máquina
+   y la receta está en CONTINUAR.md §3. Un test que recorra el flujo de compra y
+   afirme que carga sin errores de JavaScript es lo que falta.
 
-b) B-02: `EMAIL_EXISTS` confirma la existencia del email en un endpoint público.
+b) B-02, el ÚNICO hallazgo abierto de verdad: `EMAIL_EXISTS` confirma la
+   existencia del email en un endpoint público, y eso permite construir un listado
+   de clientes. La mitigación ya existe en `forgotPassword` y no se aplica en
+   `register`. Pregúntame antes de tocarlo: cambiarlo cambia lo que ve el usuario
+   al registrarse.
 
-c) B-21 y B-22: 13 formularios con `method="post"` sin `action`, y el de contacto
-   sin estado de carga.
+c) B-01 parcial: algunos conflictos de estado devuelven 400 donde 409 sería lo
+   correcto.
 
-d) B-32 y B-33: `redact()` en los logs de los drivers, y validar la subruta del
-   shim de `api/index.js`.
+Cerrados en la tercera sesión: B-21 (los 13 botones de envío salen deshabilitados
+y los habilita el JS), B-22 (el botón de contacto dice "Enviando…"), B-32 (se
+verificó que los drivers NO filtran la URL, y se taparon 2 huecos reales de
+`redact`) y B-33 (la subruta del shim se valida antes de reescribir `req.url`).
 
 Reglas:
 - Un commit por problema, con mensaje que explique el porqué y el archivo:línea.
@@ -93,4 +98,4 @@ decisión de negocio.
   bug de zona muerta temporal en `js/config.js` y un `.d.ts` que se estaba
   desplegando a `public/`
 - **Pendiente de decisión de negocio:** pasarela de pago (M-15) y reseñas (B-25)
-- **Pendiente:** B-05, B-02, B-21, B-22, B-32, B-33, B-01 parcial
+- **Pendiente:** B-05 (ampliar), B-02, B-01 parcial
