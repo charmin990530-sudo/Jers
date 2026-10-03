@@ -981,23 +981,23 @@ Leyenda: **Resuelto** · **Aceptado** (decisión tuya, no se cambia) ·
 | B-02 | **Pendiente** — `EMAIL_EXISTS` sigue confirmando la existencia del email | — |
 | B-03 | Resuelto | `7009f36` |
 | B-04 | Resuelto | `7009f36` |
-| B-05 | **Pendiente** — sigue sin tests de frontend (ver 9.4) | — |
+| B-05 | **Parcial** — hay suite de frontend: 43 tests sobre `api.js`, `carrito.js` y `auth.js`. Faltan los controladores de página (ver 9.4) | `d5859fe`, `149ebc7`, `c10bb12` |
 | B-06 | **Resuelto** | `c037c39` |
 | B-07 | **Resuelto** | `a37357f` |
 | B-08 | Resuelto | `623fdb9` |
 | B-09 | Resuelto | `15959a3` |
 | B-10 | Resuelto | `623fdb9` |
 | B-11 … B-20 | Resueltos | `09917b6`, `e3d1c9c`, `76f1b3e` |
-| B-21 | **Pendiente** — formularios con `method="post"` sin `action` | — |
-| B-22 | **Pendiente** — el formulario de contacto no cambia el texto del botón | — |
+| B-21 | **Resuelto** | `449a461` |
+| B-22 | **Resuelto** | `c10bb12` |
 | B-23 | **Aceptado** — los iconos del pie apuntan a perfiles inexistentes; decidiste dejarlos | — |
 | B-24 | **Aceptado** — doble splash en `bienvenida.html`; decidiste dejarlo | — |
 | B-25 | **Aceptado con riesgo legal** — ver 9.5 | — |
 | B-26 | **Resuelto** | `9e3c6d3` |
 | B-27 | **Resuelto** | `a45079b` |
 | B-28 … B-31 | Resueltos | `e3d1c9c`, `76f1b3e`, `15959a3` |
-| B-32 | **Parcial** — el hostname ya se enmascara; sigue sin `redact()` en los logs de los drivers | — |
-| B-33 | **Pendiente** — el shim serverless no valida la subruta | — |
+| B-32 | **Resuelto** — el hostname ya se enmascaraba, y se verificó que los drivers **no** meten la URL ni la clave en sus errores. Salieron 2 huecos reales en `redact()` | `e989514` |
+| B-33 | **Resuelto** | `21f60f5` |
 | B-34 | Sin cambios: la auditoría lo verificó como **no bug** | — |
 | B-35 | **Resuelto** | `af8d2a2` |
 
@@ -1012,6 +1012,9 @@ de JavaScript que escribe en stderr.
 | Las 20 páginas (14 públicas + 6 de admin) | Cero errores de JavaScript |
 | Tipografías del repo (B-35) | Playfair Display en títulos y Poppins en texto, renderizando desde `/font/` |
 | **C-02, el layout del carrito** | **Verificado, y era el punto que faltaba**: con dos artículos dentro, la miniatura se queda en 64×64, el botón `×` de quitar cae dentro del panel de 390 px y un nombre largo se trunca sin empujar nada |
+| B-22, botón de contacto | Pone "Enviando…" y se deshabilita; antes se quedaba en "Enviar" |
+| B-21, los 13 formularios | El botón sale `disabled` en el HTML servido y queda habilitado cuando `iniciarAplicacion()` corre |
+| El flujo completo en una pantalla | Se recorren las 20 páginas. Una limitación de este método: `firefox --screenshot` captura en el evento `load`, así que el loader de `loader-boot.js` suele aparecer en la imagen. Para verlo hay que quitar el script en `public/`, que es un build generado |
 
 El paso que destapó el trabajo de B-06: `js/config.js` falló con
 `ReferenceError: can't access lexical declaration 'leerMeta' before initialization`
@@ -1022,8 +1025,12 @@ regla `no-use-before-define` lo impide.
 
 Lo que **sigue sin verificarse**, y no se puede cerrar aquí:
 
-- **B-05, los tests de frontend.** Ahora que hay navegador en el arnés, la vía
-  natural es un test de integración con un navegador real en vez de jsdom.
+- **B-05, la cobertura de frontend que queda.** Ya hay 43 tests sobre `js/api.js`
+  (el contrato de red), `js/carrito.js` (la lógica que decide cuánto se cobra) y
+  `setBtnLoading`. Lo que **no** está cubierto son los controladores de página
+  (`producto.js`, `checkout.js`, `mis-pedidos.js`…) y `js/api.js` no está probado
+  contra la API real, sino contra un `fetch` simulado. La vía para seguir es un test
+  de integración con Firefox headless, ya que el arnés funciona.
 - El flujo de compra completo con pago y sesión reales: se puede recorrer por API
   (`curl` con cookie de admin) y con capturas de las páginas, pero no hay forma de
   automatizar el clic en «Finalizar pedido» con la pasarela de pago, que además
