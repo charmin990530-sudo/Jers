@@ -1081,6 +1081,7 @@ export async function cerrarSesion() {
  */
 export function iniciarAplicacion() {
 
+    habilitarFormularios();
     iniciarMenuMovil();
     resaltarPaginaActual();
     iniciarBusqueda();
@@ -1091,6 +1092,33 @@ export function iniciarAplicacion() {
     iniciarWhatsapp();
     iniciarChatbot();
     iniciarAnimacionesScroll();
+}
+
+/**
+ * Habilita los botones de envío de los formularios (B-21).
+ *
+ * Los 13 formularios de la tienda salen del HTML con el botón `disabled`, y esto
+ * los habilita. El motivo es el fallo que `method="post"` sin `action` provoca:
+ *
+ * El handler de envío lo registra el módulo ES de cada página dentro de
+ * `DOMContentLoaded`. Si ese módulo no carga —una dependencia caída, un error de
+ * sintaxis en un despliegue, una CSP que bloquea el script—, el
+ * `preventDefault()` no llega a registrarse y el navegador envía el formulario con
+ * un POST a la página actual: se recarga, se pierde todo lo que el usuario había
+ * escrito y en `login.html` lo que se ve en lugar del formulario es la respuesta
+ * cruda. En un checkout eso es el pedido entero.
+ *
+ * Deshabilitar en el HTML es lo único que sobrevive a un módulo que no carga: es
+ * estado declarado en el documento, no código que ejecutar. Quitar `method="post"`,
+ * que es la otra sugerencia habitual de esta auditoría, sería peor: sin `method`
+ * el formulario pasa a GET y la contraseña acabaría en la query string, en el
+ * historial del navegador y en los logs del servidor.
+ *
+ * Se habilita aquí y no en cada página porque `iniciarAplicacion()` lo llaman todas.
+ */
+function habilitarFormularios() {
+    document.querySelectorAll('form[method="post"] button[type="submit"][disabled]')
+        .forEach(boton => { boton.disabled = false; });
 }
 
 async function inicializarSesionUI() {
