@@ -6,7 +6,7 @@ hace falta para seguir sin tener que releer 15.000 líneas de código.
 - **Fecha de corte:** 3 de octubre de 2026, tras la segunda sesión (cerró los bloques 8 y 9).
 - **Rama:** `audit/fixes` (creada desde `master` @ `e19cdba`, árbol limpio).
 - **Base de datos:** `mongodb://127.0.0.1:27017/by-jers` (local, sin réplica).
-- **Estado:** 295 tests pasan (252 backend + 43 frontend), lint y type-check en
+- **Estado:** 311 tests pasan (268 backend + 43 frontend), lint y type-check en
 verde, el backend corre y sirve la web.
 
 Si solo puedes leer una sección, lee **§1**. Si solo vas a hacer una cosa, haz **§4.1**.
@@ -108,7 +108,7 @@ regenerar `public/`.
 ## 3. Comandos de verificación
 
 ```bash
-npm test                    # backend (252) + frontend (43), ~95 s
+npm test                    # backend (268) + frontend (43), ~2 min
 npm run test:frontend       # solo los 43 del frontend, ~2 s
 npm run test:backend        # solo los del backend, ~90 s
 npm run check               # lint + type-check, lo que corre el CI
@@ -175,17 +175,32 @@ completo carga sin errores y pinta el total", que es lo que de verdad falta.
 
 ### 4.2 Lo demás que queda abierto
 
-- **B-02, y este es el único que queda abierto de verdad:** `EMAIL_EXISTS`
-  confirma la existencia del email en un endpoint público, lo que permite construir
-  un listado de clientes. La mitigación ya existe en el mismo archivo
-  (`forgotPassword` responde siempre lo mismo) y no se aplica en `register`.
-  Arreglarlo **cambia lo que ve el usuario al registrarse**, así que es decisión
-  tuya y está pendiente.
 - **B-01:** quedan algunos conflictos de estado que devuelven 400 donde 409 sería
   lo correcto. Cosmético para el frontend actual, mejora el contrato.
 
-Cerrados en la tercera sesión, con su commit en `AUDITORIA.md` §9: B-05 (a medias,
-ver §4.1), B-21, B-22, B-32 y B-33.
+**No queda ningún hallazgo abierto**, salvo B-01 parcial. Los cerrados en la tercera
+sesión, con su commit en `AUDITORIA.md` §9: **B-02**, B-05 (a medias, ver §4.1),
+B-21, B-22, B-32 y B-33.
+
+### Un cambio de contrato que conviene conocer: el registro
+
+Desde `7dd868c`, `POST /api/auth/register` **responde igual exista o no la cuenta**,
+**no devuelve el usuario** y **no deja iniciado de sesión**. Antes devolvía `user`,
+ponía cookie y decía `EMAIL_EXISTS` si el correo ya estaba, lo que permitía montar
+un listado de clientes.
+
+La razón de no dejar sesión es la parte que no es obvia: si el caso real pusiera
+cookie y el duplicado no, bastaría pedir `/api/auth/me` después para volver a saber
+cuál de los dos fue. El flujo ahora termina en el login, con el correo puesto.
+
+Quien ya tenía cuenta recibe un aviso por correo. **El aviso no lleva enlace de
+restablecimiento**, a propósito: mandarlo convertiría ese correo en una vía para
+tomar cuentas ajenas.
+
+Si algún día hay que ajustar este mensaje, el lugar es
+`backend/src/controllers/authController.js`, la constante `MENSAJE`, y las dos
+ramas deben seguir dando exactamente lo mismo: lo comprueba
+`backend/tests/register-enumeracion.test.js`.
 
 ---
 
