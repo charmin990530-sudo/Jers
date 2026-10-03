@@ -419,13 +419,47 @@ app.use('/api/admin', routes.admin);
 // pueda acabar sirviendo un archivo estatico por error, y el 404 de API se
 // limita a /api/* para que el resto de rutas las atienda la pagina 404 del sitio.
 const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../public');
-const STATIC_DENY = /\.(?:env|log|json|lock)$|^\.|^node_modules\//i;
+
+// Lo que no debe servirse como archivo estatico aunque alguien lo dejara dentro
+// de public/.
+//
+// `.json` NO va a proposito, y conviene no añadirlo: `data/producto-destacado.json`
+// lo lee js/bienvenida.js y se sirve hoy (HTTP 200). Bloquear los .json rompe la
+// pagina de bienvenida. Lo que hay que impedir es la basura sensible: el .env, los
+// logs, el lockfile y un node_modules que alguien copiara dentro.
+// (El .env real y el package.json estan en la raiz y en backend/, fuera de
+// PUBLIC_DIR, asi que express.static no puede verlos de todos modos.)
+const STATIC_DENY = /\.(?:env|log|lock)$|^\.|^node_modules\//i;
 
 
 // 404 de la API: JSON, como espera cualquier cliente de API.
 app.use('/api', notFound);
 
 if (SERVE_STATIC) {
+  // 404 del sitio. Se reutiliza en los dos sitios que hacen falta: al final de
+  // la cadena, y cuando STATIC_DENY deniega un archivo.
+  const pagina404 = (req, res) => {
+    res.status(404).sendFile(join(PUBLIC_DIR, '404.html'), err => {
+      if (err) {
+        res.status(404).type('text/plain; charset=utf-8')
+          .send('404 - Pagina no encontrada. Regenera public/ con: node scripts/preparar-estatico.mjs');
+      }
+    });
+  };
+
+  // Barrera real, y va ANTES de express.static a proposito: despues ya estarian
+  // los bytes en camino. Antes solo se comprobaba STATIC_DENY en la ruta de HTML
+  // abreviado, que es donde no podia llegar a hacer nada (su expresion regular
+  // solo acepta [a-z0-9_-] por segmento, asi que ningun path con punto — que es
+  // justo lo que STATIC_DENY busca — llega a esa ruta). Verificado con la
+  // expresion real de ambas: no hay ningun path que las satisfaga a las dos.
+  app.use((req, res, next) => {
+    if (!STATIC_DENY.test(req.path)) return next();
+    // Denegado: NO se sirve y NO se pasa a express.static. Un `next()` aqui
+    // dejaria el archivo served igual, que es justo el bug que se arregla.
+    return pagina404(req, res);
+  });
+
   const staticOptions = {
     // Los .html/.css/.js se revalidan siempre: si se corrige una pagina y se
     // reinicia, el navegador no debe quedarse con la version vieja cacheada.
@@ -434,9 +468,12 @@ if (SERVE_STATIC) {
         res.setHeader('Cache-Control', 'no-cache, must-revalidate');
       }
     },
+    // `dotfiles: 'deny'` cubre el caso de un archivo que empieza por punto; lo
+    // pone tambien STATIC_DENY, pero por separado: este es comportamiento de
+    // serve-static y el otro es nuestro, por si se cambia la opcion.
     dotfiles: 'deny',
-    // Segunda barrera: aunque algo se colara en public/, .env y package.json
-    // no se sirven nunca.
+    // Si el archivo no esta o esta denegado, la peticion sigue hasta la pagina
+    // 404 del sitio en vez de cortar aqui.
     fallthrough: true,
     index: false,
   };
@@ -450,10 +487,10 @@ if (SERVE_STATIC) {
 
   // HTML abreviado: /carrito -> /carrito.html y /admin/dashboard ->
   // /admin/dashboard.html. Admite varios segmentos, pero SOLO con caracteres
-  // [a-z0-9_-]: como `..` no puede pasar el filtro, no hay forma de que este
-  // camino suba de directorio aunque se intente.
+  // [a-z0-9_-]. Ese filtro es la barrera de verdad de esta ruta, y por eso aqui
+  // no hace falta STATIC_DENY: como `..` no puede pasar, no hay forma de subir de
+  // directorio ni de pedir un archivo con punto, extension o no.
   app.get(/^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/i, (req, res, next) => {
-    if (STATIC_DENY.test(req.path)) return next();
     const relativo = `${req.path.slice(1)}.html`;
     const destino = join(PUBLIC_DIR, relativo);
     // Defensa extra: el destino resuelto tiene que seguir dentro de public/.
@@ -464,12 +501,7 @@ if (SERVE_STATIC) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api/')) return next();
-    res.status(404).sendFile(join(PUBLIC_DIR, '404.html'), err => {
-      if (err) {
-        res.status(404).type('text/plain; charset=utf-8')
-          .send('404 - Pagina no encontrada. Regenera public/ con: node scripts/preparar-estatico.mjs');
-      }
-    });
+    pagina404(req, res);
   });
 } else {
   app.use(notFound);
