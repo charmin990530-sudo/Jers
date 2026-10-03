@@ -74,10 +74,27 @@ jobs:
           TZ: America/Bogota
           JWT_SECRET: test-secret-key-for-ci-pipeline-only-not-for-production-use-1234567890
 
+      # M-12/B-07. Antes eran dos comandos:
+      #
+      #   npm audit --audit-level=high
+      #   npm audit --audit-level=high --prefix backend
+      #
+      # El segundo no puede funcionar. `backend` es un workspace, no un proyecto
+      # con dependencias propias: npm no escribe lockfile en un workspace member
+      # y lo sube todo a la raiz. `npm audit --prefix backend` busca
+      # `backend/package-lock.json`, no lo encuentra y muere con ENOLOCK, asi que
+      # este paso del pipeline estaba rojo siempre que llegaba aqui.
+      #
+      # El comando de la raiz ya cubre el backend entero: el lockfile raiz tiene
+      # la entrada `backend` con sus 16 dependencias (13 + 3 de desarrollo) y
+      # todas están resueltas en el árbol raiz, que es justo lo que `npm audit`
+      # recorre. Comprobado sobre package-lock.json (lockfileVersion 3).
+      #
+      # La forma de auditar backend por separado seria darle lockfile propio
+      # (`npm i --package-lock-only --prefix backend`), lo que crea un segundo
+      # origen de verdad que se desincroniza del primero. No compensa.
       - name: Audit dependencies
-        run: |
-          npm audit --audit-level=high
-          npm audit --audit-level=high --prefix backend
+        run: npm audit --audit-level=high
 
       - name: Build static files
         run: npm run build:static
