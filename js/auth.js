@@ -186,21 +186,50 @@ export function mostrarMensajeGlobal(form, mensaje, tipo = 'error') {
 
 /**
  * Pone botón en estado loading
+ *
+ * Hay dos formas de botón en el proyecto y este helper sirve para las dos:
+ *
+ *  - Con spans (`<span class="btn-texto">Iniciar sesión</span>` +
+ *    `<span class="btn-loader" hidden>⏳</span>`), como en login.html y register.html.
+ *    Ahí solo se conmuta `hidden`.
+ *  - Con texto plano (`<button class="contact-btn">Enviar</button>`), como en
+ *    contacto.html. Antes este caso no hacía NADA visible: `btn.disabled` sí se
+ *    aplicaba, pero el texto se quedaba igual, así que el usuario pulsaba "Enviar"
+ *    y no tenía ni una señal de que la petición estaba en camino (B-22). Aquí se
+ *    cambia el texto y se guarda la etiqueta original en `data-etapa-original`,
+ *    para que volver a pulsar no acabe enseñando "Enviando...".
+ *
  * @param {HTMLButtonElement} btn
  * @param {boolean} loading
  */
 export function setBtnLoading(btn, loading) {
     const texto = btn.querySelector('.btn-texto');
     const loader = btn.querySelector('.btn-loader');
+    const conSpans = texto !== null || loader !== null;
 
     if (loading) {
         btn.disabled = true;
-        if (texto) texto.hidden = true;
-        if (loader) loader.hidden = false;
-    } else {
-        btn.disabled = false;
+        if (conSpans) {
+            if (texto) texto.hidden = true;
+            if (loader) loader.hidden = false;
+            return;
+        }
+        if (!btn.dataset.etapaOriginal) btn.dataset.etapaOriginal = btn.textContent.trim();
+        btn.textContent = 'Enviando…';
+        btn.setAttribute('aria-busy', 'true');
+        return;
+    }
+
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    if (conSpans) {
         if (texto) texto.hidden = false;
         if (loader) loader.hidden = true;
+        return;
+    }
+    if (btn.dataset.etapaOriginal) {
+        btn.textContent = btn.dataset.etapaOriginal;
+        delete btn.dataset.etapaOriginal;
     }
 }
 
