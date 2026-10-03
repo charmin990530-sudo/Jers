@@ -24,7 +24,7 @@ Estado real que verifiqué levantando el proyecto:
 | `npm test` | **199 tests, 13 suites, todos pasan** (~90 s) |
 | `npm run build:static` | OK, 258 archivos a `public/` |
 | `npm start` | Arranca; **el `MONGODB_URI` de `backend/.env` falla con `bad auth : authentication failed`** (ver §1.1) |
-| `npm audit` | 0 vulnerabilidades. En `backend/` **no se puede ejecutar**: no hay lockfile propio (§4, M-12) |
+| `npm audit` | 0 vulnerabilidades. En `backend/` no se puede ejecutar y **no se debe**: no hay lockfile propio porque es un workspace (M-12, `a37357f`). El comando de la raíz ya cubre el backend entero |
 | Lint / typecheck / formateo | **Ya existen** (B-06): `npm run lint` con ESLint 10 y `npm run typecheck` con `checkJs`. Ambos en verde y como paso de CI |
 | Suite de tests de frontend | **No existe.** Cero cobertura del código donde están todos los bugs |
 
