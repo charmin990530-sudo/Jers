@@ -7,6 +7,7 @@ import {
   SMTP_PASS,
   EMAIL_FROM,
   NODE_ENV,
+  FRONTEND_URL,
 } from '../config/env.js';
 
 const escapeHtml = value => String(value ?? '')
@@ -70,6 +71,41 @@ export const sendPasswordResetEmail = ({ to, resetUrl }) => sendEmail({
   subject: 'Restablece tu contraseña de By Jers',
   text: `Restablece tu contraseña usando este enlace: ${resetUrl}`,
   html: `<p>Restablece tu contraseña usando este enlace:</p><p><a href="${escapeHtml(resetUrl)}">Restablecer contraseña</a></p>`,
+});
+
+/**
+ * Avisa a quien YA tiene cuenta de que alguien intentó registrarse con su correo.
+ *
+ * Es la otra mitad del arreglo de B-02: el endpoint de registro deja de responder
+ * distinto según el email exista o no, y para que eso no sea un muro seco, quien
+ * tiene la cuenta se entera. Así el titular además puede recuperar la contraseña
+ * si de verdad fue un intento suyo del que se olvidó.
+ *
+ * NO se manda el enlace de restablecimiento: enviarlo convertiría este correo en
+ * una vía para tomar cuentas ajenas, ya que cualquiera que sepa el email
+ * podría pedirlo. Va el enlace del login, que no da acceso a nada.
+ */
+export const sendDuplicateRegistrationEmail = ({ to, nombre }) => sendEmail({
+  to,
+  subject: 'Alguien intentó registrarse con tu correo de By Jers',
+  text: [
+    `Hola ${nombre},`,
+    '',
+    'Alguien intentó crear una cuenta en By Jers con este correo, que ya está registrado.',
+    'La cuenta no se ha modificado ni se ha creado ninguna nueva.',
+    '',
+    'Si eras tú y se te olvidó que tenías cuenta, entra con tu contraseña; si no la',
+    'recuerdas, puedes restablecerla desde la página de iniciar sesión.',
+    `Volver a By Jers: ${FRONTEND_URL}`,
+  ].join('\n'),
+  html: `
+    <p>Hola ${escapeHtml(nombre)},</p>
+    <p>Alguien intentó crear una cuenta en <strong>By Jers</strong> con este correo, que ya está registrado.
+       La cuenta no se ha modificado ni se ha creado ninguna nueva.</p>
+    <p>Si eras tú y se te olvidó que tenías cuenta, entra con tu contraseña; si no la recuerdas,
+       puedes restablecerla desde la página de iniciar sesión.</p>
+    <p><a href="${escapeHtml(FRONTEND_URL)}">Volver a By Jers</a></p>
+  `,
 });
 
 export const sendContactEmail = ({ nombre, email, telefono, mensaje }) => sendEmail({
