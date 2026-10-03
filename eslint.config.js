@@ -53,6 +53,19 @@ const baseRules = {
   'no-var': 'error',
   'prefer-const': ['error', { destructuring: 'all' }],
 
+  // Zona muerta temporal. Es la clase de fallo que mas caro sale y mas invisible
+  // es: una `const` usada antes de su declaracion no da error al escribir el
+  // codigo, ni lo dan los tests si la funcion se invoca mas tarde, y solo
+  // revienta cuando esa funcion se llama durante la evaluacion del modulo.
+  // Pasó de verdad: `leerMeta` en js/config.js se llamaba desde
+  // `obtenerApiBaseUrl`, que se invoca al cargar el modulo, y `config.js`
+  // entero dejo de funcionar en el navegador mientras los 199 tests en verde.
+  // `functions: false` a proposito: una `function` declarada esta izada, asi que
+  // usarla antes de su declaracion NO falla nunca y solo es estilo. Lo que si
+  // revienta es la zona muerta temporal de `const`/`let`, y eso es lo que se
+  // comprueba aqui.
+  'no-use-before-define': ['error', { functions: false, classes: false, variables: true }],
+
   eqeqeq: ['error', 'smart'],
   'no-implicit-coercion': 'off',
 };

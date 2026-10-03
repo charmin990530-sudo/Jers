@@ -72,6 +72,13 @@ const crearProducto = (overrides = {}) => Product.create({
   ...overrides,
 });
 
+const User_setRole = async (id, role) => {
+  const { User } = await import('../src/models/index.js');
+  await User.updateOne({ _id: id }, { $set: { role } });
+  // La cookie JWT lleva `ver: tokenVersion`; cambiar el rol no la invalida.
+  return id;
+};
+
 beforeEach(async () => {
   [categoria, marca] = await Promise.all([
     Category.create({ nombre: 'rostro', slug: 'rostro', orden: 1 }),
@@ -89,12 +96,6 @@ beforeEach(async () => {
   cliente = await registrar(`cliente_${Date.now()}_${Math.random()}@byjers.com`);
 });
 
-const User_setRole = async (id, role) => {
-  const { User } = await import('../src/models/index.js');
-  await User.updateOne({ _id: id }, { $set: { role } });
-  // La cookie JWT lleva `ver: tokenVersion`; cambiar el rol no la invalida.
-  return id;
-};
 
 const agregar = (producto, cantidad = 1) =>
   conCsrf(cliente.agent, 'post')('/api/cart', { productoId: producto._id.toString(), cantidad });

@@ -26,6 +26,13 @@ const normalizeHeader = value => String(value ?? '').replace(/[\r\n]/g, ' ').tri
  * así que el correo de un pedido antiguo sigue mostrando lo que se cobró entonces
  * aunque la tarifa global haya cambiado.
  */
+/**
+ * Formatea un importe entero como COP para los correos. Reutiliza el mismo
+ * criterio que el resto del sistema (pesos sin centavos, ver services/money.js)
+ * en vez de depender de la configuración regional del servidor.
+ */
+const montoCorreo = valor => `$${Number(valor || 0).toLocaleString('es-CO')}`;
+
 const lineaImpuestos = (impuestos, tasaBp) => {
   const monto = Number(impuestos) || 0;
   if (monto === 0) return { texto: [], html: [] };
@@ -71,13 +78,6 @@ export const sendContactEmail = ({ nombre, email, telefono, mensaje }) => sendEm
   text: `Nombre: ${nombre}\nEmail: ${email}\nTeléfono: ${telefono}\nMensaje: ${mensaje}`,
   html: `<p><strong>Nombre:</strong> ${escapeHtml(nombre)}</p><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Teléfono:</strong> ${escapeHtml(telefono)}</p><p>${escapeHtml(mensaje)}</p>`,
 });
-
-/**
- * Formatea un importe entero como COP para los correos. Reutiliza el mismo
- * criterio que el resto del sistema (pesos sin centavos, ver services/money.js)
- * en vez de depender de la configuración regional del servidor.
- */
-const montoCorreo = valor => `$${Number(valor || 0).toLocaleString('es-CO')}`;
 
 /** Lineas de un item de pedido, en texto plano y en HTML. */
 const detalleItems = items => (items || [])
