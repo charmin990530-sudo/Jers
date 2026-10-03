@@ -150,6 +150,34 @@ app.use((req, res, next) => {
 const CDN_SCRIPTS = ['https://cdn.jsdelivr.net'];
 const CDN_STYLES = ['https://fonts.googleapis.com'];
 
+// ==========================================
+// CSP — por que hay otra en vercel.json (B-26)
+// ==========================================
+//
+// SON DOS, Y NO SE PUEDE DEJAR UNA SOLA.
+//
+// - Esta (helmet) es la unica que corre cuando Express sirve el sitio: en local y
+//   en cualquier despliegue propio. Ademas es la unica que puede leer del
+//   entorno `API_ORIGIN` y `FRONTEND_ALLOWED_ORIGINS`, porque una cabecera
+//   estatica de Vercel no interpola variables.
+// - La de `vercel.json` es la unica que aplica al sitio publicado en Vercel:
+//   alla el HTML, el CSS y el JS los sirve el edge desde `public/` y Express no
+//   se ejecuta para esas peticiones. Sin ella, las paginas no tendrian CSP.
+//
+// En un despliegue en Vercel, las respuestas de /api llevan las dos (el
+// navegador se queda con la mas restrictiva de todas las que reciba) y las del
+// sitio llevan solo la de vercel.json. Por eso van alineadas directiva por
+// directiva; lo que faltaba en la de Vercel (frame-src, script-src-attr y
+// upgrade-insecure-requests) se le anadio alli.
+//
+// `connect-src` es la unica que no se puede alinear, porque vercel.json no lee
+// el entorno. Y no hace falta: js/config.js deriva la URL de la API de
+// `window.location.origin`, sin ningun host escrito, de modo que en Vercel la
+// API siempre es same-origin y `'self'` es completo.
+//
+// `script-src-attr 'none'` y `frame-src 'none'` no rompen nada: el sitio no usa
+// manejadores `onclick=` en linea ni iframes (comprobado en las 22 paginas), y
+// los eventos van por addEventListener desde js/.
 const cspDirectives = nonce => ({
   defaultSrc: ["'self'"],
   scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`, ...CDN_SCRIPTS] : ["'self'", ...CDN_SCRIPTS],
@@ -162,7 +190,12 @@ const cspDirectives = nonce => ({
   baseUri: ["'self'"],
   formAction: ["'self'"],
   frameAncestors: ["'none'"],
-  ...(NODE_ENV === 'production' ? { upgradeInsecureRequests: [] } : {}),
+  // `upgrade-insecure-requests` no se lista a proposito: helmet ya la pone en sus
+  // directivas por defecto (helmet/index.cjs, DEFAULT_DIRECTIVES), asi que
+  // condicionarla a NODE_ENV no cambiaba nada: salia siempre. Antes de quitar el
+  // condicional se comprobó con curl que la cabecera local ya traia la directiva
+  // con NODE_ENV=development. Dejarla fija ademas evita tener dos CSP segun el
+  // entorno, que es justo lo que B-26 viene a evitar.
 });
 
 app.use((req, res, next) => {
