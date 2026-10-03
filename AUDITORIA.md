@@ -21,12 +21,17 @@ Estado real que verifiqué levantando el proyecto:
 | Comprobación | Resultado |
 |---|---|
 | `npm install` | OK, 483 paquetes, **0 vulnerabilidades** |
-| `npm test` | **164 tests, 11 suites, todos pasan** (67 s) |
-| `npm run build:static` | OK, 248 archivos a `public/` |
+| `npm test` | **199 tests, 13 suites, todos pasan** (~90 s) |
+| `npm run build:static` | OK, 258 archivos a `public/` |
 | `npm start` | Arranca; **el `MONGODB_URI` de `backend/.env` falla con `bad auth : authentication failed`** (ver §1.1) |
 | `npm audit` | 0 vulnerabilidades. En `backend/` **no se puede ejecutar**: no hay lockfile propio (§4, M-12) |
-| Lint / typecheck / formateo | **No existen.** Ningún tooling, ningún `lint` en package.json |
+| Lint / typecheck / formateo | **Ya existen** (B-06): `npm run lint` con ESLint 10 y `npm run typecheck` con `checkJs`. Ambos en verde y como paso de CI |
 | Suite de tests de frontend | **No existe.** Cero cobertura del código donde están todos los bugs |
+
+> Esta tabla se actualizó al cerrar la ronda de correcciones. Las cifras
+> originales de la auditoría (164 tests, 11 suites, 248 archivos) describían la
+> rama `master` en el momento de escribirse. El estado hallazgo por hallazgo,
+> con el commit que lo cerró, está en **§9**.
 
 ### 1.1 Base de datos local (resuelto)
 
@@ -130,6 +135,11 @@ Lo dejo escrito porque son trampas de inspection donde se pierden horas:
 ---
 
 ## 4. Hallazgos
+
+> **Las tablas de esta sección describen el estado en `master` @ `e19cdba`, antes
+> de la ronda de correcciones.** No se modificaron al arreglar los hallazgos: así
+> se puede ver qué se encontró y qué se hizo. Para el estado actual de cada uno,
+> con su commit, ver **§9**.
 
 Severidad: **CRÍTICO** = pierde dinero/datos o bloquea una función de venta · **ALTO** = función rota con impacto directo · **MEDIO** = degradación o deuda con riesgo · **BAJO** = limpieza y consistencia.
 
@@ -900,9 +910,12 @@ Lo que depende de decisiones de negocio o de contenido. Ver §6.
 Node      v22.23.3          npm  10.9.9
 MongoDB   mongod local standalone (sin réplica), base by-jers-audit
 Redis     deshabilitado (REDIS_ENABLED no activo en desarrollo)
-Tests     164 en 11 suites, todos pasan
+Tests     164 en 11 suites, todos pasan        (master, al escribirse esto)
+          199 en 13 suites, todos pasan        (audit/fixes, al cerrarse)
 Audit     0 vulnerabilidades en la raíz
-Lint      no existe
+Lint      no existe                          (master)
+          ESLint 10 + checkJs, ambos en 0     (audit/fixes)
+Navegador Firefox 156.0.1 headless, solo en la ronda de correcciones
 Rama      audit/fixes, base master @ e19cdba
 ```
 
@@ -911,3 +924,123 @@ Para reproducir el arranque con la base local:
 ```bash
 MONGODB_URI=mongodb://127.0.0.1:27017/by-jers-audit npm start
 ```
+---
+
+## 9. Estado tras la ronda de correcciones
+
+Esta sección se añadió al cerrar la ronda de trabajo en `audit/fixes`. **Las
+tablas de §4 describen el estado en el momento de la auditoría** (rama `master`
+@ `e19cdba`) y no se tocaron, para que se pueda comparar. Aquí está el estado real
+de los 69 hallazgos, con el commit que los cerró.
+
+Leyenda: **Resuelto** · **Aceptado** (decisión tuya, no se cambia) ·
+**Pendiente** (sigue abierto) · **Parcial**.
+
+### 9.1 Críticos y altos
+
+| ID | Estado | Commit |
+|---|---|---|
+| C-01 | Resuelto | `623fdb9` |
+| C-02 | Resuelto y **verificado en navegador** (ver 9.4) | `09917b6` |
+| A-01 | Resuelto | `9aea01e` |
+| A-02 | Resuelto | `623fdb9` |
+| A-03 | Resuelto | `625bcaf` |
+| A-04 | Resuelto | `625bcaf` |
+| A-05 | Resuelto | `625bcaf` |
+| A-06 | Resuelto | `623fdb9` |
+| A-07 | Resuelto | `7009f36` |
+| A-08 | Resuelto | `e3d1c9c` |
+| A-09 | Resuelto | `76f1b3e` |
+
+### 9.2 Medios
+
+| ID | Estado | Commit |
+|---|---|---|
+| M-01, M-02 | Resuelto | `09917b6` |
+| M-03, M-17 | Resuelto | `623fdb9` |
+| M-04 | **Pendiente** — oráculo de tiempo en el login | — |
+| M-05 | Resuelto | `7009f36` |
+| M-06, M-07 | Resuelto | `e3d1c9c` |
+| M-08 | Resuelto | `76f1b3e` |
+| M-09 | Resuelto | `625bcaf` |
+| M-10 | Resuelto | `76f1b3e` |
+| M-11, M-13, M-21, M-22 | Resuelto | `e3d1c9c` |
+| M-12 | Resuelto | `a37357f` |
+| M-14, M-16 | Resuelto | `7009f36` |
+| M-15 | **Pendiente** — la pasarela de pago, decisión de negocio | — |
+| M-18 | Resuelto | `efb8261` |
+| M-19 | Resuelto | `e19cdba` (previo) |
+| M-20 | Resuelto | `7009f36` |
+| M-23 | Resuelto | `15959a3` |
+
+### 9.3 Bajos
+
+| ID | Estado | Commit |
+|---|---|---|
+| B-01 | **Parcial** — corregidos los de la ronda anterior; quedan algunos 400/409 | — |
+| B-02 | **Pendiente** — `EMAIL_EXISTS` sigue confirmando la existencia del email | — |
+| B-03 | Resuelto | `7009f36` |
+| B-04 | Resuelto | `7009f36` |
+| B-05 | **Pendiente** — sigue sin tests de frontend (ver 9.4) | — |
+| B-06 | **Resuelto** | `c037c39` |
+| B-07 | **Resuelto** | `a37357f` |
+| B-08 | Resuelto | `623fdb9` |
+| B-09 | Resuelto | `15959a3` |
+| B-10 | Resuelto | `623fdb9` |
+| B-11 … B-20 | Resueltos | `09917b6`, `e3d1c9c`, `76f1b3e` |
+| B-21 | **Pendiente** — formularios con `method="post"` sin `action` | — |
+| B-22 | **Pendiente** — el formulario de contacto no cambia el texto del botón | — |
+| B-23 | **Aceptado** — los iconos del pie apuntan a perfiles inexistentes; decidiste dejarlos | — |
+| B-24 | **Aceptado** — doble splash en `bienvenida.html`; decidiste dejarlo | — |
+| B-25 | **Aceptado con riesgo legal** — ver 9.5 | — |
+| B-26 | **Resuelto** | `9e3c6d3` |
+| B-27 | **Resuelto** | `a45079b` |
+| B-28 … B-31 | Resueltos | `e3d1c9c`, `76f1b3e`, `15959a3` |
+| B-32 | **Parcial** — el hostname ya se enmascara; sigue sin `redact()` en los logs de los drivers | — |
+| B-33 | **Pendiente** — el shim serverless no valida la subruta | — |
+| B-34 | Sin cambios: la auditoría lo verificó como **no bug** | — |
+| B-35 | **Resuelto** | `af8d2a2` |
+
+### 9.4 Verificación en navegador
+
+Lo que esta auditoría **no** había hecho: cargar el sitio en un navegador. Hecho
+con Firefox headless (Firefox 156.0.1), capturando pantalla y leyendo los errores
+de JavaScript que escribe en stderr.
+
+| Qué | Resultado |
+|---|---|
+| Las 20 páginas (14 públicas + 6 de admin) | Cero errores de JavaScript |
+| Tipografías del repo (B-35) | Playfair Display en títulos y Poppins en texto, renderizando desde `/font/` |
+| **C-02, el layout del carrito** | **Verificado, y era el punto que faltaba**: con dos artículos dentro, la miniatura se queda en 64×64, el botón `×` de quitar cae dentro del panel de 390 px y un nombre largo se trunca sin empujar nada |
+
+El paso que destapó el trabajo de B-06: `js/config.js` falló con
+`ReferenceError: can't access lexical declaration 'leerMeta' before initialization`
+en las 20 páginas, mientras los 199 tests seguían en verde. Ningún test carga los
+módulos del navegador, y por eso un `const` usado antes de su declaración —que es
+la causa clásica de A-03 y A-08— no se ve. Está corregido en `e8d11df` y ahora la
+regla `no-use-before-define` lo impide.
+
+Lo que **sigue sin verificarse**, y no se puede cerrar aquí:
+
+- **B-05, los tests de frontend.** Ahora que hay navegador en el arnés, la vía
+  natural es un test de integración con un navegador real en vez de jsdom.
+- El flujo de compra completo con pago y sesión reales: se puede recorrer por API
+  (`curl` con cookie de admin) y con capturas de las páginas, pero no hay forma de
+  automatizar el clic en «Finalizar pedido» con la pasarela de pago, que además
+  sigue sin decidir (M-15).
+- Rendimiento real: sin throttling de red no hay cifras de Core Web Vitals. En
+  particular, los 17 MB de `img/hero-secuencia/` (B-24) no se han medido.
+
+### 9.5 Lo que queda aceptado por decisión tuya
+
+Tres hallazgos se cerraron sin tocar código porque decidiste dejarlos así:
+
+- **B-23** (iconos del pie a `facebook.com/tu-tienda`): la página funciona y los
+  enlaces no hacen daño, pero no abren el perfil de la tienda.
+- **B-24** (doble splash en `bienvenida.html`): dos animaciones de progreso durante
+  la carga. No es un bug, es redundancia visual.
+- **B-25** (`resenas.html`): seis reseñas escritas a mano bajo el título «Lo que
+  dicen nuestras clientas». **Este es el único de los tres con riesgo legal**: en
+  Colombia, presentar opiniones ficticias como las de clientas reales es práctica
+  comercial engañosa. Queda anotado aquí para que no se pierda de vista; no es un
+  problema técnico y por eso queda en tu mano, no en el código.
