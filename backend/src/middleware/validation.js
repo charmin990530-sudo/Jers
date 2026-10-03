@@ -40,7 +40,12 @@ const minorAmount = (label) =>
     .min(0, `${label} no puede ser negativo`)
     .max(MAX_MINOR_AMOUNT, `${label} excede el maximo representable`);
 
+// El regex de la linea siguiente lleva `no-control-regex` desactivado a proposito:
+// la regla existe para avisar de caracteres invisibles escritos por error, y aqui
+// son justo lo que se busca rechazar, para que una URL no pueda smugglear
+// caracteres de control en cabeceras o rutas.
 const assetUrl = z.string().trim().min(1).refine(value => {
+  // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\\]/.test(value)) return false;
   if (value.startsWith('/')) return !value.startsWith('//') && !value.includes('..');
   try {
@@ -104,7 +109,7 @@ export const schemas = {
     apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(50),
     email: z.string().email('Email inválido').toLowerCase(),  // Normaliza
     password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
-    telefono: z.string().regex(/^[\d\s\-\+\(\)]{7,20}$/, 'Teléfono inválido').optional(),
+    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/, 'Teléfono inválido').optional(),
     // z.literal(true) = DEBE ser exactamente true (no "true", no 1)
     aceptoTerminos: z.literal(true, { errorMap: () => ({ message: 'Debe aceptar los términos y condiciones' }) }),
     aceptoPrivacidad: z.literal(true, { errorMap: () => ({ message: 'Debe aceptar la política de privacidad' }) }),
@@ -121,7 +126,7 @@ export const schemas = {
   updateProfile: z.object({
     nombre: z.string().min(2).max(50).optional(),
     apellido: z.string().min(2).max(50).optional(),
-    telefono: z.string().regex(/^[\d\s\-\+\(\)]{7,20}$/).optional(),
+    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/).optional(),
   }),
 
   // PATCH /api/auth/password
@@ -137,7 +142,7 @@ export const schemas = {
   addAddress: z.object({
     alias: z.string().min(2, 'El alias debe tener al menos 2 caracteres').max(30),
     nombreCompleto: z.string().min(2, 'El nombre completo es obligatorio').max(100),
-    telefono: z.string().regex(/^[\d\s\-\+\(\)]{7,20}$/, 'Teléfono inválido'),
+    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/, 'Teléfono inválido'),
     direccion: z.string().min(5, 'La dirección es obligatoria').max(200),
     ciudad: z.string().min(2, 'La ciudad es obligatoria').max(50),
     departamento: z.string().min(2, 'El departamento es obligatorio').max(50),
@@ -149,7 +154,7 @@ export const schemas = {
   updateAddress: z.object({
     alias: z.string().min(2).max(30).optional(),
     nombreCompleto: z.string().min(2).max(100).optional(),
-    telefono: z.string().regex(/^[\d\s\-\+\(\)]{7,20}$/).optional(),
+    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/).optional(),
     direccion: z.string().min(5).max(200).optional(),
     ciudad: z.string().min(2).max(50).optional(),
     departamento: z.string().min(2).max(50).optional(),
@@ -173,7 +178,7 @@ export const schemas = {
     direccionEnvio: z.object({
       alias: z.string().min(2).max(30),
       nombreCompleto: z.string().min(2).max(100),
-      telefono: z.string().regex(/^[\d\s\-\+\(\)]{7,20}$/),
+      telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/),
       direccion: z.string().min(5).max(200),
       ciudad: z.string().min(2).max(50),
       departamento: z.string().min(2).max(50),
@@ -242,7 +247,7 @@ export const schemas = {
   contact: z.object({
     nombre: z.string().trim().min(2).max(100),
     email: z.string().trim().email('Email inválido').toLowerCase(),
-    telefono: z.string().trim().regex(/^[\d\s\-\+\(\)]{7,20}$/).optional().or(z.literal('')),
+    telefono: z.string().trim().regex(/^[\d\s\-+()]{7,20}$/).optional().or(z.literal('')),
     mensaje: z.string().trim().min(10).max(2000),
     website: z.string().max(200).optional(),
   }),

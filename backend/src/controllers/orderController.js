@@ -29,7 +29,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { Order, Cart, Product, User } from '../models/index.js';
+import { Order, Cart, Product } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
 import { WHATSAPP_NUMBER, SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';

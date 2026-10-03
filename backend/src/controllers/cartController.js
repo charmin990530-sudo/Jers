@@ -247,7 +247,7 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
  * Vacía completamente el carrito del usuario
  */
 export const clearCart = asyncHandler(async (req, res) => {
-  let cart = await Cart.findOne({ usuario: req.userId });
+  const cart = await Cart.findOne({ usuario: req.userId });
   if (cart) {
     await cart.limpiar();
   }

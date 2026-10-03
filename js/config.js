@@ -42,13 +42,12 @@ const obtenerApiBaseUrl = () => {
         const desdeGlobal = normalizar(window.API_BASE_URL);
         if (desdeGlobal) return desdeGlobal;
     }
-    // 2) Meta tag en el HTML.
+    // 2) Meta tag en el HTML. El `/** @type {HTMLMetaElement|null} */` es para el
+    // type-check: `querySelector` devuelve `Element`, que no declara `content`.
+    // No cambia nada en runtime; sin el, `checkJs` no puede seguir este archivo.
     if (typeof document !== 'undefined') {
-        const meta = document.querySelector('meta[name="api-base-url"]');
-        if (meta?.content) {
-            const desdeMeta = normalizar(meta.content);
-            if (desdeMeta) return desdeMeta;
-        }
+        const desdeMeta = normalizar(leerMeta('api-base-url') || '');
+        if (desdeMeta) return desdeMeta;
     }
     // 3) Origen actual. Funciona igual en desarrollo y en produccion.
     //
@@ -131,6 +130,24 @@ export const formatearFecha = (valor, estilo = 'corta') => {
     return FECHA_CORTA.format(fecha);
 };
 
+/**
+ * Lee el `content` de un `<meta name="...">` del HTML.
+ *
+ * Antes el numero de WhatsApp hacia la misma consulta dos veces (una con `?.` y
+ * otra sin) y `querySelector` devolvia `Element`, que no declara `content`. El
+ * cast a `HTMLMetaElement` de abajo resuelve lo segundo para el type-check.
+ *
+ * @param {string} nombre
+ * @returns {string|null}
+ */
+const leerMeta = (nombre) => {
+    if (typeof document === 'undefined') return null;
+    const meta = /** @type {HTMLMetaElement|null} */ (
+        document.querySelector(`meta[name="${nombre}"]`)
+    );
+    return meta?.content ?? null;
+};
+
 export const CONFIG = {
     SESSION_EXPIRY_MS: 7 * 24 * 60 * 60 * 1000,
 
@@ -138,7 +155,5 @@ export const CONFIG = {
     // override explícito).
     WHATSAPP_NUMBER: (typeof window !== 'undefined' && window.WHATSAPP_NUMBER)
         ? window.WHATSAPP_NUMBER
-        : (typeof document !== 'undefined' && document.querySelector('meta[name="whatsapp-number"]')?.content)
-            ? document.querySelector('meta[name="whatsapp-number"]').content
-            : '573114333561',
+        : leerMeta('whatsapp-number') || '573114333561',
 };

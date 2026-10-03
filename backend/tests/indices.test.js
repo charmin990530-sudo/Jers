@@ -22,7 +22,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import mongoose from 'mongoose';
 import { Product, Category, Brand, Order, User, Cart } from '../src/models/index.js';
 
 const planDe = (model, filtro, opciones = {}) => model

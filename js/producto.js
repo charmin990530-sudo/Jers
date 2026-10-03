@@ -13,7 +13,7 @@ import { getProduct, getProducts, handleApiError } from './api.js';
 import { formatearPrecio } from './config.js';
 import { crearImagenProducto, iniciarAplicacion, obtenerImagenProducto, enlaceDetalle } from './app.js';
 import { escapeHTML, safeAssetUrl, safePosition } from './sanitize.js';
-import { renderCargando, renderError, renderVacio, resolverCatalogo, demoActivado } from './estados.js';
+import { renderCargando, renderError, renderVacio, demoActivado } from './estados.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializa componentes compartidos
@@ -406,7 +406,7 @@ function renderizarProducto(producto, contenedor) {
     `;
 
     // Inicializa galería interactiva
-    inicializarGaleria(imagenes);
+    inicializarGaleria();
 
     // Event listeners para botones
     const btnCarrito = document.getElementById('btnAgregarCarrito');
@@ -479,10 +479,12 @@ function renderizarProducto(producto, contenedor) {
 }
 
 /**
- * Inicializa galería de imágenes con thumbnails
- * @param {Array} imagenes
+ * Inicializa galería de imágenes con thumbnails.
+ *
+ * Trabaja sobre el DOM ya renderizado (los thumbnails se emiten en el HTML de
+ * la ficha), asi que no necesita recibir la lista de imagenes.
  */
-function inicializarGaleria(imagenes) {
+function inicializarGaleria() {
     const imgPrincipal = document.getElementById('imagenPrincipal');
     const thumbs = document.querySelectorAll('.galeria-thumb');
 

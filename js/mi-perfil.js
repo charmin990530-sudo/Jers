@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function verificarAuthYCargar() {
     // La proteccion vive en js/rutas.js: decide una sola vez que hacer ante falta
     // de sesion o de rol, y devuelve al usuario a esta pagina tras identificarse.
-    const { ok } = await protegerRuta({ pantalla: 'mi-perfil' });
+    const { ok } = await protegerRuta();
     if (!ok) return;
     const response = await getMe();
     if (!response.ok) {

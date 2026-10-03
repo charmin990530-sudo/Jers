@@ -18,8 +18,18 @@
     "dev": "node --watch backend/src/app.js",
     "seed": "node backend/src/seeds/seed.js",
     "test": "npm test --prefix backend",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -p jsconfig.json",
+    "check": "npm run lint && npm run typecheck",
     "autostart": "node scripts/instalar-autoinicio.mjs",
     "autostart:stop": "node scripts/instalar-autoinicio.mjs --desinstalar",
     "autostart:status": "node scripts/instalar-autoinicio.mjs --estado"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^15.15.0",
+    "typescript": "^5.9.3"
   }
 }

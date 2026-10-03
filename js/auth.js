@@ -40,7 +40,7 @@ export function validarEmail(email) {
  */
 export function validarTelefono(telefono) {
     if (!telefono) return true;  // Opcional
-    return /^[\d\s\-\+\(\)]{7,20}$/.test(telefono);
+    return /^[\d\s\-+()]{7,20}$/.test(telefono);
 }
 
 /**
