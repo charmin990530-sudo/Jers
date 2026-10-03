@@ -26,7 +26,9 @@ const PAGINAS = [
 ];
 
 // Carpetas que se copian completas.
-const CARPETAS = ['css', 'js', 'img', 'data', 'admin', 'video'];
+// `font` son las tipografías del sitio (B-35): viven en el repo y se sirven desde
+// el mismo origen, sin pasar por Google Fonts.
+const CARPETAS = ['css', 'js', 'img', 'data', 'admin', 'video', 'font'];
 
 const copiar = (desde, hasta) => {
   const stat = fs.statSync(desde);
