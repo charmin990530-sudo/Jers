@@ -52,6 +52,10 @@ jobs:
       - name: Type-check frontend (checkJs)
         run: npm run typecheck
 
+      # `npm test` corre las dos suites: `test:backend` (13 suites, 199 tests) y
+      # `test:frontend` (js/api.js, 20 tests). Los tests del backend necesitan
+      # JWT_SECRET; los del frontend no leen variables de entorno, asi que van con
+      # las mismas y no estorban.
       - name: Run tests
         run: npm test
         env:

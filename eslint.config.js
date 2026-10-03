@@ -133,7 +133,9 @@ export default [
 
   // ---- Tests ---------------------------------------------------------------
   {
-    files: ['backend/tests/**/*.js'],
+    // Los del backend viven en backend/tests y los del frontend en
+    // tests/frontend (arbol distinto: los segundos importan `js/`, no `backend/src`).
+    files: ['backend/tests/**/*.js', 'tests/frontend/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
