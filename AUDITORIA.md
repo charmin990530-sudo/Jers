@@ -978,7 +978,7 @@ Leyenda: **Resuelto** · **Aceptado** (decisión tuya, no se cambia) ·
 | ID | Estado | Commit |
 |---|---|---|
 | B-01 | **Parcial** — corregidos los de la ronda anterior; quedan algunos 400/409 | — |
-| B-02 | **Pendiente** — `EMAIL_EXISTS` sigue confirmando la existencia del email | — |
+| B-02 | **Resuelto** — el registro responde igual exista o no la cuenta, no autentica y avisa al titular | `7dd868c` |
 | B-03 | Resuelto | `7009f36` |
 | B-04 | Resuelto | `7009f36` |
 | B-05 | **Parcial** — hay suite de frontend: 43 tests sobre `api.js`, `carrito.js` y `auth.js`. Faltan los controladores de página (ver 9.4) | `d5859fe`, `149ebc7`, `c10bb12` |
