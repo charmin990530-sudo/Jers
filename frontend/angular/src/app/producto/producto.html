@@ -1,0 +1,89 @@
+<section class="producto">
+  @if (cargando()) {
+    <p class="vacio">Cargando producto…</p>
+  } @else if (error()) {
+    <div class="vacio">
+      <p>{{ error() }}</p>
+      <a class="cardbtn" routerLink="/catalogo/maquillaje">Volver al catálogo</a>
+    </div>
+  } @else if (producto(); as producto) {
+    <nav class="migas" aria-label="Ruta de navegación">
+      <a routerLink="/">Inicio</a>
+      <span>/</span>
+      @if (slugReferencia(producto.categoria); as slug) {
+        <a [routerLink]="['/catalogo', slug]">{{ nombreReferencia(producto.categoria) }}</a>
+      } @else {
+        <a routerLink="/catalogo/maquillaje">Catálogo</a>
+      }
+      <span>/</span>
+      <span aria-current="page">{{ producto.nombre }}</span>
+    </nav>
+
+    <div class="detalle">
+      <div class="zona-imagen">
+        <img class="detalle-imagen" [src]="imagenUrl(producto)" [alt]="producto.nombre" />
+        @if (descuento(producto) > 0) {
+          <span class="descuento-badge">-{{ descuento(producto) }}%</span>
+        }
+      </div>
+
+      <div class="info">
+        @if (nombreReferencia(producto.marca); as marca) {
+          <p class="eyebrow text-accent">{{ marca }}</p>
+        }
+        <h1 class="titulo-producto">{{ producto.nombre }}</h1>
+
+        @if (producto.descripcionCorta) {
+          <p class="descripcion-corta">{{ producto.descripcionCorta }}</p>
+        }
+
+        <div class="precio-bloque">
+          <p class="cardprecio">
+            {{ formatearPrecio(producto.precio) }}
+            @if (descuento(producto) > 0) {
+              <span class="precio-anterior">{{ formatearPrecio(precioAnteriorValor(producto)) }}</span>
+            }
+          </p>
+          <p class="impuestos">Impuestos incluidos. Envío calculado en el checkout.</p>
+        </div>
+
+        @if ((producto.stock ?? 0) > 0) {
+          <p class="stock"><span class="punto"></span> Disponible · {{ producto.stock }} unidades</p>
+        } @else {
+          <p class="stock agotado"><span class="punto"></span> Agotado temporalmente</p>
+        }
+
+        @if (producto.descripcion) {
+          <div class="descripcion">
+            <h2>Descripción</h2>
+            <p>{{ producto.descripcion }}</p>
+          </div>
+        }
+
+        <div class="compra">
+          <div class="cantidad" aria-label="Cantidad">
+            <button type="button" (click)="cambiarCantidad(-1)" [disabled]="cantidad() <= 1" aria-label="Quitar una unidad">−</button>
+            <span>{{ cantidad() }}</span>
+            <button type="button" (click)="cambiarCantidad(1)" [disabled]="cantidad() >= (producto.stock ?? 99)" aria-label="Añadir una unidad">+</button>
+          </div>
+          <button class="cardbtn" type="button" [disabled]="agregando() || (producto.stock ?? 0) < 1" (click)="agregarAlCarrito(producto)">
+            {{ agregando() ? 'Añadiendo…' : ((producto.stock ?? 0) < 1 ? 'Sin stock' : 'Añadir al carrito') }}
+          </button>
+        </div>
+
+        @if (aviso()) {
+          <p class="aviso" role="status">{{ aviso() }} <a routerLink="/carrito">Ver carrito</a></p>
+        }
+        @if (errorAgregar()) {
+          <p class="aviso error" role="alert">{{ errorAgregar() }}</p>
+        }
+
+        <ul class="beneficios">
+          <li>Envíos a todo Colombia</li>
+          <li>Productos originales</li>
+          <li>Atención personalizada por WhatsApp</li>
+        </ul>
+      </div>
+    </div>
+  }
+</section>

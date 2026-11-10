@@ -1,0 +1,86 @@
+<section class="catalogo">
+  <header class="cabecera-catalogo">
+    <div>
+      <p class="eyebrow text-accent">Catálogo</p>
+      <h1 class="titulo-catalogo">{{ titulo() }}</h1>
+      <p class="descripcion-catalogo">{{ descripcion() }}</p>
+    </div>
+
+    <div class="filtros">
+      <div class="tabs">
+        <a routerLink="/catalogo/maquillaje" [class.activo]="slug() === 'maquillaje'">Maquillaje</a>
+        <a routerLink="/catalogo/cabello" [class.activo]="slug() === 'cabello'">Cabello</a>
+      </div>
+      <label class="buscador">
+        <input type="search" [ngModel]="busqueda()" (ngModelChange)="buscar($event)" maxlength="100" placeholder="Buscar producto…" aria-label="Buscar en el catálogo" />
+      </label>
+    </div>
+  </header>
+
+  @if (aviso()) {
+    <p class="aviso" role="status">{{ aviso() }} <a routerLink="/carrito">Ver carrito</a></p>
+  }
+
+  @if (cargando()) {
+    <div class="grid" aria-label="Cargando productos">
+      @for (n of [1,2,3,4,5,6]; track n) {
+        <div class="card esqueleto">
+          <div class="cardimage"></div>
+          <div class="linea"></div>
+          <div class="linea corta"></div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="vacio">
+      <p>{{ error() }}</p>
+      <button class="cardbtn" type="button" (click)="cargar(slug())">Reintentar</button>
+    </div>
+  } @else if (productos().length === 0) {
+    <div class="vacio">
+      <p>No encontramos productos para esta búsqueda.</p>
+      @if (busqueda()) {
+        <button class="cardbtn" type="button" (click)="buscar('')">Limpiar búsqueda</button>
+      }
+    </div>
+  } @else {
+    <div class="grid">
+      @for (producto of productos(); track producto._id ?? producto.id ?? producto.nombre) {
+        <article class="card">
+          <a class="cardimage-link" [routerLink]="['/producto', producto._id ?? producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
+            <img class="cardimage" [src]="imagenUrl(producto)" [alt]="producto.nombre" loading="lazy" decoding="async" />
+            @if (descuento(producto) > 0) {
+              <span class="descuento-badge">-{{ descuento(producto) }}%</span>
+            }
+          </a>
+          <div class="card-info">
+            @if (nombreMarca(producto); as marca) {
+              <p class="card-marca">{{ marca }}</p>
+            }
+            <h3 class="cardname">
+              <a [routerLink]="['/producto', producto._id ?? producto.id]">{{ producto.nombre }}</a>
+            </h3>
+            <p class="cardprecio">
+              {{ formatearPrecio(producto.precio) }}
+              @if (descuento(producto) > 0) {
+                <span class="precio-anterior">{{ formatearPrecio(precioAnterior(producto)) }}</span>
+              }
+            </p>
+          </div>
+          <div class="card-acciones">
+            <button class="cardbtn" type="button" [disabled]="agregandoId() === (producto._id ?? producto.id) || (producto.stock ?? 1) < 1" (click)="agregarAlCarrito(producto)">
+              {{ agregandoId() === (producto._id ?? producto.id) ? 'Añadiendo…' : ((producto.stock ?? 1) < 1 ? 'Sin stock' : 'Añadir al carrito') }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+    @if (paginas() > 1) {
+      <nav class="paginacion" aria-label="Páginas del catálogo">
+        <button class="cardbtn" type="button" [disabled]="pagina() <= 1" (click)="cargar(slug(), pagina() - 1)">Anterior</button>
+        <span role="status">Página {{ pagina() }} de {{ paginas() }} · {{ total() }} productos</span>
+        <button class="cardbtn" type="button" [disabled]="pagina() >= paginas()" (click)="cargar(slug(), pagina() + 1)">Siguiente</button>
+      </nav>
+    }
+  }
+</section>

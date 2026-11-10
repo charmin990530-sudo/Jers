@@ -1,0 +1,232 @@
+.auth {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-16) var(--space-4);
+}
+
+.auth-card {
+  width: min(100%, 520px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: 4px;
+  margin-bottom: var(--space-6);
+  background: var(--bg-elev);
+  border-radius: var(--radius-full);
+}
+
+.auth-tabs button {
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.auth-tabs button.activo {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.titulo-auth {
+  font-size: clamp(1.75rem, 1.4rem + 2vw, 2.5rem);
+  margin: var(--space-2) 0 var(--space-6);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.campo > span:first-child {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.campo small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.campo input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.campo input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.campo-password {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.campo-password input {
+  border: 0;
+  border-radius: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.campo-password input:focus {
+  outline: none;
+}
+
+.ver-password {
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.error {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger, #b23b3b) 12%, transparent);
+  color: var(--danger, #b23b3b);
+  font-size: 0.88rem;
+}
+
+.mensaje-exito {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+// Aviso neutro (no es un error): por ejemplo, "si ese correo tiene cuenta,
+// te enviamos el enlace". Comparte estilo con el aviso del inicio y del
+// catalogo para que la pantalla se lea igual en toda la tienda.
+.aviso {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 0.88rem;
+}
+
+.nota {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.cambio a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cambio a:hover {
+  text-decoration: underline;
+}
+
+.cambio {
+  margin-top: var(--space-6);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.cambio button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cardbtn {
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cardbtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 560px) {
+  .auth {
+    padding: var(--space-8) var(--space-3);
+  }
+
+  .auth-card {
+    padding: var(--space-5);
+  }
+
+  .fila {
+    grid-template-columns: 1fr;
+  }
+}

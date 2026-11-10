@@ -21,7 +21,7 @@ cp backend/.env.example backend/.env         # rellena JWT_SECRET
 # sitio donde hay un puerto escrito.
 #
 # IMPORTANTE: el sitio y la API los sirve ESTE proceso, así que `PORT` tiene que
-# ser el mismo puerto desde el que abres el navegador. `js/config.js` saca la URL
+# ser el mismo puerto desde el que abres el navegador. `frontend/js/config.js` saca la URL
 # de la API de `window.location.origin` y no escribe ningún puerto, de modo que
 # si cambias PORT a 3005, la web tiene que abrirse en http://localhost:3005.
 
@@ -34,9 +34,9 @@ npm start                                   # http://localhost:3000
 
 | Script | Qué hace |
 |---|---|
-| `npm start` | Reconstruye `public/` y arranca el servidor |
+| `npm start` | Reconstruye `frontend/public/` y arranca el servidor |
 | `npm run dev` | Igual, con recarga al guardar (`node --watch`) |
-| `npm run build:static` | Solo regenera `public/` |
+| `npm run build:static` | Solo regenera `frontend/public/` |
 | `npm run seed` | Carga datos iniciales |
 | `npm test` | 127 tests contra un replica set en memoria |
 
@@ -46,16 +46,15 @@ replica set, que es lo que permite probar transacciones de verdad.
 ### Estructura
 
 ```
-raíz/            HTML, css/, js/, img/, data/, admin/   <- fuente del sitio
-public/          copia generada, la que se sirve        <- artefacto
-backend/         API Express + tests
-scripts/         preparar-estatico.mjs
-thunder-tests/   colección de Thunder Client
-API.md           contrato de la API
+frontend/          pages/, css/, js/, img/, data/, admin/, tests/  <- fuente del sitio
+frontend/public/   copia generada, la que se sirve                 <- artefacto
+backend/           API Express + tests + thunder-tests/
+scripts/           preparar-estatico.mjs
+docs/              API.md (contrato), AUDITORIA.md
 ```
 
-`public/` es una **copia generada**: se reconstruye en cada `npm start` y en
-Vercel. Los archivos a editar son siempre los de la raíz.
+`frontend/public/` es una **copia generada**: se reconstruye en cada `npm start` y en
+Vercel. Los archivos a editar son siempre los de `frontend/`.
 
 ## Rutas del sitio
 
@@ -150,7 +149,7 @@ mongosh --eval 'rs.initiate()'
 Base: `/api`. `🔒` = requiere sesión · `🛡` = requiere rol admin.
 
 El detalle completo de cada endpoint, con cuerpos y errores, está en
-[`API.md`](../API.md) (raíz del repositorio).
+[`API.md`](../docs/API.md) (en `docs/`).
 
 ## Salud
 

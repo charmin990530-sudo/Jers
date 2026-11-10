@@ -13,11 +13,12 @@ import globals from 'globals';
 
 const ignores = [
   'node_modules/**',
-  'public/**',        // build generado por scripts/preparar-estatico.mjs
+  'frontend/public/**', // build generado por scripts/preparar-estatico.mjs
+  'frontend/angular/dist/**',
   'backend/coverage/**',
-  'thunder-tests/**',
-  'video/**',
-  'data/**',
+  'backend/thunder-tests/**',
+  'frontend/video/**',
+  'frontend/data/**',
   '.vercel/**',
 ];
 
@@ -57,7 +58,7 @@ const baseRules = {
   // es: una `const` usada antes de su declaracion no da error al escribir el
   // codigo, ni lo dan los tests si la funcion se invoca mas tarde, y solo
   // revienta cuando esa funcion se llama durante la evaluacion del modulo.
-  // Pasó de verdad: `leerMeta` en js/config.js se llamaba desde
+  // Pasó de verdad: `leerMeta` en frontend/js/config.js se llamaba desde
   // `obtenerApiBaseUrl`, que se invoca al cargar el modulo, y `config.js`
   // entero dejo de funcionar en el navegador mientras los 199 tests en verde.
   // `functions: false` a proposito: una `function` declarada esta izada, asi que
@@ -77,12 +78,12 @@ export default [
 
   // ---- Frontend: el navegador ----------------------------------------------
   {
-    // Todo `js/` son modulos ES salvo los dos que los HTML cargan como scripts
-    // clasicos (`<script src=...>` sin `type="module"`): son los que corren
-    // antes de que exista el grafo de modulos, para que la pagina no se vea
-    // rota mientras se descargan el resto.
-    files: ['js/**/*.js'],
-    ignores: ['js/fondo-textura.js', 'js/loader-boot.js'],
+    // Todo `frontend/js/` son modulos ES salvo los dos que los HTML cargan como
+    // scripts clasicos (`<script src=...>` sin `type="module"`): son los que
+    // corren antes de que exista el grafo de modulos, para que la pagina no se
+    // vea rota mientras se descargan el resto.
+    files: ['frontend/js/**/*.js'],
+    ignores: ['frontend/js/fondo-textura.js', 'frontend/js/loader-boot.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -101,7 +102,7 @@ export default [
   {
     // Se cargan con `<script src=...>` sin `type="module"`, asi que viven en
     // el ambito global de la pagina y no pueden usar import/export.
-    files: ['js/fondo-textura.js', 'js/loader-boot.js'],
+    files: ['frontend/js/fondo-textura.js', 'frontend/js/loader-boot.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'script',
@@ -158,7 +159,7 @@ export default [
     // Van en su propio bloque y no con los de backend porque necesitan los dos
     // entornos: un test de frontend sustituye el `fetch` de Node Y usa el DOM
     // (jsdom), y con un solo `globals` faltan la mitad de los identificadores.
-    files: ['tests/frontend/**/*.js'],
+    files: ['frontend/tests/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',

@@ -5,7 +5,7 @@
     "solo aparecian cuando el navegador ejecutaba el codigo.",
     "",
     "ALCANCE DELIMITADO A PROPOSITO, Y POR QUE:",
-    "`js/` tiene 28 modulos y casi todos son controladores de pagina que hacen",
+    "`frontend/js/` tiene 28 modulos y casi todos son controladores de pagina que hacen",
     "`document.getElementById(...).value`, `.dataset`, `.hidden` y `event.key`.",
     "`getElementById` devuelve `HTMLElement`, que no declara ninguna de esas",
     "propiedades, asi que activar checkJs ahi produce cientos de errores que NO",
@@ -35,11 +35,11 @@
     "forceConsistentCasingInFileNames": true
   },
   "files": [
-    "js/tipos-globales.d.ts",
-    "js/sanitize.js",
-    "js/fallbackCatalog.js",
-    "js/estados.js",
-    "js/config.js",
-    "js/api.js"
+    "frontend/js/tipos-globales.d.ts",
+    "frontend/js/sanitize.js",
+    "frontend/js/fallbackCatalog.js",
+    "frontend/js/estados.js",
+    "frontend/js/config.js",
+    "frontend/js/api.js"
   ]
 }

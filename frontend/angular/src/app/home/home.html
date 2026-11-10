@@ -1,0 +1,272 @@
+<section class="hero hero-motion scroll-reveal">
+  <div class="hero-texto">
+    <p class="eyebrow text-accent"><span class="hero-punto"></span> Una nueva forma de sentir la belleza</p>
+    <h1>Tu belleza.<br /><em>Tu universo.</em></h1>
+    <p class="lead">Maquillaje y productos capilares elegidos para acompañar tu rutina, realzar tu estilo y cuidar de ti todos los días.</p>
+    <div class="hero-acciones">
+      <a class="btn primario" routerLink="/catalogo/maquillaje">Descubre la colección <span aria-hidden="true">↗</span></a>
+      <a class="btn secundario" routerLink="/looks">Encuentra tu look</a>
+    </div>
+    <dl class="hero-datos">
+      <div>
+        <dt>Envío gratis</dt>
+        <dd>Desde {{ formatearPrecio(envioGratis) }}</dd>
+      </div>
+      <div>
+        <dt>Asesoría</dt>
+        <dd>Personalizada por WhatsApp</dd>
+      </div>
+      <div>
+        <dt>Selección</dt>
+        <dd>Marcas originales</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="hero-visual">
+    <span class="hero-edicion">BY JERS / BEAUTY IN MOTION</span>
+    <figure class="hero-foto">
+      <img src="/img/hero/soficora-editorial-v2.webp" alt="Modelo de By Jers con maquillaje de ojos y labios brillantes" fetchpriority="high" />
+    </figure>
+    <app-beauty-scene />
+    <a class="hero-firma" routerLink="/looks"><span class="look-swatch" aria-hidden="true"></span><span><small>El look de la semana</small><strong>Glow, a tu manera</strong></span><span aria-hidden="true">↗</span></a>
+  </div>
+</section>
+
+<section class="beneficios scroll-reveal" aria-label="Beneficios de comprar en By Jers">
+  <div>
+    <span>01</span>
+    <div>
+      <strong>Envíos a todo Colombia</strong>
+      <p>Recibe tu pedido donde estés.</p>
+    </div>
+  </div>
+  <div>
+    <span>02</span>
+    <div>
+      <strong>Productos originales</strong>
+      <p>Marcas seleccionadas y verificadas.</p>
+    </div>
+  </div>
+  <div>
+    <span>03</span>
+    <div>
+      <strong>Atención cercana</strong>
+      <p>Te asesoramos antes y después de comprar.</p>
+    </div>
+  </div>
+</section>
+
+<section class="seccion categorias scroll-reveal">
+  <div class="seccion-cabecera">
+    <div>
+      <p class="eyebrow text-accent">Compra por categoría</p>
+      <h2>Encuentra tu imprescindible</h2>
+    </div>
+  </div>
+
+  <div class="categorias-grid">
+    <a class="categoria-card" routerLink="/catalogo/maquillaje">
+      <img src="/img/promociones/paleta-de-sombras.webp" alt="Paleta de sombras" loading="lazy" />
+      <div class="categoria-texto">
+        <h3>Maquillaje</h3>
+        <p>Rostro, ojos y labios para crear el look que quieras.</p>
+        <span>Ver productos</span>
+      </div>
+    </a>
+    <a class="categoria-card" routerLink="/catalogo/cabello">
+      <img src="/img/productos/shampoo-hidratacion-profunda.webp" alt="Shampoo de hidratación profunda" loading="lazy" />
+      <div class="categoria-texto">
+        <h3>Cabello</h3>
+        <p>Limpieza, hidratación y protección para tu cabello.</p>
+        <span>Ver productos</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<section class="seccion destacados scroll-reveal">
+  <div class="seccion-cabecera">
+    <div>
+      <p class="eyebrow text-accent">Recién llegados</p>
+      <h2>Novedades</h2>
+    </div>
+    <a class="ver-todo" routerLink="/catalogo/maquillaje">Ver todo</a>
+  </div>
+
+  @if (aviso()) {
+    <p class="aviso" role="status">{{ aviso() }} <a routerLink="/carrito">Ver carrito</a></p>
+  }
+
+  @if (cargando()) {
+    <div class="grid">
+      @for (n of [1,2,3,4]; track n) {
+        <div class="card esqueleto">
+          <div class="cardimage"></div>
+          <div class="linea"></div>
+          <div class="linea corta"></div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="vacio">
+      <p>{{ error() }}</p>
+      <button class="btn secundario" type="button" (click)="cargarDestacados()">Reintentar</button>
+    </div>
+  } @else if (destacados().length === 0) {
+    <p class="vacio">Todavía no hay novedades publicadas.</p>
+  } @else {
+    <div class="grid">
+      @for (producto of destacados(); track producto._id ?? producto.id ?? producto.nombre) {
+        <article class="card">
+          <a class="cardimage-link" [routerLink]="['/producto', producto._id ?? producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
+            @if (imagenAlterna(producto); as alterna) {
+              <img class="cardimage cardimage-alterna" [src]="alterna" [alt]="producto.nombre + ', vista alternativa'" loading="lazy" decoding="async" />
+            }
+            <img class="cardimage" [src]="imagenUrl(producto)" [alt]="producto.nombre" loading="lazy" decoding="async" />
+            @if (descuento(producto) > 0) {
+              <span class="descuento-badge">-{{ descuento(producto) }}%</span>
+            }
+          </a>
+          <div class="card-info">
+            @if (nombreMarca(producto); as marca) {
+              <p class="card-marca">{{ marca }}</p>
+            }
+            <h3 class="cardname">
+              <a [routerLink]="['/producto', producto._id ?? producto.id]">{{ producto.nombre }}</a>
+            </h3>
+            <p class="cardprecio">
+              {{ formatearPrecio(producto.precio) }}
+              @if (descuento(producto) > 0) {
+                <span class="precio-anterior">{{ formatearPrecio(precioAnterior(producto)) }}</span>
+              }
+            </p>
+          </div>
+          <div class="card-acciones">
+            <button class="cardbtn" type="button" [disabled]="agregandoId() === (producto._id ?? producto.id)" (click)="agregarAlCarrito(producto)">
+              {{ agregandoId() === (producto._id ?? producto.id) ? 'Añadiendo…' : 'Añadir al carrito' }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<section class="promo-banner scroll-reveal">
+  <img src="/img/promociones/promocion.webp" alt="Selección especial By Jers" loading="lazy" />
+  <div class="promo-texto">
+    <p class="eyebrow text-accent">Selección especial</p>
+    <h2>Precios especiales en tus favoritos</h2>
+    <p>Productos que ya son parte de tu rutina, ahora con un motivo más para llevarlos contigo.</p>
+    <a class="btn primario" routerLink="/catalogo/maquillaje">Descubrir ofertas</a>
+  </div>
+</section>
+
+@if (cargandoPromos() || promociones().length > 0) {
+  <section #ofertasCarrusel class="seccion promociones scroll-reveal">
+    <div class="seccion-cabecera">
+      <div>
+        <p class="eyebrow text-accent">Por tiempo limitado</p>
+        <h2>En oferta</h2>
+      </div>
+      @if (promociones().length > 1 && !cargandoPromos()) {
+        <div class="carrusel-controles" aria-label="Controles del carrusel de ofertas">
+          <button type="button" aria-label="Ver ofertas anteriores" (click)="desplazarCarrusel(ofertasCarrusel, -1)">←</button>
+          <button type="button" aria-label="Ver más ofertas" (click)="desplazarCarrusel(ofertasCarrusel, 1)">→</button>
+        </div>
+      }
+    </div>
+
+    @if (cargandoPromos()) {
+      <p class="vacio">Cargando ofertas…</p>
+    } @else {
+      <div #ofertasCarrusel class="ofertas-lista" tabindex="0" aria-label="Ofertas de productos; desliza horizontalmente para recorrer">
+        @for (producto of promociones(); track producto._id ?? producto.id ?? producto.nombre) {
+          <article class="oferta">
+            <a [routerLink]="['/producto', producto._id ?? producto.id]">
+              @if (imagenAlterna(producto); as alterna) {
+                <img class="oferta-img-alterna" [src]="alterna" [alt]="producto.nombre + ', vista alternativa'" loading="lazy" />
+              }
+              <img [src]="imagenUrl(producto)" [alt]="producto.nombre" loading="lazy" />
+            </a>
+            <div class="oferta-info">
+              <h3><a [routerLink]="['/producto', producto._id ?? producto.id]">{{ producto.nombre }}</a></h3>
+              <p>
+                <span class="oferta-precio">{{ formatearPrecio(producto.precio) }}</span>
+                @if (descuento(producto) > 0) {
+                  <span class="precio-anterior">{{ formatearPrecio(precioAnterior(producto)) }}</span>
+                }
+              </p>
+            </div>
+            <span class="oferta-badge">-{{ descuento(producto) }}%</span>
+          </article>
+        }
+      </div>
+    }
+  </section>
+}
+
+<section class="seccion marcas scroll-reveal">
+  <div class="seccion-cabecera">
+    <div>
+      <p class="eyebrow text-accent">Nuestras marcas</p>
+      <h2>Marcas que elegimos</h2>
+    </div>
+  </div>
+
+  @if (cargandoMarcas()) {
+    <p class="vacio">Cargando marcas…</p>
+  } @else if (marcas().length === 0) {
+    <p class="vacio">Pronto publicaremos nuestras marcas favoritas.</p>
+  } @else {
+    <div class="marcas-carrusel-shell">
+      <button class="marca-control" type="button" aria-label="Ver marcas anteriores" (click)="desplazarCarrusel(marcasCarrusel, -1)">←</button>
+      <div #marcasCarrusel class="marcas-lista" tabindex="0" aria-label="Marcas disponibles; desliza horizontalmente para recorrer">
+        <div class="marcas-pista">
+          @for (marca of marcas(); track marca._id ?? marca.nombre) {
+            <span class="marca-chip">{{ marca.nombre }}</span>
+          }
+        </div>
+        <div class="marcas-pista marcas-pista-duplicada" aria-hidden="true">
+          @for (marca of marcas(); track marca._id ?? marca.nombre) {
+            <span class="marca-chip">{{ marca.nombre }}</span>
+          }
+        </div>
+      </div>
+      <button class="marca-control" type="button" aria-label="Ver más marcas" (click)="desplazarCarrusel(marcasCarrusel, 1)">→</button>
+    </div>
+  }
+</section>
+
+<section class="seccion testimonios scroll-reveal">
+  <div class="seccion-cabecera">
+    <div>
+      <p class="eyebrow text-accent">Lo que dicen de nosotras</p>
+      <h2>Clientas que vuelven</h2>
+    </div>
+  </div>
+  <div class="testimonios-grid">
+    <blockquote>
+      <p>“Encontré mi labial perfecto y la asesoría fue súper cercana.”</p>
+      <cite>Laura M.</cite>
+    </blockquote>
+    <blockquote>
+      <p>“El shampoo me cambió el cabello. La atención por WhatsApp es muy rápida.”</p>
+      <cite>Camila R.</cite>
+    </blockquote>
+    <blockquote>
+      <p>“Me encanta la selección de productos y que todo llegue bien empacado.”</p>
+      <cite>Valentina G.</cite>
+    </blockquote>
+  </div>
+</section>
+
+<section class="cta-final scroll-reveal">
+  <img src="/img/logo/logo.webp" alt="" loading="lazy" />
+  <div>
+    <h2>¿No sabes qué elegir?</h2>
+    <p>Cuéntanos qué buscas y te ayudamos a armar tu rutina.</p>
+  </div>
+  <a class="btn primario" href="https://wa.me/573114333561" target="_blank" rel="noopener">Hablar por WhatsApp</a>
+</section>

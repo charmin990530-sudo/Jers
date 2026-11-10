@@ -34,6 +34,7 @@ import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
 import { WHATSAPP_NUMBER, SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
+import { invalidarCacheDashboard } from '../services/dashboardCache.js';
 import {
   sendOrderConfirmationEmail,
   sendNewOrderNotificationEmail,
@@ -64,6 +65,106 @@ const serializeOrder = order => ({
 });
 
 /**
+ * Respuesta de "este pedido ya existe" (reintento con la misma clave).
+ *
+ * La clave de idempotencia tiene que devolver SIEMPRE el mismo pedido, y con
+ * los mismos datos. Se construye aqui para que el camino normal y el camino
+ * de carrera(devolviendo el pedido que creo otra peticion) no puedan divergir.
+ */
+const respuestaPedidoExistente = order => ({
+  success: true,
+  message: 'El pedido ya había sido creado',
+  order: {
+    id: order._id,
+    numeroOrden: order.numeroOrden,
+    total: order.total,
+    estado: order.estado,
+    whatsappUrl: null,
+  },
+});
+
+/**
+ * Busca el pedido de un usuario con una clave de idempotencia concreta.
+ * @param {import('mongoose').Types.ObjectId} usuario
+ * @param {string} idempotencyKey
+ * @returns {Promise<object|null>}
+ */
+const buscarPedidoPorClave = (usuario, idempotencyKey) =>
+  Order.findOne({ usuario, idempotencyKey }).select('+idempotencyKey');
+
+/**
+ * Busca el pedido esperando un poco entre intentos.
+ *
+ * POR QUE HAY QUE ESPERAR
+ * ----------------------
+ * Cuando dos peticiones con la MISMA clave llegan a la vez, la segunda puede
+ * perder la carrera por el carrito (el `checkoutToken`) y fallar con
+ * `CHECKOUT_IN_PROGRESS` JUSTO cuando la primera todavia no ha confirmado su
+ * pedido. Si la segunda consulta el pedido en ese instante, no lo encuentra y
+ * le responde 409 al cliente: el cliente ve un error aunque su pedido SI se
+ * haya creado, que es justo lo que la idempotencia debe evitar.
+ *
+ * Se reintenta unas pocas veces con esperas cortas: si la primera peticion
+ *.commit() o no commit() falla, el pedido no existira nunca y se devuelve el
+ * error original tras el ultimo intento.
+ */
+const buscarPedidoPorClaveConEspera = async (usuario, idempotencyKey, intentos = 4) => {
+  for (let i = 0; i < intentos; i++) {
+    const order = await buscarPedidoPorClave(usuario, idempotencyKey);
+    if (order) return order;
+    if (i < intentos - 1) {
+      await new Promise(resolve => setTimeout(resolve, 60 * (i + 1)));
+    }
+  }
+  return null;
+};
+
+/**
+ * Reserva el stock de las lineas del pedido.
+ *
+ * CON transaccion (replica set): un unico `bulkWrite`. La transaccion garantiza
+ * que se aplica todo o nada, asi que no hace falta saber que lineas se
+ * aplicaron: si algo falla, el abort lo revierte entero. Un solo viaje de red
+ * para N lineas.
+ *
+ * SIN transaccion (mongod standalone): el `bulkWrite` puede aplicar las tres
+ * primeras operaciones y NO aplicar la cuarta (su filtro no matchea porque ya
+ * no hay stock) sin lanzar ningun error. La compensacion necesita saber QUE se
+ * aplico para devolver SOLO ese stock: devolver el de una linea que nunca se
+ * desconto inflaria el inventario, y el stock fantasma permitia vender mas
+ * producto del que existia. Por eso, en este camino, la reserva se hace de una
+ * en una y se va anotando lo que se aplico de verdad.
+ *
+ * @param {Array<object>} items - Lineas validas del pedido.
+ * @param {import('mongodb').ClientSession|null} session
+ * @returns {Promise<{completos: number, aplicados: Array<object>}>}
+ */
+const reservarStock = async (items, session) => {
+  if (session) {
+    const reservation = await Product.bulkWrite(
+      items.map(item => ({
+        updateOne: {
+          filter: { _id: item.producto, activo: true, stock: { $gte: item.cantidad } },
+          update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
+        },
+      })),
+      { session, ordered: true },
+    );
+    return { completos: reservation.modifiedCount ?? 0, aplicados: items };
+  }
+
+  const aplicados = [];
+  for (const item of items) {
+    const resultado = await Product.updateOne(
+      { _id: item.producto, activo: true, stock: { $gte: item.cantidad } },
+      { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
+    );
+    if ((resultado.modifiedCount ?? 0) === 1) aplicados.push(item);
+  }
+  return { completos: aplicados.length, aplicados };
+};
+
+/**
  * POST /api/orders
  * Checkout: convierte carrito en pedido
  * Body validado por schemas.createOrder: { direccionEnvio, notas? }
@@ -76,19 +177,9 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     return next(new AppError('Idempotency-Key inválida', 400, ErrorCodes.INVALID_IDEMPOTENCY_KEY));
   }
   if (idempotencyKey) {
-    const existingOrder = await Order.findOne({ usuario: req.userId, idempotencyKey }).select('+idempotencyKey');
+    const existingOrder = await buscarPedidoPorClave(req.userId, idempotencyKey);
     if (existingOrder) {
-      return res.status(200).json({
-        success: true,
-        message: 'El pedido ya había sido creado',
-        order: {
-          id: existingOrder._id,
-          numeroOrden: existingOrder.numeroOrden,
-          total: existingOrder.total,
-          estado: existingOrder.estado,
-          whatsappUrl: null,
-        },
-      });
+      return res.status(200).json(respuestaPedidoExistente(existingOrder));
     }
   }
 
@@ -174,6 +265,11 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   // simultaneos sin cabecera, el que recibia el 409 se llevaba por delante el
   // historial entero de compras.
   let createdOrderId = null;
+  // Lineas cuyo stock se desconto DE VERDAD. Sin replica set no hay atomicidad,
+  // asi que la compensacion tiene que saber exactamente cuales se aplicaron:
+  // devolver el stock de una linea que nunca se desconto lo inflaria, y el
+  // stock fantasma permitia vender mas producto del que existia.
+  let itemsReservados = [];
   try {
     const outcome = await withTransaction(async ({ session }) => {
       // 1) Tomar el carrito. El $or descarta un checkout vivo de otro intento, de
@@ -194,22 +290,15 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         throw new AppError('Ya hay un checkout en curso para este carrito', 409, ErrorCodes.CHECKOUT_IN_PROGRESS);
       }
 
-      // 2) Reservar stock con UN solo bulkWrite. Antes era un updateOne por item
-      //    (N viajes de red); con 20 items en el carrito un corte de conexion a
-      //    mitad dejaba el stock descontado a medias. Cada operacion conserva su
-      //    filtro `stock: {$gte: cantidad}`, asi que si otro pedido se adelanta
-      //    ese update no modifica nada y bulkWrite lo refleja en modifiedCount.
-      const reservation = await Product.bulkWrite(
-        validItems.map(item => ({
-          updateOne: {
-            filter: { _id: item.producto, activo: true, stock: { $gte: item.cantidad } },
-            update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
-          },
-        })),
-        { session, ordered: true },
-      );
-      const reservedCount = reservation.modifiedCount ?? 0;
-      if (reservedCount !== validItems.length) {
+      // 2) Reservar stock. Cada operacion conserva su filtro
+      //    `stock: {$gte: cantidad}`, asi que si otro pedido se adelanta ese
+      //    update no modifica nada y se refleja en el conteo de aplicados.
+      //    Con transaccion va en un solo bulkWrite (un viaje de red); sin ella
+      //    se hace linea a linea para saber QUE se desconto, que es lo que
+      //    necesita la compensacion. Ver reservarStock().
+      const { completos, aplicados } = await reservarStock(validItems, session);
+      itemsReservados = aplicados;
+      if (completos !== validItems.length) {
         throw new AppError('Stock insuficiente para uno o más productos del carrito', 400, ErrorCodes.INSUFFICIENT_STOCK);
       }
 
@@ -239,17 +328,24 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     });
     order = outcome.result;
   } catch (error) {
-    // Con replica set el abort ya revirtió todo y compensar aqui seria
+    // Con replica set el abort ya revIRTIO todo y compensar aqui seria
     // DESHACER un cambio ya deshecho, introduciendo stock fantasma. Por eso la
     // compensacion solo corre cuando no hubo transaccion real.
     if (!transactional) {
       await Promise.allSettled([
-        Product.bulkWrite(validItems.map(item => ({
-          updateOne: {
-            filter: { _id: item.producto, stock: { $gte: 0 } },
-            update: { $inc: { stock: item.cantidad, vendidos: -item.cantidad } },
-          },
-        })), { ordered: false }),
+        // Solo las lineas que se descontaron de verdad. Antes se devolvia el
+        // stock de TODAS las lineas del carrito, incluso de las que nunca se
+        // habían descontado (por ejemplo cuando el fallo era pedir el carrito
+        // que ya tenia otro checkout, o cuando el stock se habia agotado en
+        // otra linea): cada intento fallido inflaba el inventario.
+        itemsReservados.length
+          ? Product.bulkWrite(itemsReservados.map(item => ({
+            updateOne: {
+              filter: { _id: item.producto, stock: { $gte: 0 } },
+              update: { $inc: { stock: item.cantidad, vendidos: -item.cantidad } },
+            },
+          })), { ordered: false })
+          : Promise.resolve({ modifiedCount: 0 }),
         Cart.updateOne(
           { _id: cart._id, checkoutToken },
           { $unset: { checkoutToken: 1, checkoutExpiresAt: 1 } },
@@ -261,6 +357,23 @@ export const createOrder = asyncHandler(async (req, res, next) => {
           ? Order.deleteOne({ _id: createdOrderId })
           : Promise.resolve({ deletedCount: 0 }),
       ]);
+    }
+
+    // IDEMPOTENCIA BAJO CONCURRENCIA
+    // --------------------------------
+    // Esta peticion ha fallado, pero puede que OTRA peticion con la misma clave
+    // de idempotencia haya creado el pedido (el caso tipico: dos clics o dos
+    // pestanas, la segunda pierde la carrera por el carrito con
+    // CHECKOUT_IN_PROGRESS). El cliente debe recibir SU pedido, no un error.
+    //
+    // Si el pedido aparece, se devuelve tal cual (200). Si no aparece, el error
+    // original se propaga: la peticion no creo nada y el cliente tiene que
+    // enterarse.
+    if (idempotencyKey) {
+      const yaCreado = await buscarPedidoPorClaveConEspera(req.userId, idempotencyKey);
+      if (yaCreado) {
+        return res.status(200).json(respuestaPedidoExistente(yaCreado));
+      }
     }
     throw error;
   }
@@ -335,6 +448,10 @@ Orden: ${order.numeroOrden}
       }
     });
   });
+
+  // Un pedido nuevo cambia totalOrders/totalRevenue: invalidar la caché del
+  // dashboard para que el panel admin lo refleje en la siguiente lectura.
+  invalidarCacheDashboard();
 
   res.status(201).json({
     success: true,
@@ -504,6 +621,10 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
     }
     return next(new AppError('Este pedido no se puede cancelar en su estado actual', 400, ErrorCodes.CANNOT_CANCEL));
   }
+
+  // Cancelar un pedido cambia totalOrders/estados/revenue: invalidar la caché
+  // del dashboard para que el panel admin lo refleje en la siguiente lectura.
+  invalidarCacheDashboard();
 
   res.status(200).json({
     success: true,

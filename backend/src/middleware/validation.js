@@ -23,6 +23,7 @@
 
 import { z } from 'zod';
 import { CATEGORIAS_FIJAS } from '../models/Category.js';
+import { CANTIDAD_MAXIMA_POR_ITEM } from '../models/Cart.js';
 import { MAX_MINOR_AMOUNT } from '../services/money.js';
 import { ErrorCodes, sendError } from './apiError.js';
 
@@ -35,7 +36,7 @@ import { ErrorCodes, sendError } from './apiError.js';
  * services/money.js y los validadores de los modelos).
  */
 const minorAmount = (label) =>
-  z.number({ invalid_type_error: `${label} debe ser un numero` })
+  z.number({ error: `${label} debe ser un numero` })
     .int(`${label} debe ser un numero entero (la moneda no tiene centavos)`)
     .min(0, `${label} no puede ser negativo`)
     .max(MAX_MINOR_AMOUNT, `${label} excede el maximo representable`);
@@ -87,7 +88,7 @@ export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
   if (!result.success) {
     // Formatea errores Zod a array simple {field, message}
-    const details = result.error.errors.map(err => ({
+    const details = result.error.issues.map(err => ({
       field: err.path.join('.'),    // ej: "direccionEnvio.ciudad"
       message: err.message,
     }));
@@ -111,8 +112,8 @@ export const schemas = {
     password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
     telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/, 'Teléfono inválido').optional(),
     // z.literal(true) = DEBE ser exactamente true (no "true", no 1)
-    aceptoTerminos: z.literal(true, { errorMap: () => ({ message: 'Debe aceptar los términos y condiciones' }) }),
-    aceptoPrivacidad: z.literal(true, { errorMap: () => ({ message: 'Debe aceptar la política de privacidad' }) }),
+    aceptoTerminos: z.literal(true, { error: () => ({ message: 'Debe aceptar los términos y condiciones' }) }),
+    aceptoPrivacidad: z.literal(true, { error: () => ({ message: 'Debe aceptar la política de privacidad' }) }),
   }),
 
   // POST /api/auth/login
@@ -165,12 +166,15 @@ export const schemas = {
   // POST /api/cart
   addToCart: z.object({
     productoId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'ID de producto inválido'), // ObjectId hex
-    cantidad: z.number().int().min(1, 'La cantidad mínima es 1').max(99, 'La cantidad máxima es 99').default(1),
+    // El tope de 99 es el MAXIMO POR PRODUCTO en el carrito, no solo el de esta
+    // llamada: el controlador comprueba el total resultante despues de
+    // escribir. Ver CANTIDAD_MAXIMA_POR_ITEM en models/Cart.js.
+    cantidad: z.number().int().min(1, 'La cantidad mínima es 1').max(CANTIDAD_MAXIMA_POR_ITEM, `La cantidad máxima es ${CANTIDAD_MAXIMA_POR_ITEM}`).default(1),
   }),
 
   // PATCH /api/cart/:itemId
   updateCartItem: z.object({
-    cantidad: z.number().int().min(1, 'La cantidad mínima es 1').max(99),
+    cantidad: z.number().int().min(1, 'La cantidad mínima es 1').max(CANTIDAD_MAXIMA_POR_ITEM, `La cantidad máxima es ${CANTIDAD_MAXIMA_POR_ITEM}`),
   }),
 
   // POST /api/orders
@@ -211,6 +215,7 @@ export const schemas = {
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(12),
     sort: z.enum(['nuevos', 'mas_vendidos', 'precio_asc', 'precio_desc', 'descuento']).default('nuevos'),
+    search: z.string().trim().max(100).optional(),
   }),
 
   orderQuery: z.object({
@@ -268,7 +273,7 @@ export const schemas = {
   // raros y sin `role` (undefined -> "Rol invalido" en vez de un error de campo).
   updateUserRole: z.object({
     role: z.enum(['user', 'admin'], {
-      errorMap: () => ({ message: 'El rol debe ser "user" o "admin"' }),
+      error: () => ({ message: 'El rol debe ser "user" o "admin"' }),
     }),
   }),
 
@@ -400,7 +405,7 @@ export const schemas = {
 export const validateParams = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.params);
   if (!result.success) {
-    const details = result.error.errors.map(err => ({
+    const details = result.error.issues.map(err => ({
       field: err.path.join('.'),
       message: err.message,
     }));
@@ -416,7 +421,7 @@ export const validateParams = (schema) => (req, res, next) => {
 export const validateQuery = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.query);
   if (!result.success) {
-    const details = result.error.errors.map(err => ({
+    const details = result.error.issues.map(err => ({
       field: err.path.join('.'),
       message: err.message,
     }));

@@ -300,6 +300,30 @@ describe('carrito: importes y autorizacion', () => {
     expect(res.status).toBe(400);
   });
 
+  it('no deja pasar de 99 unidades del mismo producto aunque se agregue por partes', async () => {
+    // El limite por producto es del SERVIDOR: cada peticion respeta el tope de
+    // 99, pero el total del mismo producto en el carrito tambien. Antes solo se
+    // comprobaba la cantidad de cada llamada, asi que dos altas de 50 dejaban
+    // 100 unidades en el carrito y el servidor lo aceptaba.
+    const producto = await crearProducto({ precio: 25000, stock: 500 });
+    expect((await agregar(producto, 50)).status).toBe(200);
+    // Esta pasaria de 100: se rechaza y el carrito se queda en 50.
+    const segundo = await agregar(producto, 50);
+    expect(segundo.status).toBe(400);
+    expect(segundo.body.error.code).toBe('INVALID_QUANTITY');
+    expect((await agregar(producto, 40)).status).toBe(200);
+
+    const carrito = await cliente.agent.get('/api/cart');
+    expect(carrito.body.cart.items[0].cantidad).toBe(90);
+  });
+
+  it('rechaza una cantidad por encima del tope en una sola llamada', async () => {
+    const producto = await crearProducto({ precio: 25000, stock: 500 });
+    const res = await conCsrf(cliente.agent, 'post')('/api/cart', { productoId: producto._id.toString(), cantidad: 100 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('otro usuario no puede ver ni tocar un carrito ajeno', async () => {
     const producto = await crearProducto({ precio: 25000, stock: 30 });
     const add = await agregar(producto, 2);
@@ -623,6 +647,29 @@ describe('transacciones', () => {
     expect(dos.status).toBe(200);
     expect(dos.body.order.numeroOrden).toBe(uno.body.order.numeroOrden);
     expect(await Order.countDocuments({})).toBe(1);
+  });
+
+  it('dos peticiones simultaneas con la misma clave dejan un solo pedido y las dos lo reciben', async () => {
+    // El caso real de un doble clic o de dos pestanas: las dos peticiones
+    // salen a la vez con la misma clave. Una crea el pedido y la otra pierde la
+    // carrera por el carrito. La que pierde NO puede responder un error: el
+    // cliente ya tiene su pedido, y un 409 lo haria creer que no se guardo.
+    const producto = await crearProducto({ precio: 30000, stock: 10 });
+    await agregar(producto, 1);
+    const clave = `test-paralelo-${Date.now()}`;
+
+    const [uno, dos] = await Promise.all([
+      pedir({}, { 'Idempotency-Key': clave }),
+      pedir({}, { 'Idempotency-Key': clave }),
+    ]);
+
+    expect(await Order.countDocuments({})).toBe(1);
+    const numeros = new Set([uno.body.order?.numeroOrden, dos.body.order?.numeroOrden]);
+    expect(numeros.size).toBe(1);
+    expect(numeros.has(undefined)).toBe(false);
+    // Ninguna de las dos puede ser un error: las dos tienen que devolver el
+    // mismo pedido.
+    expect([uno.status, dos.status].sort()).toEqual([200, 201]);
   });
 });
 

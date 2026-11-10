@@ -389,7 +389,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${FRONTEND_URL.replace(/\/$/, '')}/reset-password.html?token=${encodeURIComponent(resetToken)}`;
+    // La URL que viaja en el correo tiene que existir en la tienda que se
+    // publica. La SPA de Angular sirve las rutas desde el router, asi que el
+    // enlace apunta a `/reset-password` (ruta del router) y NO a la pagina
+    // estatica `/reset-password.html`, que ya no se sirve: ese enlace llevaba a
+    // la pagina 404 y dejaba al cliente sin poder recuperar su clave.
+    const resetUrl = `${FRONTEND_URL.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(resetToken)}`;
     try {
       await sendPasswordResetEmail({ to: user.email, resetUrl });
     } catch {

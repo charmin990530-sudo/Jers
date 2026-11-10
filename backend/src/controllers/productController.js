@@ -30,6 +30,7 @@
 
 import { Product, Category, Brand } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import { GRUPOS_CATEGORIAS } from '../models/Category.js';
 
 /**
  * Construye filtro MongoDB desde query params
@@ -220,16 +221,27 @@ export const getBrands = asyncHandler(async (req, res) => {
  */
 export const getProductsByCategory = asyncHandler(async (req, res, next) => {
   const { slug } = req.params;
-  const { page = 1, limit = 12, sort = 'nuevos' } = req.query;
+  const { page = 1, limit = 12, sort = 'nuevos', search } = req.query;
 
   // Busca categoría por slug
-  const category = await Category.findOne({ slug, activo: true });
-  if (!category) {
-    return next(new AppError('Categoría no encontrada', 404, 'CATEGORY_NOT_FOUND'));
+  const grupo = Object.hasOwn(GRUPOS_CATEGORIAS, slug) ? GRUPOS_CATEGORIAS[slug] : null;
+  let category;
+  let categoriaFiltro;
+  if (grupo) {
+    const categories = await Category.find({ nombre: { $in: grupo }, activo: true }).select('_id').lean();
+    categoriaFiltro = { $in: categories.map(c => c._id) };
+    category = { nombre: slug === 'maquillaje' ? 'Maquillaje' : 'Cuidado capilar', slug };
+  } else {
+    category = await Category.findOne({ slug, activo: true });
+    if (!category) {
+      return next(new AppError('Categoría no encontrada', 404, 'CATEGORY_NOT_FOUND'));
+    }
+    categoriaFiltro = category._id;
   }
 
   const skip = (page - 1) * limit;
-  const filter = { categoria: category._id, activo: true };
+  const filter = { categoria: categoriaFiltro, activo: true };
+  if (search) filter.$text = { $search: search };
 
   const [products, total] = await Promise.all([
     Product.find(filter)

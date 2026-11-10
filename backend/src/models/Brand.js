@@ -49,16 +49,25 @@ const brandSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Normaliza acentos y símbolos igual que el frontend (NFD + strip diacritics):
+// "L'Bel Café" -> "lbel-cafe". Sin esto, el slug conservaba apóstrofes y el
+// filtro por marca del catálogo no encontraba el documento.
+const normalizarSlug = texto => texto
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
 brandSchema.pre('validate', function () {
   if (!this.slug && this.nombre) {
-    this.slug = this.nombre.toLowerCase().replace(/\s+/g, '-');
+    this.slug = normalizarSlug(this.nombre);
   }
 });
 
-// Auto-genera slug: "L'Bel" -> "lbel"
 brandSchema.pre('save', function (next) {
   if (!this.slug) {
-    this.slug = this.nombre.toLowerCase().replace(/\s+/g, '-');
+    this.slug = normalizarSlug(this.nombre);
   }
   next();
 });

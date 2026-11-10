@@ -42,6 +42,11 @@ export const CATEGORIAS_FIJAS = [
   'tratamientos',
 ];
 
+export const GRUPOS_CATEGORIAS = {
+  maquillaje: ['rostro', 'ojos', 'labios'],
+  cabello: ['shampoo', 'acondicionador', 'tratamientos'],
+};
+
 const categorySchema = new mongoose.Schema({
   nombre: {
     type: String,
@@ -72,16 +77,24 @@ const categorySchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Normaliza acentos y símbolos igual que el frontend (NFD + strip diacritics)
+// para que el slug generado coincida con el que el catálogo construye en JS.
+const normalizarSlug = texto => texto
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
 categorySchema.pre('validate', function () {
   if (!this.slug && this.nombre) {
-    this.slug = this.nombre.toLowerCase().replace(/\s+/g, '-');
+    this.slug = normalizarSlug(this.nombre);
   }
 });
 
-// Auto-genera slug: "Shampoo" -> "shampoo"
 categorySchema.pre('save', function (next) {
   if (!this.slug) {
-    this.slug = this.nombre.toLowerCase().replace(/\s+/g, '-');
+    this.slug = normalizarSlug(this.nombre);
   }
   next();
 });

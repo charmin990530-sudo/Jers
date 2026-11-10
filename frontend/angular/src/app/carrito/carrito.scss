@@ -1,0 +1,229 @@
+.carrito {
+  padding: var(--space-16) var(--space-6);
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
+.cabecera-carrito {
+  margin-bottom: var(--space-10);
+}
+
+.titulo-carrito {
+  font-size: clamp(2rem, 1.4rem + 2.5vw, 3.25rem);
+  margin-top: var(--space-2);
+}
+
+.vacio {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.aviso {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 112px 1fr auto;
+  align-items: center;
+  gap: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.itemimagen-enlace {
+  display: block;
+}
+
+.itemimagen {
+  width: 112px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--bg-elev);
+}
+
+.iteminfo {
+  min-width: 0;
+}
+
+.itemnombre {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+.itemprecio {
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.itemstock {
+  margin-top: var(--space-2);
+  font-size: 0.8rem;
+  color: var(--success, #2f7d5d);
+}
+
+.itemstock.agotado {
+  color: var(--danger, #b23b3b);
+}
+
+.itemacciones {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.cantidad {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--bg-elev);
+}
+
+.cantidad button,
+.cantidad span {
+  width: 38px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+
+.cantidad button {
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.cantidad span {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cantidad button:disabled,
+.quitar:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.itemtotal {
+  font-weight: 700;
+}
+
+.quitar {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.resumen {
+  margin-top: var(--space-8);
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(100%, 440px);
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.resumen h2 {
+  font-family: var(--font-display);
+  margin-bottom: var(--space-2);
+}
+
+.resumen p {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+}
+
+.resumen .total {
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.resumen small {
+  color: var(--text-muted);
+}
+
+.resumen-acciones {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.cardbtn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cardbtn.secundario {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .carrito {
+    padding: var(--space-10) var(--space-3);
+  }
+
+  .item {
+    grid-template-columns: 88px 1fr;
+  }
+
+  .itemimagen {
+    width: 88px;
+    height: 76px;
+  }
+
+  .itemacciones {
+    grid-column: 1 / -1;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    justify-items: start;
+    width: 100%;
+  }
+
+  .itemtotal {
+    justify-self: end;
+  }
+}

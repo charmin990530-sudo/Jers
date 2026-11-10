@@ -1,0 +1,254 @@
+<section class="admin-panel">
+  <header class="admin-cabecera">
+    <div>
+      <p class="eyebrow text-accent">By Jers</p>
+      <h1>Panel de administración</h1>
+    </div>
+    @if (acceso() === 'ok') {
+      <a class="btn secundario" routerLink="/">Ver tienda</a>
+    }
+  </header>
+
+  @if (acceso() === 'comprobando') {
+    <p class="vacio">Comprobando permisos…</p>
+  } @else if (acceso() === 'login') {
+    <div class="vacio">
+      <h2>Inicia sesión</h2>
+      <p>Necesitas una cuenta de administrador para entrar al panel.</p>
+      <a class="btn" routerLink="/login">Iniciar sesión</a>
+    </div>
+  } @else if (acceso() === 'denegado') {
+    <div class="vacio">
+      <h2>Acceso restringido</h2>
+      <p>Tu cuenta no tiene permisos de administración.</p>
+      <a class="btn" routerLink="/">Volver a la tienda</a>
+    </div>
+  } @else {
+    <nav class="admin-tabs" aria-label="Secciones del panel">
+      <button type="button" [class.activo]="tab() === 'resumen'" (click)="cambiarTab('resumen')">Resumen</button>
+      <button type="button" [class.activo]="tab() === 'productos'" (click)="cambiarTab('productos')">Productos</button>
+      <button type="button" [class.activo]="tab() === 'pedidos'" (click)="cambiarTab('pedidos')">Pedidos</button>
+    </nav>
+
+    @if (aviso()) {
+      <p class="aviso" role="status">{{ aviso() }}</p>
+    }
+    @if (error()) {
+      <p class="aviso error" role="alert">{{ error() }}</p>
+    }
+
+    @if (tab() === 'resumen') {
+      @if (cargando()) {
+        <p class="vacio">Cargando resumen…</p>
+      } @else if (estadisticas(); as stats) {
+        <div class="stats">
+          <article class="stat">
+            <span>Ventas totales</span>
+            <strong>{{ formatearPrecio(stats.totalRevenue) }}</strong>
+          </article>
+          <article class="stat">
+            <span>Ventas de hoy</span>
+            <strong>{{ formatearPrecio(stats.revenueToday) }}</strong>
+          </article>
+          <article class="stat">
+            <span>Pedidos</span>
+            <strong>{{ stats.totalOrders ?? 0 }}</strong>
+          </article>
+          <article class="stat">
+            <span>Productos</span>
+            <strong>{{ stats.totalProducts ?? 0 }}</strong>
+          </article>
+          <article class="stat">
+            <span>Usuarios</span>
+            <strong>{{ stats.totalUsers ?? 0 }}</strong>
+          </article>
+        </div>
+
+        <div class="resumen-grid">
+          <section class="bloque">
+            <h2>Pedidos recientes</h2>
+            @if ((stats.recentOrders ?? []).length === 0) {
+              <p class="texto-muted">Todavía no hay pedidos.</p>
+            } @else {
+              <div class="tabla-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pedido</th>
+                      <th>Cliente</th>
+                      <th>Fecha</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (pedido of stats.recentOrders ?? []; track pedido._id ?? pedido.numeroOrden) {
+                      <tr>
+                        <td>{{ pedido.numeroOrden }}</td>
+                        <td>{{ cliente(pedido) }}</td>
+                        <td>{{ formatearFecha(pedido.createdAt) }}</td>
+                        <td>{{ formatearPrecio(pedido.total) }}</td>
+                        <td><span class="estado">{{ etiquetaEstado(pedido.estado) }}</span></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+
+          <section class="bloque">
+            <h2>Pedidos por estado</h2>
+            @if (pedidosPorEstado().length === 0) {
+              <p class="texto-muted">Sin datos todavía.</p>
+            } @else {
+              <ul class="estados-lista">
+                @for (item of pedidosPorEstado(); track item.estado) {
+                  <li>
+                    <span>{{ etiquetaEstado(item.estado) }}</span>
+                    <strong>{{ item.cantidad }}</strong>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        </div>
+      }
+    }
+
+    @if (tab() === 'productos') {
+      @if (cargandoTab()) {
+        <p class="vacio">Cargando productos…</p>
+      } @else if (productos().length === 0) {
+        <p class="vacio">No hay productos registrados.</p>
+      } @else {
+        <p class="texto-muted productos-nota">Cambia el precio, el stock o la visibilidad y pulsa Guardar. El cambio se aplica al catálogo en el momento.</p>
+        <div class="tabla-scroll bloque">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Marca</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Visible</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (producto of productos(); track producto._id ?? producto.nombre) {
+                <tr>
+                  <td>
+                    <div class="producto-celda">
+                      <img [src]="imagenProducto(producto)" [alt]="producto.nombre" loading="lazy" />
+                      <span>{{ producto.nombre }}</span>
+                    </div>
+                  </td>
+                  <td>{{ nombreMarca(producto) }}</td>
+                  <td>{{ nombreCategoria(producto) }}</td>
+                  <td>
+                    <label class="campo-tabla">
+                      <span class="visualmente-oculto">Precio de {{ producto.nombre }}</span>
+                      <input
+                        class="input-admin"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        [ngModel]="valor(producto, 'precio')"
+                        (ngModelChange)="cambiar(producto, 'precio', $event)"
+                        [ngModelOptions]="{ standalone: true }"
+                      />
+                    </label>
+                  </td>
+                  <td>
+                    <label class="campo-tabla">
+                      <span class="visualmente-oculto">Stock de {{ producto.nombre }}</span>
+                      <input
+                        class="input-admin"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        [ngModel]="valor(producto, 'stock')"
+                        (ngModelChange)="cambiar(producto, 'stock', $event)"
+                        [ngModelOptions]="{ standalone: true }"
+                      />
+                    </label>
+                  </td>
+                  <td>
+                    <label class="campo-tabla check-tabla">
+                      <input
+                        type="checkbox"
+                        [ngModel]="valor(producto, 'activo')"
+                        (ngModelChange)="cambiar(producto, 'activo', $event)"
+                        [ngModelOptions]="{ standalone: true }"
+                      />
+                      <span class="visualmente-oculto">Visible en la tienda: {{ producto.nombre }}</span>
+                    </label>
+                  </td>
+                  <td>
+                    <button
+                      class="btn chico"
+                      type="button"
+                      [disabled]="guardandoId() === producto._id"
+                      (click)="guardarProducto(producto)"
+                    >
+                      {{ guardandoId() === producto._id ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    @if (tab() === 'pedidos') {
+      @if (cargandoTab()) {
+        <p class="vacio">Cargando pedidos…</p>
+      } @else if (pedidos().length === 0) {
+        <p class="vacio">No hay pedidos registrados.</p>
+      } @else {
+        <div class="pedidos-admin">
+          @for (pedido of pedidos(); track pedido._id ?? pedido.numeroOrden) {
+            <article class="pedido-admin">
+              <div class="pedido-admin-cabecera">
+                <div>
+                  <p class="texto-muted">{{ formatearFecha(pedido.createdAt) }}</p>
+                  <h3>{{ pedido.numeroOrden }}</h3>
+                  <p>{{ cliente(pedido) }} · {{ pedido.usuario?.email }}</p>
+                </div>
+                <div class="pedido-admin-total">
+                  <span class="estado">{{ etiquetaEstado(pedido.estado) }}</span>
+                  <strong>{{ formatearPrecio(pedido.total) }}</strong>
+                </div>
+              </div>
+
+              <div class="pedido-admin-items">
+                @for (item of pedido.items ?? []; track $index) {
+                  <span>{{ item.cantidad }} × {{ item.nombre }}</span>
+                }
+              </div>
+
+              <div class="pedido-admin-acciones">
+                @if (siguienteEstado(pedido.estado); as siguiente) {
+                  <button class="btn chico" type="button" [disabled]="actualizando() === pedido._id" (click)="actualizarEstado(pedido, siguiente)">
+                    Marcar {{ etiquetaEstado(siguiente) }}
+                  </button>
+                }
+                @if (puedeCancelar(pedido.estado)) {
+                  <button class="btn chico peligro" type="button" [disabled]="actualizando() === pedido._id" (click)="actualizarEstado(pedido, 'cancelado')">
+                    Cancelar
+                  </button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    }
+  }
+</section>

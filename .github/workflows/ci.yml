@@ -38,7 +38,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci && npm ci --prefix frontend/angular
 
       # B-06. El linter y el type-check van ANTES que los tests: son mas rapidos
       # y si algo esta mal tipado conviene enterarse antes de esperar 90 s.
@@ -51,6 +51,9 @@ jobs:
 
       - name: Type-check frontend (checkJs)
         run: npm run typecheck
+
+      - name: Type-check Angular
+        run: npm run check:angular
 
       # `npm test` corre las dos suites: `test:backend` (13 suites, 199 tests) y
       # `test:frontend` (js/api.js, 20 tests). Los tests del backend necesitan

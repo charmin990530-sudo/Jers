@@ -61,7 +61,7 @@ const hijo = spawn(
     '--experimental-vm-modules',
     jestBin,
     '--config',
-    resolve(RAIZ, 'tests/frontend/jest.config.js'),
+    resolve(RAIZ, 'frontend/tests/jest.config.js'),
     ...process.argv.slice(2),
   ],
   { stdio: 'inherit' },

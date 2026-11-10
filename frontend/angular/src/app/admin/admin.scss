@@ -1,0 +1,431 @@
+.admin-panel {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: var(--space-12) var(--space-6) var(--space-16);
+}
+
+.admin-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.admin-cabecera h1 {
+  margin-top: var(--space-2);
+  font-size: clamp(2rem, 1.5rem + 2.5vw, 3.2rem);
+  line-height: 1;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 4px;
+  margin-bottom: var(--space-5);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+.admin-tabs button {
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-tabs button.activo {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.vacio {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.vacio h2 {
+  margin-bottom: var(--space-2);
+  color: var(--text);
+}
+
+.vacio .btn {
+  margin-top: var(--space-4);
+}
+
+.aviso {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 0.86rem;
+}
+
+.aviso.error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.stat {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.stat span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stat strong {
+  display: block;
+  margin-top: var(--space-2);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.8rem);
+  line-height: 1;
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 0.5fr;
+  gap: var(--space-4);
+}
+
+.bloque {
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.bloque h2 {
+  margin-bottom: var(--space-4);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+}
+
+.texto-muted {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+th {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.estado {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado.inactivo {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.estados-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.estados-lista li {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.84rem;
+}
+
+.estados-lista li:last-child {
+  border-bottom: 0;
+}
+
+.estados-lista span {
+  color: var(--text-muted);
+}
+
+.producto-celda {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 220px;
+}
+
+.producto-celda img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+}
+
+// Edicion en linea de precio y stock. Los campos son pequenos porque van
+// dentro de una tabla, pero con el mismo borde y el mismo foco que el resto
+// de la tienda.
+.productos-nota {
+  margin-bottom: var(--space-3);
+  font-size: 0.82rem;
+}
+
+.campo-tabla {
+  display: block;
+}
+
+.input-admin {
+  width: 100%;
+  min-width: 92px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.input-admin:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.check-tabla {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-tabla input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+// Texto solo para lectores de pantalla: los inputs de la tabla llevan su
+// etiqueta en un <span> oculto para que se sepa que campo se esta editando.
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pedidos-admin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pedido-admin {
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.pedido-admin-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.pedido-admin-cabecera h3 {
+  margin-block: 2px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.pedido-admin-cabecera .texto-muted {
+  font-size: 0.74rem;
+}
+
+.pedido-admin-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.pedido-admin-total strong {
+  font-size: 1.1rem;
+}
+
+.pedido-admin-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.pedido-admin-items span {
+  padding: 2px 8px;
+  background: var(--bg-elev);
+  border-radius: var(--radius-full);
+}
+
+.pedido-admin-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-5);
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.btn.secundario {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn.chico {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.76rem;
+}
+
+.btn.peligro {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+@media (max-width: 980px) {
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .resumen-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-panel {
+    padding: var(--space-8) var(--space-3) var(--space-12);
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-tabs {
+    width: 100%;
+  }
+
+  .admin-tabs button {
+    flex: 1;
+    padding-inline: var(--space-2);
+  }
+
+  .pedido-admin-cabecera {
+    flex-direction: column;
+  }
+
+  .pedido-admin-total {
+    align-items: flex-start;
+  }
+}
