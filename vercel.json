@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/preparar-estatico.mjs",
-  "outputDirectory": "public",
+  "outputDirectory": "frontend/public",
   "functions": {
     "api/index.js": {
       "memory": 1024,
@@ -12,6 +12,62 @@
     {
       "source": "/api/:path*",
       "destination": "/api"
+    },
+    {
+      "source": "/catalogo/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/producto/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/carrito",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pedidos",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/looks",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/recuperar",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/maquillaje",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/cabello",
+      "destination": "/index.html"
     }
   ],
   "cleanUrls": true,
@@ -96,5 +152,6 @@
         }
       ]
     }
-  ]
+  ],
+  "installCommand": "npm ci && npm ci --prefix frontend/angular"
 }

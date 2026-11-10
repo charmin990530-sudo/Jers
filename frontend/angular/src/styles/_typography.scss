@@ -1,0 +1,59 @@
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 1.5rem + 4vw, 4.75rem);
+  font-weight: 700;
+}
+
+h2 {
+  font-size: clamp(2rem, 1.4rem + 2.5vw, 3.25rem);
+}
+
+h3 {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+}
+
+p {
+  color: var(--text-muted);
+}
+
+small {
+  color: var(--text-muted);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-gold {
+  color: var(--gold);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.text-success {
+  color: var(--success);
+}

@@ -1,0 +1,75 @@
+<section class="carrito">
+  <header class="cabecera-carrito">
+    <p class="eyebrow text-accent">Tu selección</p>
+    <h1 class="titulo-carrito">Carrito</h1>
+  </header>
+
+  @if (cargando()) {
+    <p class="vacio">Cargando carrito…</p>
+  } @else if (requiereLogin()) {
+    <div class="vacio">
+      <p>Inicia sesión para ver y guardar tu carrito.</p>
+      <a class="cardbtn" routerLink="/login">Iniciar sesión</a>
+    </div>
+  } @else if (error()) {
+    <div class="vacio">
+      <p>{{ error() }}</p>
+      <button class="cardbtn" type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if ((carrito()?.items ?? []).length === 0) {
+    <div class="vacio">
+      <p>Tu carrito está vacío.</p>
+      <a class="cardbtn" routerLink="/catalogo/maquillaje">Explorar productos</a>
+    </div>
+  } @else {
+    @if (aviso()) {
+      <p class="aviso" role="status">{{ aviso() }}</p>
+    }
+
+    <div class="lista">
+      @for (item of carrito()?.items ?? []; track item._id ?? item.producto?._id) {
+        <article class="item">
+          <a class="itemimagen-enlace" [routerLink]="['/producto', item.producto?._id]" aria-label="Ver {{ item.producto?.nombre }}">
+            <img class="itemimagen" [src]="imagenUrl(item)" [alt]="item.producto?.nombre" />
+          </a>
+          <div class="iteminfo">
+            <h3 class="itemnombre">{{ item.producto?.nombre }}</h3>
+            <p class="itemprecio">{{ formatearPrecio(item.precioUnitario) }} c/u</p>
+            <p class="itemstock" [class.agotado]="(item.producto?.stock ?? 0) < 1">
+              {{ (item.producto?.stock ?? 0) > 0 ? 'Disponible' : 'Sin stock' }}
+            </p>
+          </div>
+          <div class="itemacciones">
+            <div class="cantidad" aria-label="Cantidad">
+              <button type="button" [disabled]="actualizandoId() !== null || vaciando() || (item.cantidad ?? 1) <= 1" (click)="actualizarCantidad(item, -1)" aria-label="Quitar una unidad">−</button>
+              <span>{{ item.cantidad }}</span>
+              <button type="button" [disabled]="actualizandoId() !== null || vaciando() || (item.cantidad ?? 1) >= 99 || (item.cantidad ?? 1) >= (item.producto?.stock ?? 99)" (click)="actualizarCantidad(item, 1)" aria-label="Añadir una unidad">+</button>
+            </div>
+            <p class="itemtotal">{{ formatearPrecio((item.precioUnitario ?? 0) * (item.cantidad ?? 1)) }}</p>
+            <button class="quitar" type="button" [disabled]="actualizandoId() !== null || vaciando()" (click)="quitar(item)">Quitar</button>
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="resumen">
+      <h2>Resumen</h2>
+      <p><span>Artículos</span><span>{{ carrito()?.totalItems }}</span></p>
+      <p><span>Subtotal</span><span>{{ formatearPrecio(carrito()?.subtotal) }}</span></p>
+      <p><span>Envío</span><span>{{ (carrito()?.costoEnvio ?? 0) === 0 ? 'Gratis' : formatearPrecio(carrito()?.costoEnvio) }}</span></p>
+      <p><span>IVA</span><span>{{ formatearPrecio(carrito()?.impuestos) }}</span></p>
+      <p class="total"><span>Total</span><span>{{ formatearPrecio(carrito()?.total) }}</span></p>
+      @if (carrito()?.envioGratisDesde) {
+        <small>Envío gratis desde {{ formatearPrecio(carrito()?.envioGratisDesde) }}.</small>
+      }
+      <div class="resumen-acciones">
+        @if (actualizandoId() === null && !vaciando()) {
+          <a class="cardbtn" routerLink="/checkout">Ir al checkout</a>
+        } @else {
+          <span role="status">Actualizando carrito…</span>
+        }
+        <button class="cardbtn secundario" type="button" [disabled]="actualizandoId() !== null || vaciando()" (click)="limpiar()">{{ vaciando() ? 'Vaciando…' : 'Vaciar carrito' }}</button>
+      </div>
+    </div>
+  }
+</section>

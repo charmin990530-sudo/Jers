@@ -1,0 +1,265 @@
+.producto {
+  padding: var(--space-8) var(--space-6) var(--space-16);
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.vacio {
+  padding: var(--space-12) 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.migas a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.migas span[aria-current] {
+  color: var(--text);
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+
+.zona-imagen {
+  position: sticky;
+  top: 96px;
+}
+
+.detalle-imagen {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  display: block;
+  background: var(--bg-elev);
+}
+
+.descuento-badge {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.titulo-producto {
+  font-size: clamp(2rem, 1.4rem + 2.5vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.descripcion-corta {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.precio-bloque {
+  padding: var(--space-4) 0;
+  border-block: 1px solid var(--line);
+}
+
+.cardprecio {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+  font-weight: 600;
+}
+
+.precio-anterior {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 400;
+  text-decoration: line-through;
+}
+
+.impuestos {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.stock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--success);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.stock .punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.stock.agotado {
+  color: var(--danger);
+}
+
+.descripcion h2 {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.descripcion p {
+  color: var(--text-muted);
+  white-space: pre-line;
+  line-height: 1.7;
+}
+
+.compra {
+  display: flex;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.cantidad {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.cantidad button,
+.cantidad span {
+  width: 42px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.cantidad button {
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.cantidad span {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.cantidad button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cardbtn {
+  flex: 1;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cardbtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.aviso {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+.aviso a {
+  color: inherit;
+  font-weight: 800;
+}
+
+.aviso.error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.beneficios li::before {
+  content: '·';
+  margin-right: var(--space-2);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+@media (max-width: 860px) {
+  .detalle {
+    grid-template-columns: 1fr;
+  }
+
+  .zona-imagen {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .producto {
+    padding: var(--space-6) var(--space-3) var(--space-12);
+  }
+
+  .compra {
+    flex-direction: column;
+  }
+
+  .cantidad {
+    align-self: flex-start;
+  }
+}

@@ -1,0 +1,119 @@
+<section class="lookbook">
+  <header class="cabecera-looks">
+    <div>
+      <p class="eyebrow text-accent">Inspiración By Jers</p>
+      <h1 class="titulo-looks">Lookbook</h1>
+      <p class="intro-looks">Seis formas de llevar tu belleza. Desliza, usa las flechas o el teclado para descubrir cada look y sus productos.</p>
+    </div>
+    <span class="contador">{{ actual() + 1 < 10 ? '0' + (actual() + 1) : actual() + 1 }} / {{ total < 10 ? '0' + total : total }}</span>
+  </header>
+
+  <div class="lookbook-grid">
+    <div
+      class="stage"
+      tabindex="0"
+      role="region"
+      aria-label="Galería de looks. Desliza o usa las flechas para cambiar."
+      (pointerdown)="alPresionar($event)"
+      (pointerup)="alSoltar($event)"
+      (pointercancel)="alCancelarArrastre()"
+      (pointerleave)="alCancelarArrastre()"
+      (wheel)="alRodar($event)"
+      (keydown)="alTeclear($event)"
+    >
+      @for (look of looks; track look.id; let i = $index) {
+        <figure class="slide" [class.activo]="i === actual()" [attr.aria-hidden]="i !== actual()">
+          <img [src]="look.imagen" [alt]="'Look ' + look.nombre" [attr.loading]="i === 0 ? 'eager' : 'lazy'" />
+          <figcaption>
+            <p class="slide-etiqueta">Look {{ look.id < 10 ? '0' + look.id : look.id }}</p>
+            <h2>{{ look.nombre }}</h2>
+          </figcaption>
+        </figure>
+      }
+
+      <button class="flecha anterior" type="button" (click)="anterior()" aria-label="Look anterior">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <button class="flecha siguiente" type="button" (click)="siguiente()" aria-label="Look siguiente">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+
+      <div class="puntos" role="tablist" aria-label="Seleccionar look">
+        @for (look of looks; track look.id; let i = $index) {
+          <button type="button" role="tab" [attr.aria-selected]="i === actual()" [class.activo]="i === actual()" [attr.aria-label]="'Ver look ' + look.nombre" (click)="irA(i)"></button>
+        }
+      </div>
+    </div>
+
+    <aside class="panel">
+      <p class="panel-etiqueta">Look {{ actual() + 1 < 10 ? '0' + (actual() + 1) : actual() + 1 }}</p>
+      <h2 class="panel-titulo">{{ lookActivo().nombre }}</h2>
+      <p class="panel-descripcion">{{ lookActivo().descripcion }}</p>
+
+      <ul class="tags" aria-label="Etiquetas del look">
+        @for (tag of lookActivo().tags; track tag) {
+          <li>{{ tag }}</li>
+        }
+      </ul>
+
+      <a class="cardbtn" routerLink="/catalogo/maquillaje">Comprar el look</a>
+
+      <div class="panel-productos">
+        <div class="panel-productos-cabecera">
+          <h3>Productos del look</h3>
+          <a routerLink="/carrito">Ver carrito</a>
+        </div>
+
+        @if (aviso()) {
+          <p class="aviso" role="status">{{ aviso() }}</p>
+        }
+
+        @if (cargandoProductos()) {
+          <p class="productos-vacio">Cargando productos…</p>
+        } @else if (errorProductos()) {
+          <div class="productos-vacio">
+            <p>{{ errorProductos() }}</p>
+            <button class="cardbtn secundario" type="button" (click)="cargarProductos()">Reintentar</button>
+          </div>
+        } @else if (productos().length === 0) {
+          <p class="productos-vacio">No hay productos disponibles por ahora.</p>
+        } @else {
+          <div class="productos">
+            @for (producto of productos(); track idProducto(producto)) {
+              <article class="producto">
+                <a class="producto-imagen" [routerLink]="['/producto', idProducto(producto)]">
+                  <img [src]="imagenProducto(producto)" [alt]="producto.nombre" loading="lazy" />
+                </a>
+                <div class="producto-info">
+                  <h4><a [routerLink]="['/producto', idProducto(producto)]">{{ producto.nombre }}</a></h4>
+                  <p>{{ formatearPrecio(producto.precio) }}</p>
+                </div>
+                <button
+                  class="fav"
+                  type="button"
+                  [class.activo]="esFavorito(producto)"
+                  [attr.aria-pressed]="esFavorito(producto)"
+                  [attr.aria-label]="esFavorito(producto) ? 'Quitar de favoritos' : 'Guardar en favoritos'"
+                  (click)="alternarFavorito(producto)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <path d="M12 21s-7.5-4.6-9.8-9.2C.6 8.6 2.2 5 5.6 5c2 0 3.4 1.2 4.4 2.4.6-.5 1.4-.8 2.4-.8 2.8 0 4.4 2.6 3.4 5.8C19.5 16.4 12 21 12 21z" fill="currentColor" />
+                  </svg>
+                </button>
+                <button
+                  class="add"
+                  type="button"
+                  [disabled]="agregandoId() === idProducto(producto) || (producto.stock ?? 1) < 1"
+                  [attr.aria-label]="'Añadir ' + producto.nombre + ' al carrito'"
+                  (click)="agregarAlCarrito(producto)"
+                >
+                  {{ agregandoId() === idProducto(producto) ? '…' : '+' }}
+                </button>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    </aside>
+  </div>
+</section>

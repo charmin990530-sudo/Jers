@@ -4,11 +4,11 @@ Tienda online de maquillaje y cuidado capilar. Proyecto de bootcamp de desarroll
 
 ## Stack
 
-- **Frontend:** HTML, CSS, JavaScript (Vanilla JS con módulos ES)
+- **Frontend:** Angular 20, TypeScript y SCSS (versión anterior conservada en `frontend/pages`, `frontend/js` y `frontend/css`)
 - **Backend:** Node.js, Express, MongoDB (Mongoose)
 - **Autenticación:** JWT en cookies HttpOnly + CSRF
 - **Despliegue:** Vercel
-- **Tests:** Jest + Supertest + MongoDB Memory Server
+- **Tests:** Jest + Supertest + MongoDB Memory Server + Jasmine/Karma en navegador
 
 ## Requisitos
 
@@ -20,7 +20,8 @@ Tienda online de maquillaje y cuidado capilar. Proyecto de bootcamp de desarroll
 
 ```bash
 # 1. Instalar dependencias
-npm install
+npm ci
+npm ci --prefix frontend/angular
 
 # 2. Configurar variables de entorno
 cp backend/.env.example backend/.env
@@ -41,19 +42,36 @@ npm start
 
 > **Un solo puerto: 3000.** El sitio y la API los sirve el mismo proceso de Express, así que
 > el puerto de `backend/.env` (`PORT`) tiene que ser el mismo desde el que abres el navegador.
-> `js/config.js` deriva la URL de la API de `window.location.origin` sin escribir ningún puerto,
+> `frontend/js/config.js` deriva la URL de la API de `window.location.origin` sin escribir ningún puerto,
 > así que si mueves `PORT` a otra cosa, ábrelo también en ese puerto. En Vercel no hay puerto:
 > `origin` ya es el dominio y no hay nada que configurar.
+
+## Desarrollo con Angular
+
+`npm start` compila Angular y sirve la tienda y la API en http://127.0.0.1:3000/.
+Para editar con recarga en vivo, deja el backend encendido y ejecuta en otra terminal
+`npm run dev:frontend`. Abre http://localhost:4200/; `/api` se reenvía al backend
+por `frontend/angular/proxy.conf.json`. Si cambias el puerto del backend, ajusta ese archivo.
+Las imágenes y videos se incluyen tanto en desarrollo como en producción.
+
+`npm run check` comprueba también los tipos de Angular. Las 43 pruebas del frontend
+anterior se complementan ahora con 28 pruebas de Angular. `npm test` ejecuta las tres suites.
+Para presentar el proyecto, consulta `docs/ENTREGA.md`.
+
+En este equipo Linux con NVIDIA, `npm run preview:gpu` abre la tienda con un perfil
+separado de navegador y selección NVIDIA mediante PRIME. Requiere el servidor iniciado.
+Para Angular en vivo: `npm run preview:gpu -- http://localhost:4200/`.
+Esto selecciona la GPU para el navegador, no convierte las compilaciones o MongoDB en tareas CUDA.
 
 ## Scripts
 
 | Script | Descripción |
 |--------|-------------|
-| `npm start` | Reconstruye `public/` y arranca el servidor |
+| `npm start` | Reconstruye `frontend/public/` y arranca el servidor |
 | `npm run dev` | Desarrollo con recarga automática |
-| `npm run build:static` | Solo regenera `public/` |
+| `npm run build:static` | Solo regenera `frontend/public/` |
 | `npm run seed` | Carga datos iniciales (desarrollo) |
-| `npm test` | Ejecuta 164 tests |
+| x |
 | `npm run autostart` | Instala y arranca el servicio systemd de usuario que deja el backend encendido y lo reinicia si se cae |
 | `npm run autostart:status` | Estado del servicio |
 | `npm run autostart:stop` | Lo detiene y lo desinstala |
@@ -68,13 +86,12 @@ journalctl --user -u by-jers-dev -f  # ver logs
 
 El servicio es de usuario (no de sistema), así que **no pide sudo** y se detiene
 al cerrar sesión. Levanta el sitio y la API en `http://localhost:3000` y se
-reinicia solo si el proceso muere. Antes de arrancar regenera `public/`, que es
-lo mismo que hace `npm start`.
+reinicia solo si el proceso muere. Antes de arrancar regenera `frontend/public/`,
+que es lo mismo que hace `npm start`.
 
 ## Estructura
 
 ```
-├── admin/              # Panel de administración (HTML)
 ├── api/                # Serverless function para Vercel
 ├── backend/            # API Express + tests
 │   ├── src/
@@ -85,15 +102,19 @@ lo mismo que hace `npm start`.
 │   │   ├── routes/     # Rutas de la API
 │   │   ├── seeds/      # Datos iniciales
 │   │   └── services/   # Transacciones, emails, dinero
-│   └── tests/          # 164 tests (Jest)
-├── css/                # Estilos
-├── data/               # Datos estáticos
-├── img/                # Imágenes (WebP)
-├── js/                 # Lógica del frontend
-├── public/            # Build generado por npm run build:static (no editar, no versionado)
+│   └── tests/          # 285 tests (Jest + MongoDB Memory Server)
+├── frontend/           # Frontend (HTML, CSS, JS, imágenes)
+│   ├── pages/          # Páginas del sitio (HTML)
+│   ├── css/            # Estilos
+│   ├── js/             # Lógica del frontend
+│   ├── admin/          # Panel de administración (HTML)
+│   ├── img/            # Imágenes (WebP)
+│   ├── font/           # Fuentes tipográficas
+│   ├── video/          # Video hero
+│   ├── data/           # Datos estáticos (JSON)
+│   └── public/         # Build generado por npm run build:static (no editar, no versionado)
 ├── scripts/            # Scripts de build
-├── docs/               # Documentación (auditoría técnica)
-└── *.html              # Páginas del sitio
+└── docs/               # Documentación (auditoría técnica)
 ```
 
 ## Variables de entorno
@@ -122,7 +143,7 @@ JWT_SECRET=cualquier-cosa-en-desarrollo
 
 ## API
 
-Ver `API.md` para el contrato completo.
+Ver `docs/API.md` para el contrato completo.
 
 ### Endpoints principales
 
@@ -141,7 +162,9 @@ Ver `API.md` para el contrato completo.
 npm test
 ```
 
-**164 tests en 11 suites** (verificado con `npm test`):
+**356 pruebas: 285 backend + 43 frontend anterior + 28 Angular** (suites verificadas por separado):
+
+Backend (`backend/tests/`):
 - `money.test.js` — Aritmética monetaria
 - `financial.test.js` — Totales, stock, idempotencia
 - `auth.test.js` — Autenticación
@@ -153,6 +176,11 @@ npm test
 - `env-production.test.js` — Variables de entorno en producción
 - `security-middleware.test.js` — CSRF, validación
 - `security-flows.test.js` — Flujos de seguridad
+
+Frontend (`frontend/tests/`):
+- `api.test.js` — Contrato de la capa de red
+- `carrito.test.js` — Lógica del carrito y defensa contra envenenamiento
+- `setbtnloading.test.js` — Helper de estado de carga de botones
 
 ## Despliegue
 
@@ -172,8 +200,8 @@ GitHub Actions ejecuta automáticamente los tests en cada push y PR a `main`/`ma
 ```yaml
 # .github/workflows/ci.yml
 - Instala dependencias
-- Ejecuta npm test dos veces: en UTC y en TZ=America/Bogota (164 tests)
-- npm audit en la raíz y en backend
+- Ejecuta npm test dos veces: en UTC y en TZ=America/Bogota (356 tests)
+- npm audit en la raíz (cubre el workspace backend)
 - Genera el build estático
 ```
 

@@ -1,0 +1,53 @@
+:root {
+  --bg: #faf4ef;
+  --bg-elev: #fff9f5;
+  --surface: #ffffff;
+  --glass: rgba(255, 255, 255, 0.62);
+  --text: #241a1a;
+  --text-muted: #6b5a58;
+  --line: #e4d6ce;
+  --accent: #a85a62;
+  --accent-soft: #c97b82;
+  --accent-contrast: #ffffff;
+  --gold: #c9a27e;
+  --success: #2e7d5b;
+  --danger: #b3261e;
+  --warning: #8a5a00;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 2px 10px rgba(36, 26, 26, 0.06);
+  --shadow-md: 0 10px 30px rgba(36, 26, 26, 0.1);
+  --shadow-lg: 0 30px 70px rgba(36, 26, 26, 0.12);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 180ms;
+  --dur-base: 260ms;
+  --dur-slow: 420ms;
+  --dur-reveal: 700ms;
+
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-body: 'Manrope Variable', system-ui, sans-serif;
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-navbar: 30;
+  --z-drawer: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}

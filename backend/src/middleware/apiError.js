@@ -51,6 +51,11 @@ export const ErrorCodes = Object.freeze({
   INVALID_PATH: 'INVALID_PATH',
   INVALID_ROLE: 'INVALID_ROLE',
   INVALID_IDEMPOTENCY_KEY: 'INVALID_IDEMPOTENCY_KEY',
+  // Cantidad que no cumple las reglas del carrito: por debajo de 1, con
+  // decimales o por encima del tope de unidades por producto. Antes esta
+  // situacion se respondia con INSUFFICIENT_STOCK, que mentia: el stock
+  // puede estar disponible y lo que falla es el limite por producto.
+  INVALID_QUANTITY: 'INVALID_QUANTITY',
   // Antes esta clave valia 'INVALID_RESET_TOKEN', o sea que el codigo para
   // "las contrasenas no coinciden" era indistinguible del de "el token de reset
   // caducado", y `ErrorCodes.INVALID_RESET_TOKEN` no existia como clave (era

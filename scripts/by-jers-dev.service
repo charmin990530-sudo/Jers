@@ -33,7 +33,7 @@ StartLimitIntervalSec=120
 
 [Service]
 Type=simple
-# Se regenera public/ antes de arrancar, igual que `npm start`. Asi lo
+# Se regenera frontend/public/ antes de arrancar, igual que `npm start`. Asi lo
 # servido nunca queda desfasado del fuente.
 ExecStartPre=/usr/bin/env npm run build:static
 ExecStart=/usr/bin/env npm start

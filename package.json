@@ -17,16 +17,20 @@
     "predev": "npm run build:static",
     "dev": "node --watch backend/src/app.js",
     "seed": "node backend/src/seeds/seed.js",
-    "test": "npm run test:backend && npm run test:frontend",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:angular",
     "test:frontend": "node --experimental-vm-modules scripts/run-tests-frontend.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p jsconfig.json",
-    "check": "npm run lint && npm run typecheck",
+    "check": "npm run lint && npm run typecheck && npm run check:angular",
     "autostart": "node scripts/instalar-autoinicio.mjs",
     "autostart:stop": "node scripts/instalar-autoinicio.mjs --desinstalar",
     "autostart:status": "node scripts/instalar-autoinicio.mjs --estado",
-    "test:backend": "npm test --prefix backend"
+    "test:backend": "npm test --prefix backend",
+    "dev:frontend": "npm start --prefix frontend/angular",
+    "check:angular": "npm run typecheck --prefix frontend/angular",
+    "preview:gpu": "node scripts/abrir-con-gpu.mjs",
+    "test:angular": "node scripts/run-tests-angular.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

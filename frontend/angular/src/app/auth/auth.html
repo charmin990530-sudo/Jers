@@ -1,0 +1,144 @@
+<section class="auth">
+  <div class="auth-card">
+    @if (modo() === 'login' || modo() === 'registro') {
+      <div class="auth-tabs" role="tablist" aria-label="Acceso a la cuenta">
+        <button type="button" role="tab" [attr.aria-selected]="modo() === 'login'" [class.activo]="modo() === 'login'" (click)="cambiarModo('login')">Ingresar</button>
+        <button type="button" role="tab" [attr.aria-selected]="modo() === 'registro'" [class.activo]="modo() === 'registro'" (click)="cambiarModo('registro')">Crear cuenta</button>
+      </div>
+    }
+
+    @if (modo() === 'login') {
+      <p class="eyebrow text-accent">Bienvenido de nuevo</p>
+      <h1 class="titulo-auth">Ingresa a tu cuenta</h1>
+    } @else if (modo() === 'registro') {
+      <p class="eyebrow text-accent">Únete a By Jers</p>
+      <h1 class="titulo-auth">Crea tu cuenta</h1>
+    } @else if (modo() === 'recuperar') {
+      <p class="eyebrow text-accent">Recuperar acceso</p>
+      <h1 class="titulo-auth">Olvidé mi contraseña</h1>
+    } @else {
+      <p class="eyebrow text-accent">Nueva contraseña</p>
+      <h1 class="titulo-auth">Cambia tu contraseña</h1>
+    }
+
+    @if (exito() && modo() !== 'reset-password') {
+      <p class="mensaje-exito" role="status">¡Listo! Redirigiendo…</p>
+    } @else {
+      <form class="formulario" #form="ngForm" (ngSubmit)="enviar()">
+        @if (modo() === 'registro') {
+          <div class="fila">
+            <label class="campo">
+              <span>Nombre</span>
+              <input [(ngModel)]="nombre" name="nombre" required minlength="2" maxlength="50" autocomplete="given-name" />
+            </label>
+            <label class="campo">
+              <span>Apellido</span>
+              <input [(ngModel)]="apellido" name="apellido" required minlength="2" maxlength="50" autocomplete="family-name" />
+            </label>
+          </div>
+        }
+
+        @if (modo() !== 'reset-password') {
+          <label class="campo">
+            <span>Email</span>
+            <input [(ngModel)]="email" name="email" type="email" required autocomplete="email" inputmode="email" />
+          </label>
+        }
+
+        @if (modo() === 'login' || modo() === 'registro') {
+          <label class="campo">
+            <span>Contraseña</span>
+            <span class="campo-password">
+              <input [(ngModel)]="password" name="password" [type]="verPassword() ? 'text' : 'password'" required [minlength]="modo() === 'registro' ? 8 : 1" autocomplete="current-password" />
+              <button type="button" class="ver-password" (click)="verPassword.set(!verPassword())" [attr.aria-label]="verPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                {{ verPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </span>
+            @if (modo() === 'registro') {
+              <small>Mínimo 8 caracteres.</small>
+            }
+          </label>
+        }
+
+        @if (modo() === 'reset-password') {
+          <label class="campo">
+            <span>Nueva contraseña</span>
+            <span class="campo-password">
+              <input [(ngModel)]="password" name="password" [type]="verPassword() ? 'text' : 'password'" required minlength="8" maxlength="128" autocomplete="new-password" />
+              <button type="button" class="ver-password" (click)="verPassword.set(!verPassword())" [attr.aria-label]="verPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                {{ verPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </span>
+            <small>Mínimo 8 caracteres.</small>
+          </label>
+
+          <label class="campo">
+            <span>Repite la nueva contraseña</span>
+            <input [(ngModel)]="confirmarPassword" name="confirmarPassword" type="password" required minlength="8" maxlength="128" autocomplete="new-password" />
+          </label>
+        }
+
+        @if (modo() === 'registro') {
+          <label class="campo">
+            <span>Teléfono <small>(opcional)</small></span>
+            <input [(ngModel)]="telefono" name="telefono" autocomplete="tel" inputmode="tel" />
+          </label>
+
+          <label class="check">
+            <input [(ngModel)]="aceptoTerminos" name="aceptoTerminos" type="checkbox" required />
+            <span>Acepto los términos y condiciones</span>
+          </label>
+          <label class="check">
+            <input [(ngModel)]="aceptoPrivacidad" name="aceptoPrivacidad" type="checkbox" required />
+            <span>Acepto la política de privacidad y el tratamiento de mis datos</span>
+          </label>
+        }
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        @if (aviso()) {
+          <p class="aviso" role="status">{{ aviso() }}</p>
+        }
+
+        <button class="cardbtn" type="submit" [disabled]="cargando() || form.invalid">
+          @if (cargando()) {
+            Procesando…
+          } @else if (modo() === 'login') {
+            Ingresar
+          } @else if (modo() === 'registro') {
+            Crear cuenta
+          } @else if (modo() === 'recuperar') {
+            Enviar enlace
+          } @else {
+            Guardar contraseña
+          }
+        </button>
+
+        @if (modo() === 'recuperar') {
+          <p class="nota">Te enviamos el enlace por correo. El enlace caduca en una hora.</p>
+        }
+      </form>
+    }
+
+    <p class="cambio">
+      @if (modo() === 'login') {
+        <span>¿No tienes cuenta?</span>
+        <button type="button" (click)="cambiarModo('registro')">Regístrate</button>
+      } @else if (modo() === 'registro') {
+        <span>¿Ya tienes cuenta?</span>
+        <button type="button" (click)="cambiarModo('login')">Ingresa</button>
+      } @else {
+        <span>¿Recordaste la contraseña?</span>
+        <button type="button" (click)="cambiarModo('login')">Vuelve a ingresar</button>
+      }
+    </p>
+
+    @if (modo() === 'login') {
+      <p class="cambio">
+        <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+      </p>
+    }
+  </div>
+</section>

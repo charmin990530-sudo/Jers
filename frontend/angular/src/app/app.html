@@ -1,0 +1,123 @@
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="topbar">
+  <a class="brand" routerLink="/" (click)="cerrarMenu()">
+    <span class="brand-mark">BJ</span>
+    <span class="brand-text">By Jers<small>Beauty studio</small></span>
+  </a>
+
+  <nav class="nav" [class.abierto]="menuAbierto()" aria-label="Navegación principal">
+    <a routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">Inicio</a>
+    <a routerLink="/catalogo/maquillaje" routerLinkActive="activo" (click)="cerrarMenu()">Maquillaje</a>
+    <a routerLink="/catalogo/cabello" routerLinkActive="activo" (click)="cerrarMenu()">Cabello</a>
+    <a routerLink="/looks" routerLinkActive="activo" (click)="cerrarMenu()">Looks</a>
+    @if (api.estaLogueado()) {
+      <a routerLink="/pedidos" routerLinkActive="activo" (click)="cerrarMenu()">Mis pedidos</a>
+    }
+    @if (api.esAdmin()) {
+      <a routerLink="/admin" routerLinkActive="activo" (click)="cerrarMenu()">Admin</a>
+    }
+
+    <div class="nav-movil">
+      <a class="nav-movil-carrito" routerLink="/carrito" (click)="cerrarMenu()">
+        Carrito
+        @if (api.carritoCantidad() > 0) {
+          <span class="badge">{{ api.carritoCantidad() }}</span>
+        }
+      </a>
+      @if (api.estaLogueado()) {
+        <a routerLink="/pedidos" (click)="cerrarMenu()">Mis pedidos</a>
+        <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+      } @else {
+        <a class="nav-movil-login" routerLink="/login" (click)="cerrarMenu()">Ingresar</a>
+        <a routerLink="/register" (click)="cerrarMenu()">Crear cuenta</a>
+      }
+    </div>
+  </nav>
+
+  <div class="acciones">
+    <a class="icon-btn" routerLink="/carrito" aria-label="Ver carrito">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M6 7h12l1 13H5L6 7Zm3 0a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      @if (api.carritoCantidad() > 0) {
+        <span class="badge">{{ api.carritoCantidad() }}</span>
+      }
+    </a>
+
+    @if (api.estaLogueado()) {
+      <div class="cuenta">
+        <button class="icon-btn cuenta-btn" type="button" (click)="alternarCuenta()" [attr.aria-expanded]="menuCuenta()">
+          <span class="avatar">{{ api.usuario()?.nombre?.charAt(0) }}{{ api.usuario()?.apellido?.charAt(0) }}</span>
+          <span class="cuenta-nombre">{{ api.usuario()?.nombre }}</span>
+        </button>
+        @if (menuCuenta()) {
+          <div class="cuenta-menu">
+            <p class="cuenta-menu-cabecera">{{ api.usuario()?.nombre }} {{ api.usuario()?.apellido }}</p>
+            <a routerLink="/pedidos" (click)="cerrarMenu()">Mis pedidos</a>
+            @if (api.esAdmin()) {
+              <a routerLink="/admin" (click)="cerrarMenu()">Panel de administración</a>
+            }
+            <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+          </div>
+        }
+      </div>
+    } @else {
+      <a class="icon-btn login-link" routerLink="/login">Ingresar</a>
+    }
+  </div>
+
+  <button class="menu-toggle" type="button" [attr.aria-expanded]="menuAbierto()" aria-label="Abrir menú" (click)="alternarMenu()">
+    <span></span>
+    <span></span>
+  </button>
+</header>
+
+<main id="contenido" class="app-shell">
+  @if (errorSesion()) {
+    <p class="aviso-sesion" role="alert">{{ errorSesion() }}</p>
+  }
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-marca">
+      <a class="brand" routerLink="/">
+        <span class="brand-mark">BJ</span>
+        <span class="brand-text">By Jers<small>Beauty studio</small></span>
+      </a>
+      <p>Maquillaje y cuidado capilar seleccionados para realzar tu estilo todos los días.</p>
+    </div>
+
+    <div>
+      <h3>Tienda</h3>
+      <a routerLink="/catalogo/maquillaje">Maquillaje</a>
+      <a routerLink="/catalogo/cabello">Cabello</a>
+      <a routerLink="/looks">Looks</a>
+    </div>
+
+    <div>
+      <h3>Tu cuenta</h3>
+      <a routerLink="/carrito">Carrito</a>
+      <a routerLink="/pedidos">Mis pedidos</a>
+      @if (api.esAdmin()) {
+        <a routerLink="/admin">Administración</a>
+      } @else {
+        <a routerLink="/login">Ingresar</a>
+      }
+    </div>
+
+    <div>
+      <h3>Contacto</h3>
+      <a [href]="whatsappUrl" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+      <p>Lun a Sáb · 9:00 a 18:00</p>
+      <p>Envíos a todo Colombia</p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© {{ anio }} By Jers. Todos los derechos reservados.</span>
+    <span>Hecho con cuidado en Colombia.</span>
+  </div>
+</footer>

@@ -1,0 +1,453 @@
+.lookbook {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: var(--space-12) var(--space-6) var(--space-16);
+}
+
+.cabecera-looks {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.titulo-looks {
+  margin-top: var(--space-2);
+  font-size: clamp(2.4rem, 1.8rem + 3.5vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.intro-looks {
+  max-width: 56ch;
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.contador {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lookbook-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 560px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--bg-elev), color-mix(in srgb, var(--accent) 12%, var(--bg-elev)));
+  touch-action: pan-y;
+  user-select: none;
+  outline: none;
+}
+
+.stage:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.slide.activo {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(20, 10, 10, 0.66));
+}
+
+.slide figcaption {
+  position: absolute;
+  z-index: 1;
+  left: clamp(1.25rem, 4vw, 2.5rem);
+  right: clamp(1.25rem, 4vw, 2.5rem);
+  bottom: clamp(4.5rem, 8vw, 6rem);
+  color: #fff;
+}
+
+.slide-etiqueta {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.slide figcaption h2 {
+  margin-top: var(--space-1);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 1.4rem + 2vw, 3rem);
+  line-height: 1;
+}
+
+.flecha {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(20, 10, 10, 0.28);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background var(--dur-fast);
+}
+
+.flecha:hover {
+  background: rgba(20, 10, 10, 0.55);
+}
+
+.flecha.anterior {
+  left: var(--space-4);
+}
+
+.flecha.siguiente {
+  right: var(--space-4);
+}
+
+.puntos {
+  position: absolute;
+  z-index: 3;
+  left: clamp(1.25rem, 4vw, 2.5rem);
+  bottom: var(--space-5);
+  display: flex;
+  gap: 6px;
+}
+
+.puntos button {
+  width: 24px;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.38);
+  cursor: pointer;
+  transition: background var(--dur-fast), width var(--dur-fast);
+}
+
+.puntos button.activo {
+  width: 40px;
+  background: #fff;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.panel-etiqueta {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.panel-titulo {
+  font-size: clamp(1.8rem, 1.4rem + 1.5vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.panel-descripcion {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.tags li {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.cardbtn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cardbtn:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.cardbtn.secundario {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.76rem;
+}
+
+.panel-productos {
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.panel-productos-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.panel-productos-cabecera h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.panel-productos-cabecera a {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.aviso {
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 0.8rem;
+}
+
+.productos-vacio {
+  padding: var(--space-6) 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.productos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.producto {
+  display: grid;
+  grid-template-columns: 54px 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast);
+}
+
+.producto:hover {
+  background: var(--bg-elev);
+}
+
+.producto-imagen {
+  display: block;
+}
+
+.producto-imagen img {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+}
+
+.producto-info {
+  min-width: 0;
+}
+
+.producto-info h4 {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.producto-info h4 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.producto-info p {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.fav {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.fav svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.fav:hover,
+.fav.activo {
+  color: var(--accent);
+}
+
+.fav.activo svg {
+  fill: currentColor;
+}
+
+.add {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.add:hover:not(:disabled) {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 980px) {
+  .lookbook-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage {
+    min-height: 500px;
+  }
+
+  .productos {
+    max-height: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .lookbook {
+    padding: var(--space-8) var(--space-3) var(--space-12);
+  }
+
+  .cabecera-looks {
+    align-items: flex-start;
+  }
+
+  .contador {
+    display: none;
+  }
+
+  .stage {
+    min-height: 430px;
+  }
+
+  .flecha {
+    width: 38px;
+    height: 38px;
+    margin-top: -19px;
+  }
+
+  .panel {
+    padding: var(--space-4);
+  }
+
+  .producto {
+    grid-template-columns: 48px 1fr auto auto;
+  }
+
+  .producto-imagen img {
+    width: 48px;
+    height: 48px;
+  }
+}

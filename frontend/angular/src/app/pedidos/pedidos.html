@@ -1,0 +1,65 @@
+<section class="pedidos">
+  <header class="cabecera-pedidos">
+    <p class="eyebrow text-accent">Historial</p>
+    <h1 class="titulo-pedidos">Mis pedidos</h1>
+  </header>
+
+  @if (cargando()) {
+    <p class="vacio">Cargando pedidos…</p>
+  } @else if (requiereLogin()) {
+    <div class="vacio">
+      <p>Inicia sesión para consultar tus pedidos.</p>
+      <a class="cardbtn" routerLink="/login">Iniciar sesión</a>
+    </div>
+  } @else if (error()) {
+    <div class="vacio">
+      <p>{{ error() }}</p>
+      <button class="cardbtn" type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (pedidos().length === 0) {
+    <div class="vacio">
+      <p>Aún no tienes pedidos.</p>
+      <a class="cardbtn" routerLink="/catalogo/maquillaje">Descubrir productos</a>
+    </div>
+  } @else {
+    @if (aviso()) {
+      <p class="aviso" role="alert">{{ aviso() }}</p>
+    }
+
+    <div class="lista">
+      @for (pedido of pedidos(); track pedido._id ?? pedido.numeroOrden) {
+        <article class="pedido">
+          <div class="pedido-cabecera">
+            <div>
+              <p class="pedido-etiqueta">Pedido</p>
+              <h3 class="pedido-numero">{{ pedido.numeroOrden }}</h3>
+              <p class="pedido-fecha">{{ formatearFecha(pedido.createdAt) }} · {{ totalItems(pedido) }} artículo(s)</p>
+            </div>
+            <span class="estado" [attr.data-estado]="pedido.estado">{{ etiquetaEstado(pedido.estado) }}</span>
+          </div>
+
+          <div class="pedido-items">
+            @for (item of pedido.items ?? []; track $index) {
+              <div class="pedido-item">
+                <span>{{ item.cantidad }} × {{ nombreItem(item) }}</span>
+                <span>{{ formatearPrecio((item.precioUnitario ?? 0) * (item.cantidad ?? 1)) }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="pedido-pie">
+            <p>Total <strong>{{ formatearPrecio(pedido.total) }}</strong></p>
+            <div class="pedido-acciones">
+              @if (pedido.puedeCancelar) {
+                <button class="cardbtn secundario" type="button" [disabled]="cancelandoId() === pedido._id" (click)="cancelar(pedido)">
+                  {{ cancelandoId() === pedido._id ? 'Cancelando…' : 'Cancelar pedido' }}
+                </button>
+              }
+              <a class="cardbtn" routerLink="/catalogo/maquillaje">Seguir comprando</a>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

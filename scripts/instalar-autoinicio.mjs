@@ -5,8 +5,8 @@
  * mientras trabajamos en local.
  *
  * Por que systemd y no un nohup: `Restart=always` reinicia el proceso si
- * muere, y `ExecStartPre` regenera `public/` en cada arranque, asi que lo
- * servido nunca queda desfasado del fuente.
+ * muere, y `ExecStartPre` regenera `frontend/public/` en cada arranque, asi
+ * que lo servido nunca queda desfasado del fuente.
  *
  * Uso:
  *   node scripts/instalar-autoinicio.mjs            instala y arranca

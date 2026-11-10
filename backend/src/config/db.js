@@ -21,15 +21,18 @@ mongoose.set('bufferCommands', false);
 export const connectDB = async ({ allowRetry = false } = {}) => {
   // 1 = conectada, 2 = conectando
   if (mongoose.connection.readyState === 1) return mongoose.connection;
-  if (mongoose.connection.readyState === 2) return mongoose.connection;
 
   if (!globalThis.__byJersMongoPromise) {
-    globalThis.__byJersMongoPromise = mongoose
-      .connect(MONGODB_URI, {
+    // Compartir también la espera: readyState=2 todavía no permite consultar.
+    // Una conexión iniciada desde otro módulo se espera con asPromise().
+    const connectionAttempt = mongoose.connection.readyState === 2
+      ? mongoose.connection.asPromise().then(connection => ({ connection }))
+      : mongoose.connect(MONGODB_URI, {
         // Atlas necesita reutilizar conexiones en Lambdas en frío.
         maxPoolSize: MONGO_MAX_POOL_SIZE,
         serverSelectionTimeoutMS: MONGO_SERVER_SELECTION_TIMEOUT_MS,
-      })
+      });
+    globalThis.__byJersMongoPromise = connectionAttempt
       .then((conn) => {
         // Se enmascara el host: en producción es el nombre del cluster, que es
         // topología de infraestructura en los logs. Con el despliegue local se
@@ -38,10 +41,10 @@ export const connectDB = async ({ allowRetry = false } = {}) => {
         console.log(`MongoDB conectado: ${host}`);
         return conn.connection;
       })
-      .catch((error) => {
-        // Permite reintentar en la siguiente invocación en vez de cachear el fallo.
+      .finally(() => {
+        // Cachear solo el intento pendiente: un éxito antiguo no debe ocultar
+        // una desconexión posterior e impedir una nueva conexión.
         globalThis.__byJersMongoPromise = null;
-        throw error;
       });
   }
 

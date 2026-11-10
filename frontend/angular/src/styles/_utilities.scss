@@ -1,0 +1,26 @@
+.container {
+  width: min(100% - var(--space-4) * 2, 1200px);
+  margin-inline: auto;
+}
+
+.container-wide {
+  width: min(100% - var(--space-4) * 2, 1440px);
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(4rem, 9vw, 8rem);
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid rgb(255 255 255 / 45%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+@media (max-width: 768px) {
+  .glass {
+    background: var(--surface);
+    border-color: var(--line);
+  }
+}

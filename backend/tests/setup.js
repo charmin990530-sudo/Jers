@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { resetTransactionSupportCache } from '../src/services/transaction.js';
+import { invalidarCacheDashboard } from '../src/services/dashboardCache.js';
 
 // Limites de peticiones relajados ANTES de que se importe config/env.js.
 // dotenv no sobreescribe variables ya presentes, asi que estos valores ganan.
@@ -56,4 +57,9 @@ afterAll(async () => {
 
 afterEach(async () => {
   await clearTestDB();
+  // El cache del dashboard vive en memoria del proceso y sobrevive al borrado
+  // de colecciones: sin invalidarlo, el siguiente test leería stats del anterior
+  // (los tests de "balance del panel" leen antes/después de marcar un pedido
+  // pagado y esperan el valor fresco).
+  invalidarCacheDashboard();
 });

@@ -22,6 +22,11 @@ import { Product, Category, Brand, User, Order } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
+import {
+  leerCacheDashboard,
+  escribirCacheDashboard,
+  invalidarCacheDashboard,
+} from '../services/dashboardCache.js';
 
 /**
  * POST /api/admin/productos
@@ -407,6 +412,11 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     if (nextEstado === 'entregado' && !order.fechaEntrega) order.fechaEntrega = new Date();
     await order.save();
   }
+  // El pedido cambió (estado, pago o ambas): la caché del dashboard ya no
+  // refleja la base. Invalidar aquí asegura que el panel muestre los números
+  // nuevos en la siguiente lectura (los tests leen antes/después y esperan
+  // el valor fresco).
+  invalidarCacheDashboard();
   await order.populate('usuario', 'nombre apellido email telefono');
   res.status(200).json({ success: true, message: 'Pedido actualizado', order });
 });
@@ -421,8 +431,18 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
  *
  * El total facturado es la suma de `total` de los pedidos PAGADOS, excluyendo los
  * cancelados y los reembolsados. Es dinero cobrado, no dinero pedido.
+ *
+ * CACHE (services/dashboardCache.js):
+ * Las estadísticas se cachean 45 s en memoria y se invalidan en cada mutación de
+ * pedidos. Sin caché, el panel reabierto cada pocos segundos disparaba las 5
+ * consultas aunque nadie hubiera tocado la base desde la anterior.
  */
 export const getDashboardStats = asyncHandler(async (req, res) => {
+  const cacheado = leerCacheDashboard();
+  if (cacheado) {
+    return res.status(200).json({ success: true, stats: cacheado });
+  }
+
   const [totalUsers, totalProducts, totalOrders, recentOrders, facets] = await Promise.all([
     User.countDocuments(),
     Product.countDocuments(),
@@ -451,19 +471,20 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
   const { ordersByStatus = [], totalRevenue = [], revenueToday = [] } = facets[0] ?? {};
 
-  res.status(200).json({
-    success: true,
-    stats: {
-      totalUsers,
-      totalProducts,
-      totalOrders,
-      totalRevenue: totalRevenue[0]?.total ?? 0,
-      revenueToday: revenueToday[0]?.total ?? 0,
-      ordersByStatus: ordersByStatus.reduce((acc, item) => {
-        acc[item._id] = item.count;
-        return acc;
-      }, {}),
-      recentOrders,
-    },
-  });
+  const stats = {
+    totalUsers,
+    totalProducts,
+    totalOrders,
+    totalRevenue: totalRevenue[0]?.total ?? 0,
+    revenueToday: revenueToday[0]?.total ?? 0,
+    ordersByStatus: ordersByStatus.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, {}),
+    recentOrders,
+  };
+
+  escribirCacheDashboard(stats);
+
+  res.status(200).json({ success: true, stats });
 });

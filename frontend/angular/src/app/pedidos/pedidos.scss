@@ -1,0 +1,206 @@
+.pedidos {
+  padding: var(--space-16) var(--space-6);
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.cabecera-pedidos {
+  margin-bottom: var(--space-10);
+}
+
+.titulo-pedidos {
+  font-size: clamp(2rem, 1.4rem + 2.5vw, 3.25rem);
+  margin-top: var(--space-2);
+}
+
+.vacio {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.aviso {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger, #b23b3b) 12%, transparent);
+  color: var(--danger, #b23b3b);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pedido {
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.pedido-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.pedido-etiqueta {
+  margin-bottom: var(--space-1);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pedido-numero {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.pedido-fecha {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.estado {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado[data-estado='entregado'],
+.estado[data-estado='pagado'] {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+}
+
+.estado[data-estado='cancelado'],
+.estado[data-estado='reembolsado'] {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.estado[data-estado='pendiente'],
+.estado[data-estado='procesando'],
+.estado[data-estado='confirmado'] {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning);
+}
+
+.estado[data-estado='enviado'] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.pedido-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+
+.pedido-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.pedido-pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.pedido-pie p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.pedido-pie strong {
+  margin-left: var(--space-2);
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
+.pedido-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cardbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cardbtn.secundario {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.cardbtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .pedidos {
+    padding: var(--space-10) var(--space-3);
+  }
+
+  .pedido {
+    padding: var(--space-4);
+  }
+
+  .pedido-cabecera {
+    flex-direction: column;
+  }
+
+  .pedido-pie {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pedido-acciones {
+    justify-content: stretch;
+  }
+
+  .pedido-acciones .cardbtn {
+    flex: 1;
+  }
+}

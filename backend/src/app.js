@@ -167,8 +167,9 @@ const CDN_STYLES = [];
 //   entorno `API_ORIGIN` y `FRONTEND_ALLOWED_ORIGINS`, porque una cabecera
 //   estatica de Vercel no interpola variables.
 // - La de `vercel.json` es la unica que aplica al sitio publicado en Vercel:
-//   alla el HTML, el CSS y el JS los sirve el edge desde `public/` y Express no
-//   se ejecuta para esas peticiones. Sin ella, las paginas no tendrian CSP.
+//   alla el HTML, el CSS y el JS los sirve el edge desde `frontend/public/` y
+//   Express no se ejecuta para esas peticiones. Sin ella, las paginas no
+//   tendrian CSP.
 //
 // En un despliegue en Vercel, las respuestas de /api llevan las dos (el
 // navegador se queda con la mas restrictiva de todas las que reciba) y las del
@@ -177,14 +178,14 @@ const CDN_STYLES = [];
 // upgrade-insecure-requests) se le anadio alli.
 //
 // `connect-src` es la unica que no se puede alinear, porque vercel.json no lee
-// el entorno. Y no hace falta: js/config.js deriva la URL de la API de
+// el entorno. Y no hace falta: frontend/js/config.js deriva la URL de la API de
 // `window.location.origin`, sin ningun host escrito, de modo que en Vercel la
 // API siempre es same-origin y `'self'` es completo.
 //
 // `script-src-attr 'none'` y `frame-src 'none'` no rompen nada: el sitio no usa
 // manejadores `onclick=` en linea ni iframes (comprobado en las 22 paginas), y
 // los eventos van por addEventListener desde js/.
-const cspDirectives = nonce => ({
+const cspDirectives = (nonce, conexionSegura) => ({
   defaultSrc: ["'self'"],
   scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`, ...CDN_SCRIPTS] : ["'self'", ...CDN_SCRIPTS],
   styleSrc: ["'self'", "'unsafe-inline'", ...CDN_STYLES],
@@ -197,17 +198,43 @@ const cspDirectives = nonce => ({
   baseUri: ["'self'"],
   formAction: ["'self'"],
   frameAncestors: ["'none'"],
-  // `upgrade-insecure-requests` no se lista a proposito: helmet ya la pone en sus
-  // directivas por defecto (helmet/index.cjs, DEFAULT_DIRECTIVES), asi que
-  // condicionarla a NODE_ENV no cambiaba nada: salia siempre. Antes de quitar el
-  // condicional se comprobó con curl que la cabecera local ya traia la directiva
-  // con NODE_ENV=development. Dejarla fija ademas evita tener dos CSP segun el
-  // entorno, que es justo lo que B-26 viene a evitar.
+  // `upgrade-insecure-requests` SOLO cuando la conexion es segura.
+  //
+  // helmet la pone en sus directivas por defecto (helmet/index.cjs,
+  // DEFAULT_DIRECTIVES) y asi salia siempre, tambien en local. El problema es
+  // que la directiva convierte en `https://` TODOS los recursos http de la
+  // pagina: en un despliegue de desarrollo servido por HTTP plano (por ejemplo
+  // http://192.168.0.12:3000, que es como se abre la tienda desde el movil o
+  // desde otro equipo de la red), el navegador intentaba descargar los JS y el
+  // CSS por https:// contra un servidor que no habla TLS, el handshake fallaba
+  // y la pagina se quedaba EN BLANCO. Solo en `localhost`/`127.0.0.1` se veia,
+  // porque esos origenes son "potentially trustworthy" y el navegador no los
+  // sube: por eso el fallo se reproducia en la IP de la red y no en local.
+  //
+  // Verificado con Chrome headless: en http://127.0.0.1 el DOM renderiza y en
+  // http://192.168.0.12 el DOM llega vacio con "handshake failed" en consola.
+  //
+  // Con `null` helmet elimina la directiva (y su valor por defecto). En
+  // produccion, donde todo va por HTTPS, se mantiene: `req.secure` es true
+  // porque hay un proxy delante y `trust proxy` esta configurado.
+  upgradeInsecureRequests: conexionSegura ? [] : null,
 });
+
+/**
+ * ¿La peticion ha llegado por HTTPS?
+ *
+ * `req.secure` ya tiene en cuenta `trust proxy` (TRUST_PROXY_HOPS), que es lo
+ * que hace que en Vercel, donde el TLS termina en el proxy, `req.secure` sea
+ * true. Se comprueba tambien `x-forwarded-proto` por si el proxy no estuviera
+ * declarado, porque de este valor depende que la tienda cargue o no.
+ */
+const esConexionSegura = req =>
+  req.secure === true
+  || String(req.get('x-forwarded-proto') || '').split(',')[0].trim() === 'https';
 
 app.use((req, res, next) => {
   const nonce = req.cspNonce || (CSP_NONCE_ENABLED ? randomBytes(16).toString('base64') : null);
-  const directives = cspDirectives(nonce);
+  const directives = cspDirectives(nonce, esConexionSegura(req));
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {
@@ -348,6 +375,8 @@ const healthConDetalle = req => {
 
 app.get('/api/health', (req, res) => {
   const conDetalle = healthConDetalle(req);
+  // Sin token en producción no se expone NADA además del success/timestamp:
+  // antes el fallback `environment` filtraba NODE_ENV a cualquier sonda anónima.
   res.json({
     success: true,
     message: 'API By Jers funcionando',
@@ -359,7 +388,7 @@ app.get('/api/health', (req, res) => {
       configured: !configError,
       // Redactado, no crudo: la función existe para esto y no se aplicaba.
       ...(configError ? { configError: redactConfig(configError.message) } : {}),
-    } : { environment: NODE_ENV }),
+    } : {}),
   });
 });
 
@@ -418,24 +447,24 @@ app.use('/api/admin', routes.admin);
 //     cruzadas y SameSite funciona como se espera.
 //   - no existe ya el segundo servidor (frontend-server.js) con su propio puerto,
 //     que era el origen del desfase de puertos entre back y front.
-// `public/` es la carpeta de salida de `scripts/preparar-estatico.mjs`; los
-// originales viven junto al codigo y el build los copia. `npm start` reconstruye
+// `frontend/public/` es la carpeta de salida de `scripts/preparar-estatico.mjs`;
+// los originales viven en `frontend/` y el build los copia. `npm start` reconstruye
 // antes de arrancar, asi que lo servido nunca queda desfasado del fuente.
 //
 // Se registra DESPUES de las rutas de la API para que ninguna peticion /api/*
 // pueda acabar sirviendo un archivo estatico por error, y el 404 de API se
 // limita a /api/* para que el resto de rutas las atienda la pagina 404 del sitio.
-const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../public');
+const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/public');
 
 // Lo que no debe servirse como archivo estatico aunque alguien lo dejara dentro
-// de public/.
+// de frontend/public/.
 //
 // `.json` NO va a proposito, y conviene no añadirlo: `data/producto-destacado.json`
 // lo lee js/bienvenida.js y se sirve hoy (HTTP 200). Bloquear los .json rompe la
 // pagina de bienvenida. Lo que hay que impedir es la basura sensible: el .env, los
 // logs, el lockfile y un node_modules que alguien copiara dentro.
 // (El .env real y el package.json estan en la raiz y en backend/, fuera de
-// PUBLIC_DIR, asi que express.static no puede verlos de todos modos.)
+// frontend/public/, asi que express.static no puede verlos de todos modos.)
 const STATIC_DENY = /\.(?:env|log|lock)$|^\.|^node_modules\//i;
 
 
@@ -449,7 +478,7 @@ if (SERVE_STATIC) {
     res.status(404).sendFile(join(PUBLIC_DIR, '404.html'), err => {
       if (err) {
         res.status(404).type('text/plain; charset=utf-8')
-          .send('404 - Pagina no encontrada. Regenera public/ con: node scripts/preparar-estatico.mjs');
+          .send('404 - Pagina no encontrada. Regenera frontend/public/ con: node scripts/preparar-estatico.mjs');
       }
     });
   };
@@ -500,9 +529,18 @@ if (SERVE_STATIC) {
   app.get(/^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/i, (req, res, next) => {
     const relativo = `${req.path.slice(1)}.html`;
     const destino = join(PUBLIC_DIR, relativo);
-    // Defensa extra: el destino resuelto tiene que seguir dentro de public/.
+    // Defensa extra: el destino resuelto tiene que seguir dentro de frontend/public/.
     if (!destino.startsWith(PUBLIC_DIR)) return next();
     res.sendFile(destino, err => { if (err) next(); });
+  });
+
+  // Fallback de la SPA Angular: las rutas del router deben devolver index.html
+  // al abrirse o recargarse directamente (por ejemplo /catalogo/maquillaje).
+  // Los recursos con extensión siguen pasando al 404 estático para no devolver
+  // HTML cuando falte un .js, .css, imagen u otro archivo.
+  app.get(/.*/, (req, res, next) => {
+    if (!req.accepts('html') || /\/[^/]*\.[^/]*$/.test(req.path)) return next();
+    res.sendFile(join(PUBLIC_DIR, 'index.html'), err => { if (err) next(); });
   });
 
   app.use((req, res, next) => {
