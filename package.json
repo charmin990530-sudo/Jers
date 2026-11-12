@@ -11,6 +11,7 @@
     "backend"
   ],
   "scripts": {
+    "build:demo": "node scripts/preparar-demo.mjs",
     "build:static": "node scripts/preparar-estatico.mjs",
     "prestart": "npm run build:static",
     "start": "node backend/src/app.js",
