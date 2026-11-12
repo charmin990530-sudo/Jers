@@ -90,8 +90,9 @@
           </label>
           <label class="check">
             <input [(ngModel)]="aceptoPrivacidad" name="aceptoPrivacidad" type="checkbox" required />
-            <span>Acepto la política de privacidad y el tratamiento de mis datos</span>
+            <span>Autorizo el uso de mis datos para gestionar mi cuenta y mis pedidos. No incluye publicidad.</span>
           </label>
+          <details><summary>Cómo se usan estos datos</summary><p>Nombre, apellido y correo identifican tu cuenta. El teléfono de registro es opcional. Las direcciones se solicitan al guardarlas o hacer un pedido. El personal administrador gestiona pedidos y consultas; puedes corregir tus datos o solicitar su revisión desde «Mis datos y solicitudes».</p></details>
         }
 
         @if (error()) {

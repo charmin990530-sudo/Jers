@@ -32,7 +32,11 @@ import { randomUUID } from 'crypto';
 import { Order, Cart, Product } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
-import { WHATSAPP_NUMBER, SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
+import { SHIPPING_RULES, TAX_RATE_BP } from '../config/env.js';
+import { createdOrderResponse } from '../services/orderResponse.js';
+import GameReward from '../models/GameReward.js';
+import { quoteReward } from '../services/gameRewards.js';
+import { restoreOrderStock, undoRestoredStock } from '../services/inventory.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
 import { invalidarCacheDashboard } from '../services/dashboardCache.js';
 import {
@@ -45,7 +49,6 @@ import {
   computeOrderTotal,
   shippingCostFor,
   taxFor,
-  formatMinorAmount,
 } from '../services/money.js';
 
 /**
@@ -61,7 +64,7 @@ export { SHIPPING_RULES } from '../config/env.js';
 
 const serializeOrder = order => ({
   ...order,
-  puedeCancelar: ['pendiente', 'confirmado'].includes(order?.estado),
+  puedeCancelar: order?.estadoPago !== 'pagado' && ['pendiente', 'confirmado'].includes(order?.estado),
 });
 
 /**
@@ -74,13 +77,7 @@ const serializeOrder = order => ({
 const respuestaPedidoExistente = order => ({
   success: true,
   message: 'El pedido ya había sido creado',
-  order: {
-    id: order._id,
-    numeroOrden: order.numeroOrden,
-    total: order.total,
-    estado: order.estado,
-    whatsappUrl: null,
-  },
+  order: createdOrderResponse(order),
 });
 
 /**
@@ -223,13 +220,18 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   }
 
   const subtotal = sumMinorAmounts(itemSubtotals, 'subtotal');
+  const { descuento, premio } = await quoteReward(req.body.rewardId, req.userId, cart.items, subtotal);
   const costoEnvio = shippingCostFor(subtotal, SHIPPING_RULES);
   // Los precios del catálogo son sin impuestos. El IVA se suma aqui, en el
   // servidor, sobre la base imponible (subtotal + envio) y con la tasa vigente
   // en el momento del pedido. El cliente nunca envía importes: el esquema Zod
   // solo acepta `direccionEnvio` y `notas`.
-  const impuestos = taxFor(subtotal + costoEnvio, TAX_RATE_BP);
-  const total = computeOrderTotal({ subtotal, shipping: costoEnvio, tax: impuestos });
+  const impuestos = taxFor(subtotal - descuento + costoEnvio, TAX_RATE_BP);
+  const total = computeOrderTotal({ subtotal: subtotal - descuento, shipping: costoEnvio, tax: impuestos });
+
+  if (req.body.expectedTotal !== undefined && req.body.expectedTotal !== total) {
+    return next(new AppError('El total cambió. Revisa el resumen actualizado y confirma de nuevo.', 409, ErrorCodes.PRICE_CHANGED));
+  }
 
   // ==============================================================
   // SECCION TRANSACCIONAL
@@ -270,6 +272,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   // devolver el stock de una linea que nunca se desconto lo inflaria, y el
   // stock fantasma permitia vender mas producto del que existia.
   let itemsReservados = [];
+  let rewardReserved = false;
   try {
     const outcome = await withTransaction(async ({ session }) => {
       // 1) Tomar el carrito. El $or descarta un checkout vivo de otro intento, de
@@ -277,6 +280,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       const claimedCart = await Cart.findOneAndUpdate(
         {
           _id: cart._id,
+          updatedAt: cart.updatedAt,
           $or: [
             { checkoutToken: { $exists: false } },
             { checkoutToken: null },
@@ -288,6 +292,14 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       );
       if (!claimedCart) {
         throw new AppError('Ya hay un checkout en curso para este carrito', 409, ErrorCodes.CHECKOUT_IN_PROGRESS);
+      }
+
+      if (premio) {
+        // La reserva condicional participa en la misma transacción del pedido.
+        const reserved = await GameReward.updateOne({ _id: premio.id, usuario: req.userId, redeemedAt: null, redeemedBy: null },
+          { $set: { redeemedBy: checkoutToken, redeemedAt: new Date() } }, { session });
+        if (reserved.modifiedCount !== 1) throw new AppError('El premio ya fue utilizado. Revisa el pedido.', 409, ErrorCodes.REWARD_UNAVAILABLE);
+        rewardReserved = true;
       }
 
       // 2) Reservar stock. Cada operacion conserva su filtro
@@ -307,6 +319,8 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         usuario: req.userId,
         items: validItems,
         subtotal,
+        descuento,
+        premio: premio ? { rewardId: premio.id, kind: premio.kind, name: premio.name, percent: premio.percent } : undefined,
         costoEnvio,
         impuestos,
         tasaImpuestosBp: TAX_RATE_BP,
@@ -333,6 +347,9 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     // compensacion solo corre cuando no hubo transaccion real.
     if (!transactional) {
       await Promise.allSettled([
+        rewardReserved
+          ? GameReward.updateOne({ _id: premio.id, usuario: req.userId, redeemedBy: checkoutToken }, { $set: { redeemedAt: null, redeemedBy: null } })
+          : Promise.resolve(),
         // Solo las lineas que se descontaron de verdad. Antes se devolvia el
         // stock de TODAS las lineas del carrito, incluso de las que nunca se
         // habían descontado (por ejemplo cuando el fallo era pedir el carrito
@@ -378,34 +395,8 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     throw error;
   }
 
-  // Genera mensaje WhatsApp formateado. Los importes salen de los valores ya
-  // redondeados de la linea, no de una multiplicacion nueva, para que el texto
-  // que ve el cliente coincida exactamente con lo que se guardo.
-  const whatsappMessage = `
-Hola, quiero hacer este pedido:
-
-${validItems.map(i => `• ${i.nombre} x${i.cantidad} - ${formatMinorAmount(i.subtotal)}`).join('\n')}
-
-Subtotal: ${formatMinorAmount(subtotal)}
-Envío: ${costoEnvio === 0 ? 'Gratis' : formatMinorAmount(costoEnvio)}
-IVA (${(TAX_RATE_BP / 100).toFixed(TAX_RATE_BP % 100 === 0 ? 0 : 2)}%): ${formatMinorAmount(impuestos)}
-Total: ${formatMinorAmount(total)}
-
-Dirección de envío:
-${direccionEnvio.nombreCompleto}
-${direccionEnvio.direccion}
-${direccionEnvio.ciudad}, ${direccionEnvio.departamento}
-Tel: ${direccionEnvio.telefono}
-
-${notas ? `Notas: ${notas}` : ''}
-
-Orden: ${order.numeroOrden}
-`.trim();
-
-  // URL WhatsApp con mensaje pre-llenado
-  // Usa variable de entorno WHATSAPP_NUMBER
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
-
+  // Compartir solo la referencia: nombres, domicilio, teléfono y notas quedan
+  // en el pedido privado, fuera de URLs, historial y parámetros de terceros.
   // ==============================================================
   // AVISOS POR CORREO
   // ==============================================================
@@ -444,7 +435,7 @@ Orden: ${order.numeroOrden}
   ]).then(results => {
     results.forEach((resultado, indice) => {
       if (resultado.status === 'rejected') {
-        console.error(`No se pudo enviar el correo de pedido ${order.numeroOrden} (aviso ${indice + 1}):`, resultado.reason?.message || resultado.reason);
+        console.error('No se pudo enviar un aviso de pedido', { aviso: indice + 1, errorName: resultado.reason?.name || 'Error' });
       }
     });
   });
@@ -460,17 +451,7 @@ Orden: ${order.numeroOrden}
     // que el cliente leía que el pago ya estaba en camino cuando en realidad
     // faltaba el paso que confirma la venta.
     message: 'Pedido creado. Falta confirmar el pago con la tienda por WhatsApp.',
-    order: {
-      id: order._id,
-      numeroOrden: order.numeroOrden,
-      subtotal,
-      costoEnvio,
-      impuestos,
-      tasaImpuestosBp: TAX_RATE_BP,
-      total: order.total,
-      estado: order.estado,
-      whatsappUrl,
-    },
+    order: createdOrderResponse(order),
   });
 });
 
@@ -545,6 +526,7 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
   // devolver siempre a 'pendiente' degradaba un pedido ya confirmado por la
   // tienda. El admin si lo hacia bien (`adminController.js`), aqui no.
   let estadoPrevio = null;
+  const restoredItems = [];
 
   try {
     const outcome = await withTransaction(async ({ session }) => {
@@ -574,15 +556,7 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
       if (cancelled) {
         motivoAplicado = true;
         // UN bulkWrite en vez de un updateOne por item (antes N viajes de red).
-        await Product.bulkWrite(
-          cancelled.items.map(item => ({
-            updateOne: {
-              filter: { _id: item.producto },
-              update: { $inc: { stock: item.cantidad, vendidos: -item.cantidad } },
-            },
-          })),
-          { session, ordered: false },
-        );
+        await restoreOrderStock(cancelled.items, { session, onApplied: item => restoredItems.push(item) });
       }
 
       return cancelled;
@@ -597,14 +571,9 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
       // documento existe si `motivoAplicado` es true).
       if (pending && estadoPrevio) {
         await Promise.allSettled([
-          Product.bulkWrite(pending.items.map(item => ({
-            updateOne: {
-              filter: { _id: item.producto },
-              update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
-            },
-          })), { ordered: false }),
+          undoRestoredStock(restoredItems),
           Order.updateOne(
-            { _id: req.params.id },
+            { _id: req.params.id, estado: 'cancelado' },
             { $set: { estado: estadoPrevio }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } },
           ),
         ]);

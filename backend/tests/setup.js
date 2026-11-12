@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
-import { resetTransactionSupportCache } from '../src/services/transaction.js';
 import { invalidarCacheDashboard } from '../src/services/dashboardCache.js';
 
 // Limites de peticiones relajados ANTES de que se importe config/env.js.
@@ -12,6 +11,9 @@ import { invalidarCacheDashboard } from '../src/services/dashboardCache.js';
 process.env.RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS || '100000';
 process.env.AUTH_RATE_LIMIT_MAX_REQUESTS = process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '100000';
 process.env.CONTACT_RATE_LIMIT_MAX_REQUESTS = process.env.CONTACT_RATE_LIMIT_MAX_REQUESTS || '100000';
+
+// transaction carga la configuración: importar después de fijar el entorno de pruebas.
+const { resetTransactionSupportCache } = await import('../src/services/transaction.js');
 
 let mongoServer;
 

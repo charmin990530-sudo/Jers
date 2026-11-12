@@ -8,6 +8,7 @@ import {
   EMAIL_FROM,
   NODE_ENV,
   FRONTEND_URL,
+  EMAIL_ENABLED,
 } from '../config/env.js';
 
 const escapeHtml = value => String(value ?? '')
@@ -54,6 +55,9 @@ const getTransporter = () => {
       port: SMTP_PORT,
       secure: SMTP_SECURE,
       requireTLS: NODE_ENV === 'production',
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
       auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
     });
   }
@@ -61,7 +65,7 @@ const getTransporter = () => {
 };
 
 export const sendEmail = async ({ to, subject, text, html }) => {
-  if (!SMTP_HOST) return { sent: false };
+  if (!EMAIL_ENABLED || !SMTP_HOST) return { sent: false };
   await getTransporter().sendMail({ from: EMAIL_FROM, to, subject, text, html });
   return { sent: true };
 };

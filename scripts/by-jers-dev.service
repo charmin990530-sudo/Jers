@@ -15,13 +15,9 @@
 [Unit]
 Description=By Jers - tienda (Express: sitio estatico + API)
 Documentation=file://%h/.config/systemd/user/by-jers-dev.service
-After=network-online.target mongod.service
-Wants=network-online.target
-# MongoDB local es un servicio del sistema. Si esta apagado, By Jers arranca
+# MongoDB local se administra como servicio del sistema. Si está apagado, By Jers arranca
 # igual: la API responde 503 DATABASE_UNAVAILABLE y reintenta en cada peticion,
 # de modo que no hace falta que el backend espere a la base.
-After=mongod.service
-Wants=mongod.service
 
 # Desde systemd 230 estas dos van en [Unit], no en [Service]: ponerlas en
 # [Service] hace que systemd rechace el fichero entero con
@@ -36,7 +32,7 @@ Type=simple
 # Se regenera frontend/public/ antes de arrancar, igual que `npm start`. Asi lo
 # servido nunca queda desfasado del fuente.
 ExecStartPre=/usr/bin/env npm run build:static
-ExecStart=/usr/bin/env npm start
+ExecStart=/usr/bin/env node backend/src/app.js
 WorkingDirectory=REPLACE_WITH_PROJECT_PATH
 
 Restart=always

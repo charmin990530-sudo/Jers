@@ -99,6 +99,7 @@ const requestSecurity = (req, res, next) => {
  * host no coincide, el origen es de otro sitio y se sigue rechazando.
  */
 const esMismoServidor = (origin, req) => {
+  if (NODE_ENV === 'production') return false;
   try {
     const host = req.get('host');
     if (!host) return false;

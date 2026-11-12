@@ -175,3 +175,12 @@ describe('redact: lo que llega al log y lo que llega al cliente', () => {
     expect(() => mandarError(e)).not.toThrow();
   });
 });
+describe('Privacidad de diagnósticos',()=>{
+  it('no registra correos contenidos en mensajes externos',()=>{
+    expect(logDe('SMTP rechazó ficticio@example.com')).not.toContain('ficticio@example.com');
+  });
+  it('no reenvía detalles arbitrarios de un error interno',()=>{
+    const err=errorConMensaje('Error de dependencia');err.details={password:'valor-privado-ficticio'};
+    expect(JSON.stringify(mandarError(err))).not.toContain('valor-privado-ficticio');
+  });
+});

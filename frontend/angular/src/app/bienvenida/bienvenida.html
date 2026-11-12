@@ -1,0 +1,65 @@
+<div class="welcome" [class.reduced-motion]="reducedMotion()">
+  @if (loading()) {
+    <div class="brand-loader" role="status" aria-label="Preparando el universo By Jers" aria-live="polite">
+      <div class="loader-orbit" aria-hidden="true"></div>
+      <img class="loader-logo" src="/img/logo/logo.webp" alt="Jers" width="160" height="160" />
+      <div class="loader-word" aria-hidden="true"><span>B</span><span>y</span><span>J</span><span>e</span><span>r</span><span>s</span></div>
+      <p>UN UNIVERSO QUE EMPIEZA EN TI</p>
+      <div class="loader-track" aria-hidden="true"><span [style.transform]="'scaleX(' + loadProgress() / 100 + ')'" ></span></div>
+      <a routerLink="/tienda">Entrar a la tienda ↗</a>
+    </div>
+  }
+
+  <section class="story-scroll" [inert]="loading()" aria-label="Bienvenida a By Jers: una historia que avanza con tu scroll">
+    <div class="story-stage">
+      <div class="film-world">
+        <figure class="film-window">
+          <picture class="film-poster">
+            <source media="(max-width: 600px) and (orientation: portrait)" [srcset]="reducedMotion() ? '/img/boutique/jers-interior-mobile-v1.webp' : '/img/boutique/jers-exterior-mobile-v1.webp'" />
+            <source media="(min-width: 601px) and (orientation: portrait)" [srcset]="reducedMotion() ? '/img/boutique/jers-interior-tablet-v1.webp' : '/img/boutique/jers-exterior-tablet-v1.webp'" />
+            <img [src]="reducedMotion() ? '/img/boutique/jers-interior-v1.webp' : '/img/boutique/jers-exterior-v1.webp'" alt="Boutique JERS en 3D: fachada verde, piedra marfil y un interior de maquillaje y cuidado capilar iluminado en tonos cálidos" fetchpriority="high" />
+          </picture>
+          <video #film class="film-video" [class.ready]="videoReady()" muted playsinline preload="none" disablePictureInPicture aria-hidden="true" tabindex="-1"></video>
+        </figure>
+      </div>
+
+      <div class="story-brand" aria-label="By Jers"><img src="/img/logo/logo.webp" alt="" width="48" height="48" /><span>By Jers<small>BEAUTY, ON YOUR TERMS.</small></span></div>
+      <span class="film-edition">BY JERS / UN ESPACIO PARA TI</span>
+
+      <div class="story-layout">
+        <div class="story-copy">
+          <p class="chapter-label"><span></span>{{ current().label }}</p>
+          <div class="chapters" aria-live="polite" aria-atomic="true">
+            @for (item of chapters; track item.label; let i = $index) {
+              <div class="chapter-copy" [class.active]="chapter() === i" [attr.aria-hidden]="chapter() !== i" [inert]="chapter() !== i">
+                @if (i === 0) {
+                  <h1>{{ item.title }}<br /><em>{{ item.accent }}</em></h1>
+                } @else {
+                  <h2>{{ item.title }}<br /><em>{{ item.accent }}</em></h2>
+                }
+                <p class="chapter-description">{{ item.description }}</p>
+              </div>
+            }
+          </div>
+          <div class="story-actions">
+            <a class="enter-store skip-story" routerLink="/tienda">Entrar a la tienda <span aria-hidden="true">↗</span></a>
+            @if (chapter() < 2) {
+              <button class="discover" type="button" (click)="goToChapter(chapter() + 1)">Acércate <span aria-hidden="true">↓</span></button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <footer class="story-footer">
+        <span class="scroll-cue"><span class="scroll-line" aria-hidden="true"></span> {{ chapter() === 2 ? 'DESCUBRE TUS PRÓXIMOS FAVORITOS' : 'DESLIZA PARA ENTRAR' }}</span>
+        <nav class="chapter-nav" aria-label="Capítulos de la bienvenida">
+          @for (item of chapters; track item.label; let i = $index) {
+            <button type="button" (click)="goToChapter(i)" [class.active]="chapter() === i" [attr.aria-current]="chapter() === i ? 'step' : null" [attr.aria-label]="'Ir al capítulo ' + (i + 1)">0{{ i + 1 }}<span></span></button>
+          }
+        </nav>
+        <span class="story-signature">HECHO PARA BRILLAR. HECHO PARA TI.</span>
+      </footer>
+      <div class="story-progress" aria-hidden="true"><span [style.transform]="'scaleX(' + progress() + ')'" ></span></div>
+    </div>
+  </section>
+</div>

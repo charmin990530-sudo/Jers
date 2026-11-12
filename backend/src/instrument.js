@@ -25,14 +25,17 @@
  * reportado.
  */
 import * as Sentry from '@sentry/node';
-import { SENTRY_DSN, NODE_ENV, SENTRY_TRACES_SAMPLE_RATE } from './config/env.js';
+import { SENTRY_DSN, NODE_ENV } from './config/env.js';
+import { sanitizeTelemetryEvent } from './utils/privacy.js';
 
 if (SENTRY_DSN && NODE_ENV === 'production') {
   try {
     Sentry.init({
       dsn: SENTRY_DSN,
       environment: NODE_ENV,
-      tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
+      tracesSampleRate: 0,
+      beforeSend: sanitizeTelemetryEvent,
+      beforeSendTransaction: () => null,
       // NO incluir datos personales: los errores llegan con la URL y el estado,
       // nunca con el cuerpo de la petición ni con el email del usuario.
       sendDefaultPii: false,

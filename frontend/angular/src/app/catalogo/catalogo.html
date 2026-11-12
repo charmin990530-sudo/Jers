@@ -46,7 +46,7 @@
   } @else {
     <div class="grid">
       @for (producto of productos(); track producto._id ?? producto.id ?? producto.nombre) {
-        <article class="card">
+        <article class="card" appDepth>
           <a class="cardimage-link" [routerLink]="['/producto', producto._id ?? producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
             <img class="cardimage" [src]="imagenUrl(producto)" [alt]="producto.nombre" loading="lazy" decoding="async" />
             @if (descuento(producto) > 0) {

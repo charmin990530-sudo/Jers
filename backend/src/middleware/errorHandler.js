@@ -55,13 +55,15 @@ const redact = value => String(value ?? '')
   // El resto son valores de una sola palabra: basta con cortar en espacio o coma.
   .replace(/(jwt|password|secret|api[-_]?key)(\s*[:=]\s*)[^\s,;]+/gi, '$1$2[REDACTED]')
   // El usuario puede ir vacío, que es la forma habitual de las URLs de Redis.
-  .replace(/([a-z][a-z0-9+.-]*:\/\/)([^/\s:@]*):([^/\s@]+)@/gi, '$1$2:[REDACTED]@');
+  .replace(/([a-z][a-z0-9+.-]*:\/\/)([^/\s:@]*):([^/\s@]+)@/gi, '$1$2:[REDACTED]@')
+  .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED]')
+  .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[REDACTED]');
 
 const requestPath = req => String(req.originalUrl || '').split('?')[0];
 
 /** Convierte los errores de validacion de Mongoose al formato details[]. */
 const mongooseDetails = err =>
-  Object.values(err.errors).map(e => ({ field: e.path, message: e.message }));
+  Object.values(err.errors).map(e => ({ field: e.path, message: 'Valor no válido para este campo' }));
 
 export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
@@ -85,7 +87,8 @@ export const errorHandler = (err, req, res, next) => {
   if (!operational || status >= 500) {
     console.error('Error no controlado', {
       requestId: req.requestId,
-      message: redact(err.message),
+      message: err.code === 11000 || ['ValidationError', 'CastError'].includes(err.name)
+        ? 'Validación de datos rechazada' : redact(err.message),
       errorName: err.name,
       code,
       statusCode: status,
@@ -122,7 +125,7 @@ export const errorHandler = (err, req, res, next) => {
     return sendError(res, 401, ErrorCodes.TOKEN_EXPIRED, 'Token expirado');
   }
 
-  return sendError(res, status, code, message, { details: err.details });
+  return sendError(res, status, code, message, { details: operational ? err.details : undefined });
 };
 
 /**

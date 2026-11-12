@@ -5,3 +5,6 @@ export { default as Product } from './Product.js';
 export { default as Cart } from './Cart.js';
 export { default as Order } from './Order.js';
 export { default as Contact } from './Contact.js';
+export { default as DataRequest } from './DataRequest.js';
+export { default as GameReward } from './GameReward.js';
+export { default as GameAttempt } from './GameAttempt.js';

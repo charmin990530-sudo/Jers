@@ -1,26 +1,11 @@
-/**
- * Store de rate limiting respaldado por Redis.
- *
- * DEGRADACIÓN, NO CAÍDA
- * ---------------------
- * `increment()` antes hacía `throw new Error('Redis client not connected')` si el
- * cliente no estaba abierto. Con `passOnStoreError: false` (el valor por defecto
- * de express-rate-limit 7.x) ese error sube al `errorHandler` global y TODAS las
- * peticiones de `/api/*` responden 500. Y el estado era permanente, porque el
- * `reconnectStrategy` de `app.js` devuelve `false` a los 4 reintentos, tras lo
- * cual `isOpen` se queda en `false` para siempre: un blip de red de cinco
- * segundos en Upstash tiraba la tienda entera hasta el siguiente despliegue.
- *
- * Ahora, si Redis no responde, el store informa un contador neutro y la petición
- * pasa. Se pierde el límite durante el corte, que es el trade-off correcto: el
- * rate limiting es una defensa, no una función de negocio, y para lo que protege
- * de verdad (fuerza bruta en el login) hay además el limitador por ruta y la
- * CAPTCHA del proveedor de identidad. Lo que NO es aceptable es que caiga la
- * tienda por un problema de caché.
- */
+/** Redis usa MongoDB compartido como respaldo; nunca admite tráfico sin contarlo. */
+import { createHash } from 'node:crypto';
+import { AppError, ErrorCodes } from './apiError.js';
+
 class RedisRateLimitStore {
-  constructor({ client = null, prefix = 'rl:', onDegradado = null } = {}) {
+  constructor({ client = null, prefix = 'rl:', onDegradado = null, fallbackStore = null } = {}) {
     this.client = client;
+    this.fallbackStore = fallbackStore;
     this.prefix = prefix;
     this.windowMs = 900000;
     this.limit = 100;
@@ -36,7 +21,7 @@ class RedisRateLimitStore {
     if (this.avisado) return;
     this.avisado = true;
     console.error(
-      `[rate-limit] Redis no disponible (${motivo}). Se sigue contando en memoria.`,
+      `[rate-limit] Redis no disponible (${motivo}). Se usa el respaldo compartido o se rechaza temporalmente.`,
     );
     this.onDegradado?.(motivo);
   }
@@ -50,23 +35,16 @@ class RedisRateLimitStore {
     this.windowMs = options.windowMs || this.windowMs;
     this.limit = options.limit || this.limit;
     if (options.prefix) this.prefix = options.prefix;
+    this.fallbackStore?.init(options);
   }
 
   async increment(key) {
     if (!this.client?.isOpen) {
       this.#degradar('cliente no abierto');
-      // Contador neutro: `totalHits` en 1 deja pasar la petición siempre. No es
-      // un "reset" silencioso de la ventana, es la ausencia de límite mientras
-      // no haya dónde contabilizar.
-      return {
-        totalHits: 1,
-        resetTime: new Date(Date.now() + this.windowMs),
-        isFirstInWindow: true,
-        degradado: true,
-      };
+      return this.#fallback(key);
     }
 
-    const redisKey = `${this.prefix}${key}`;
+    const redisKey = this.#key(key);
     let result;
     try {
       // `disableOfflineQueue` está puesto en la creación del cliente: sin él, un
@@ -93,12 +71,7 @@ class RedisRateLimitStore {
       // Un comando que falla (timeout, error de red, key mal formada) no puede
       // tumbar la API. Se degrada y se deja pasar.
       this.#degradar(error?.name || 'error en el comando');
-      return {
-        totalHits: 1,
-        resetTime: new Date(Date.now() + this.windowMs),
-        isFirstInWindow: true,
-        degradado: true,
-      };
+      return this.#fallback(key);
     }
 
     this.#recuperar();
@@ -112,10 +85,17 @@ class RedisRateLimitStore {
     };
   }
 
+  #key(key) { return this.prefix + createHash('sha256').update(String(key)).digest('hex'); }
+
+  async #fallback(key) {
+    if (this.fallbackStore) return this.fallbackStore.increment(key);
+    throw new AppError('El control de solicitudes no está disponible temporalmente.', 503, ErrorCodes.DATABASE_UNAVAILABLE);
+  }
+
   async decrement(key) {
     if (!this.client?.isOpen) return;
     try {
-      await this.client.decr(`${this.prefix}${key}`);
+      await this.client.decr(this.#key(key));
     } catch {
       this.#degradar('decrement');
     }
@@ -124,7 +104,7 @@ class RedisRateLimitStore {
   async resetKey(key) {
     if (!this.client?.isOpen) return;
     try {
-      await this.client.del(`${this.prefix}${key}`);
+      await this.client.del(this.#key(key));
     } catch {
       this.#degradar('resetKey');
     }

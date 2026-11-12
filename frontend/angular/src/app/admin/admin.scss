@@ -28,6 +28,7 @@
 
 .admin-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
   padding: 4px;
   margin-bottom: var(--space-5);
@@ -89,12 +90,14 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
 
 .stat {
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -120,11 +123,12 @@
 
 .resumen-grid {
   display: grid;
-  grid-template-columns: 1.5fr 0.5fr;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, .5fr);
   gap: var(--space-4);
 }
 
 .bloque {
+  min-width: 0;
   padding: var(--space-5);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -395,11 +399,11 @@ tbody tr:last-child td {
 
 @media (max-width: 980px) {
   .stats {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .resumen-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -409,7 +413,7 @@ tbody tr:last-child td {
   }
 
   .stats {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .admin-tabs {

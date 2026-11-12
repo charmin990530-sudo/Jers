@@ -1,0 +1,10 @@
+@use '../../utils/editor';
+.editor-admin { padding: 10px 0; max-width: none; }
+.entity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.entity-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.entity-row strong { display: block; font-size: .9rem; }
+.preview { display: block; width: 140px; height: 140px; object-fit: cover; border-radius: 18px; margin-top: 20px; }
+.checks { display: flex; flex-wrap: wrap; gap: 15px; }
+.message-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.message-body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .92rem; line-height: 1.8; margin-top: 20px; }
+@media(max-width:750px) { .entity-grid { grid-template-columns: minmax(0,1fr); } }

@@ -10,8 +10,56 @@
   },
   "rewrites": [
     {
+      "source": "/mis-datos",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/perfil",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/direcciones",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contacto",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/mi-perfil",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/mis-direcciones",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/mi-perfil.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/mis-direcciones.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contacto.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tienda",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/bienvenida",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/bienvenida.html",
+      "destination": "/index.html"
+    },
+    {
       "source": "/api/:path*",
-      "destination": "/api"
+      "destination": "/api?path=:path*"
     },
     {
       "source": "/catalogo/:path*",
@@ -94,16 +142,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: blob:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src-attr 'none'; upgrade-insecure-requests"
-        }
-      ]
-    },
-    {
-      "source": "/font/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: blob:; connect-src 'self'; media-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src-attr 'none'; upgrade-insecure-requests"
         }
       ]
     },
@@ -113,24 +152,6 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/css/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=604800, stale-while-revalidate=86400"
-        }
-      ]
-    },
-    {
-      "source": "/js/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=604800, stale-while-revalidate=86400"
         }
       ]
     },
@@ -151,7 +172,16 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
+    },
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
     }
   ],
-  "installCommand": "npm ci && npm ci --prefix frontend/angular"
+  "installCommand": "npm ci --include=dev && npm ci --include=dev --prefix frontend/angular"
 }

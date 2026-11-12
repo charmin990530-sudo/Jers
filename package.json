@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "workspaces": [
     "backend"
@@ -17,27 +17,28 @@
     "predev": "npm run build:static",
     "dev": "node --watch backend/src/app.js",
     "seed": "node backend/src/seeds/seed.js",
-    "test": "npm run test:backend && npm run test:frontend && npm run test:angular",
-    "test:frontend": "node --experimental-vm-modules scripts/run-tests-frontend.mjs",
+    "test": "npm run test:backend && npm run test:angular",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc -p jsconfig.json",
-    "check": "npm run lint && npm run typecheck && npm run check:angular",
+    "typecheck": "npm run typecheck --prefix frontend/angular",
+    "check": "npm run lint && npm run typecheck",
     "autostart": "node scripts/instalar-autoinicio.mjs",
     "autostart:stop": "node scripts/instalar-autoinicio.mjs --desinstalar",
     "autostart:status": "node scripts/instalar-autoinicio.mjs --estado",
-    "test:backend": "npm test --prefix backend",
+    "test:backend": "npm test --prefix backend --",
     "dev:frontend": "npm start --prefix frontend/angular",
     "check:angular": "npm run typecheck --prefix frontend/angular",
     "preview:gpu": "node scripts/abrir-con-gpu.mjs",
-    "test:angular": "node scripts/run-tests-angular.mjs"
+    "test:angular": "node scripts/run-tests-angular.mjs",
+    "admin:create": "node scripts/crear-admin.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.12.0",
-    "globals": "^15.15.0",
-    "jest-environment-jsdom": "^30.5.2",
-    "jsdom": "^26.1.0",
-    "typescript": "^5.9.3"
+    "globals": "^15.15.0"
+  },
+  "overrides": {
+    "glob": "14.0.4",
+    "minimatch": "11.0.8"
   }
 }

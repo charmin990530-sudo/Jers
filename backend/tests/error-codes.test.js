@@ -70,7 +70,7 @@ describe('contrato de codigos de error', () => {
 describe('todo codigo emitido existe en el registro', () => {
   // Regresion de B-03: doce codigos viajaban al cliente como cadenas literales
   // desde los controladores, sin existir como clave en `ErrorCodes`, y cinco de
-  // ellos ni siquiera estaban en la tabla de `API.md`. Quien ramificara por
+  // ellos ni siquiera estaban en la tabla de `README.md`. Quien ramificara por
   // `error.code` no podia tiparlos, y dos cajas negras ni aparecian en la
   // documentacion.
   //

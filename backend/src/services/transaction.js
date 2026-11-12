@@ -1,41 +1,10 @@
-/**
- * transaction.js - Transacciones reales de MongoDB con deteccion explicita
- *
- * POR QUE NO `mongoose.connection.transaction()`
- * ---------------------------------------------
- * Mongoose ofrece `connection.transaction()` y `session.withTransaction()`, pero
- * una de sus APIs NO propaga la sesion a las operaciones y por lo tanto no da
- * atomicidad. Comprobado en este proyecto:
- *
- *   - Sobre un replica set real, `connection.transaction()` devolvio "ok" y aun
- *     asi el documento escrito dentro del callback seguia presente tras
- *     abortar. El commit y el commit declaraban exito sobre una operacion que en
- *     realidad se habia ejecutado fuera de la transaccion.
- *   - Con el driver crudo pasando `{ session }` explicito, el mismo abort si
- *     revierte. La conclusion es que la sesion hay que pasarla a mano en cada
- *     operacion.
- *
- * Por eso este modulo expone la sesion y obliga a que cada consulta dentro del
- * callback la reciba. Si se olvida, la operacion sale de la transaccion y el
- * bug se manifests como "la transacion noSirve de nada", no como un error.
- *
- * SOPORTE EN MONGO SIN REPLICA SET
- * --------------------------------
- * Un mongod standalone rechaza las transacciones con
- * `Transaction numbers are only allowed on a replica set member or mongos`
- * (MongoServerError, code 20). Se detecta UNA vez al arrancar y:
- *
- *   - si el despliegue es replica set, se usa la transaccion real;
- *   - si no lo es, se ejecuta el callback sin sesion y se avisa por log. Quien
- *     llame a `withTransaction` recibe `{ transactional: false }` y debe saber
- *     que su logica de compensacion es la que esta garantizando la coherencia.
- *
- * Deliberadamente NO se degrada en silencio: un `catch` que convierte "no hay
- * transacciones" en un exito aparente es exactamente el fallo que se quiere
- * evitar aqui.
+/** Transacciones con sesión explícita, snapshot y confirmación por mayoría.
+ * Producción exige replica set o clúster fragmentado. Solo desarrollo admite
+ * standalone con compensaciones; una detección fallida responde 503 y se reintenta.
  */
-
 import mongoose from 'mongoose';
+import { NODE_ENV } from '../config/env.js';
+import { AppError, ErrorCodes } from '../middleware/apiError.js';
 
 let supportPromise = null;
 let warnedAboutNoSupport = false;
@@ -53,10 +22,11 @@ export const detectTransactionSupport = async () => {
       const hello = await admin.command({ hello: 1 });
       // setName viene en los miembros de replica set y en mongos. Sin el, el
       // despliegue es standalone y el servidor rechazara la transaccion.
-      return Boolean(hello.setName);
+      return Boolean(hello.setName || hello.msg === 'isdbgrid');
     } catch (error) {
-      console.warn('No se pudo detectar soporte de transacciones, se asume que no hay:', error.message);
-      return false;
+      console.warn('No se pudo detectar soporte de transacciones', { name: error.name });
+      supportPromise = null;
+      throw new AppError('No se pudo verificar la disponibilidad de transacciones. Intenta nuevamente.', 503, ErrorCodes.DATABASE_UNAVAILABLE);
     }
   })();
   return supportPromise;
@@ -88,6 +58,9 @@ export const withTransaction = async fn => {
 
   const supported = await detectTransactionSupport();
   if (!supported) {
+    if (NODE_ENV === 'production') {
+      throw new AppError('La base de producción debe admitir transacciones.', 503, ErrorCodes.TRANSACTIONS_UNAVAILABLE);
+    }
     if (!warnedAboutNoSupport) {
       console.warn(
         '[db] MongoDB sin replica set: las transacciones NO estan disponibles. ' +

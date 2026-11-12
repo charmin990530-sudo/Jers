@@ -261,7 +261,7 @@ describe('total del pedido: lo calculado es lo guardado y lo devuelto', () => {
     expect(despues.items[0].subtotal).toBe(antes.items[0].subtotal);
   });
 
-  it('el mensaje de WhatsApp muestra los mismos importes que el pedido', async () => {
+  it('el enlace de WhatsApp identifica el pedido sin exportar los importes ni datos de entrega', async () => {
     const producto = await crearProducto({ precio: 45000, stock: 10 });
     await agregar(producto, 2);
     const res = await pedir();
@@ -271,9 +271,10 @@ describe('total del pedido: lo calculado es lo guardado y lo devuelto', () => {
     // fallaba ahora porque la linea de IVA es lo primero que mete un "%" en el
     // mensaje; el resto del texto nunca tuvo ninguno.
     const texto = new URL(res.body.order.whatsappUrl).searchParams.get('text');
-    expect(texto).toContain(`$${guardado.subtotal.toLocaleString('es-CO')}`);
-    expect(texto).toContain(`$${guardado.impuestos.toLocaleString('es-CO')}`);
-    expect(texto).toContain(`$${guardado.total.toLocaleString('es-CO')}`);
+    expect(texto).toContain(guardado.numeroOrden);
+    expect(texto).not.toContain('$');
+    expect(texto).not.toContain(guardado.direccionEnvio.telefono);
+    expect(texto).not.toContain(guardado.direccionEnvio.direccion);
   });
 });
 

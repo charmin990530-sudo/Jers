@@ -1,16 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
 import { ApiService } from './api.service';
+import { FeedbackService } from './feedback.service';
 
 describe('Contrato HTTP de Angular', () => {
   let api: ApiService;
   let fetchMock: jasmine.Spy;
+  let feedback: jasmine.SpyObj<FeedbackService>;
   let doc: { cookie: string; defaultView: any; querySelector: () => null };
   beforeEach(() => {
     doc = { cookie: 'jers_csrf=token-prueba', defaultView: { location: { origin: 'http://localhost:3000' }, dispatchEvent: jasmine.createSpy() }, querySelector: () => null };
-    TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT, useValue: doc }] });
+    feedback = jasmine.createSpyObj('FeedbackService', ['success']);
+    TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT, useValue: doc },{provide:FeedbackService,useValue:feedback}] });
     api = TestBed.inject(ApiService);
     fetchMock = spyOn(globalThis, 'fetch');
+  });
+
+  it('solo confirma un guardado cuando el servidor lo acepta', async () => {
+    fetchMock.and.resolveTo(Response.json({error:{code:'FORBIDDEN',message:'No permitido'}},{status:403}));
+    await api.updateProfile({nombre:'Ficticio'});expect(feedback.success).not.toHaveBeenCalled();
+    fetchMock.and.resolveTo(Response.json({success:true,user:{nombre:'Ficticio'}}));
+    await api.updateProfile({nombre:'Ficticio'});expect(feedback.success).toHaveBeenCalledWith('Los cambios se guardaron');
   });
 
   it('rechaza HTML con estado 200 en vez de fingir un catálogo vacío exitoso', async () => {
@@ -99,6 +109,19 @@ describe('Contrato HTTP de Angular', () => {
     expect(api.usuario()).toBeNull();
   });
 
+  it('una mutación tardía del carrito no repone el contador después de salir', async () => {
+    let finish!: (response: Response) => void;
+    api.usuario.set({ id: 'cliente' });
+    fetchMock.and.callFake(async (url: string) => url.endsWith('/cart')
+      ? new Promise<Response>(resolve => finish = resolve)
+      : Response.json({ success: true }));
+    const adding = api.addToCart({ productoId: 'producto', cantidad: 1 });
+    await api.logout();
+    finish(Response.json({ cart: { totalItems: 4 } }));
+    await adding;
+    expect(api.carritoCantidad()).toBe(0);
+  });
+
   it('una respuesta antigua de carrito no repone su contador después de cerrar sesión', async () => {
     let terminar!: (response: Response) => void;
     api.usuario.set({ id: 'cliente' });
@@ -110,5 +133,45 @@ describe('Contrato HTTP de Angular', () => {
     terminar(Response.json({ cart: { totalItems: 4 } }));
     await consultaAntigua;
     expect(api.carritoCantidad()).toBe(0);
+  });
+});
+
+// La cuenta debe reflejar el servidor sin revivir sesiones finalizadas.
+describe('Sincronización de la cuenta',()=>{
+  let api:ApiService; let network:jasmine.Spy;
+  beforeEach(()=>{
+    TestBed.configureTestingModule({providers:[{provide:DOCUMENT,useValue:{cookie:'jers_csrf=prueba',defaultView:{location:{origin:'http://localhost:3000'},dispatchEvent:()=>{}},querySelector:()=>null}}]});
+    api=TestBed.inject(ApiService);api.usuario.set({id:'cliente',nombre:'Antes'});network=spyOn(globalThis,'fetch');
+  });
+  it('actualiza el nombre visible tras guardar el perfil',async()=>{
+    network.and.resolveTo(Response.json({user:{id:'cliente',nombre:'Después'}}));
+    await api.updateProfile({nombre:'Después'});expect(api.usuario()?.nombre).toBe('Después');
+  });
+  it('una respuesta de perfil tardía no restaura una sesión cerrada',async()=>{
+    let finish!:(value:Response)=>void;
+    network.and.callFake(async(url:string)=>url.endsWith('/profile')?new Promise<Response>(resolve=>finish=resolve):Response.json({success:true}));
+    const saving=api.updateProfile({nombre:'Después'});await api.logout();finish(Response.json({user:{id:'cliente',nombre:'Después'}}));await saving;expect(api.usuario()).toBeNull();
+  });
+  it('actualiza las direcciones usadas en checkout al guardarlas',async()=>{
+    network.and.resolveTo(Response.json({direcciones:[{_id:'casa',esPrincipal:true}]}));
+    await api.addAddress({alias:'Casa'});expect(api.usuario()?.direcciones[0]._id).toBe('casa');
+  });
+  it('una respuesta de dirección tardía no repone datos tras cerrar sesión',async()=>{
+    let finish!:(value:Response)=>void;
+    network.and.callFake(async(url:string)=>url.endsWith('/addresses')?new Promise<Response>(resolve=>finish=resolve):Response.json({success:true}));
+    const saving=api.addAddress({alias:'Casa'});await api.logout();finish(Response.json({direcciones:[{_id:'casa'}]}));await saving;expect(api.usuario()).toBeNull();
+  });
+});
+
+describe('Confirmación de acceso',()=>{
+  it('anuncia login correcto solo después de autenticar y conserva errores como errores',async()=>{
+    const feedback=jasmine.createSpyObj('FeedbackService',['success']);
+    const doc={cookie:'jers_csrf=ficticio',defaultView:{location:{origin:'http://localhost:3000'},dispatchEvent:()=>{}},querySelector:()=>null};
+    TestBed.configureTestingModule({providers:[{provide:DOCUMENT,useValue:doc},{provide:FeedbackService,useValue:feedback}]});
+    const api=TestBed.inject(ApiService),fetchMock=spyOn(globalThis,'fetch');
+    fetchMock.and.resolveTo(Response.json({error:{code:'INVALID_CREDENTIALS',message:'Credenciales inválidas'}},{status:401}));
+    expect((await api.login({email:'ficticio@example.com',password:'ficticia'})).ok).toBeFalse();expect(feedback.success).not.toHaveBeenCalled();
+    fetchMock.and.resolveTo(Response.json({user:{id:'ficticio'}}));
+    expect((await api.login({email:'ficticio@example.com',password:'ficticia'})).ok).toBeTrue();expect(feedback.success).toHaveBeenCalledWith('Inicio de sesión correcto');
   });
 });

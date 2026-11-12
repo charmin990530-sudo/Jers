@@ -22,6 +22,7 @@ import { Product, Category, Brand, User, Order } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
 import { withTransaction, detectTransactionSupport } from '../services/transaction.js';
+import { restoreOrderStock, undoRestoredStock } from '../services/inventory.js';
 import {
   leerCacheDashboard,
   escribirCacheDashboard,
@@ -311,6 +312,9 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
   if (!order) return next(new AppError('Pedido no encontrado', 404, ErrorCodes.ORDER_NOT_FOUND));
 
   const previousEstado = order.estado;
+  const mutationFilter = { _id: order._id, estado: previousEstado, estadoPago: order.estadoPago, updatedAt: order.updatedAt };
+  const restoredItems = [];
+  const previousFields = { estado: previousEstado, estadoPago: order.estadoPago, notas: order.notas, canceladoEn: order.canceladoEn, motivoCancelacion: order.motivoCancelacion };
   const nextEstado = req.body.estado || previousEstado;
   const transitions = {
     pendiente: ['confirmado', 'cancelado'],
@@ -352,7 +356,7 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
     try {
       const outcome = await withTransaction(async ({ session }) => {
         const updated = await Order.findOneAndUpdate(
-          { _id: order._id, estado: previousEstado },
+          mutationFilter,
           {
             $set: {
               ...req.body,
@@ -371,15 +375,7 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
         if (!updated) {
           throw new AppError('El pedido cambió simultáneamente; intente de nuevo', 409, ErrorCodes.ORDER_STATE_CHANGED);
         }
-        await Product.bulkWrite(
-          updated.items.map(item => ({
-            updateOne: {
-              filter: { _id: item.producto },
-              update: { $inc: { stock: item.cantidad, vendidos: -item.cantidad } },
-            },
-          })),
-          { session, ordered: false },
-        );
+        await restoreOrderStock(updated.items, { session, onApplied: item => restoredItems.push(item) });
         return updated;
       });
       order = outcome.result;
@@ -389,17 +385,13 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
         const stillOpen = await Order.findOne({ _id: order._id, estado: nextEstado }).lean();
         if (stillOpen) {
           await Promise.allSettled([
-            Product.bulkWrite(stillOpen.items.map(item => ({
-              updateOne: {
-                filter: { _id: item.producto },
-                update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
-              },
-            })), { ordered: false }),
+            undoRestoredStock(restoredItems),
             Order.updateOne(
               { _id: order._id, estado: nextEstado },
-              cancelacion
-                ? { $set: { estado: previousEstado }, $unset: { canceladoEn: 1, motivoCancelacion: 1 } }
-                : { $set: { estado: previousEstado } },
+              {
+                $set: Object.fromEntries(Object.entries(previousFields).filter(([, value]) => value !== undefined)),
+                $unset: Object.fromEntries(Object.entries(previousFields).filter(([, value]) => value === undefined).map(([key]) => [key, 1])),
+              },
             ),
           ]);
         }
@@ -407,10 +399,11 @@ export const updateAdminOrder = asyncHandler(async (req, res, next) => {
       return next(error);
     }
   } else {
-    Object.assign(order, req.body);
-    if (nextEstado === 'enviado' && !order.fechaEnvio) order.fechaEnvio = new Date();
-    if (nextEstado === 'entregado' && !order.fechaEntrega) order.fechaEntrega = new Date();
-    await order.save();
+    const changes = { ...req.body };
+    if (nextEstado === 'enviado' && !order.fechaEnvio) changes.fechaEnvio = new Date();
+    if (nextEstado === 'entregado' && !order.fechaEntrega) changes.fechaEntrega = new Date();
+    order = await Order.findOneAndUpdate(mutationFilter, { $set: changes }, { new: true, runValidators: true });
+    if (!order) return next(new AppError('El pedido cambió simultáneamente; actualiza antes de continuar', 409, ErrorCodes.ORDER_STATE_CHANGED));
   }
   // El pedido cambió (estado, pago o ambas): la caché del dashboard ya no
   // refleja la base. Invalidar aquí asegura que el panel muestre los números

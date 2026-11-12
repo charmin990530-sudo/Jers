@@ -68,8 +68,7 @@ if (desinstalar) {
 
 // --------------------------------------------------------------- instalar
 // `REPLACE_WITH_PROJECT_PATH` se sustituye por la ruta real del proyecto. Con
-// una ruta con espacios (este repo las tiene) hay que entrecomillarla en el
-// servicio, porque systemd no aplica shell al WorkingDirectory.
+// systemd acepta los espacios del WorkingDirectory sin reglas de shell.
 // La ruta va SIN comillas. systemd no interpreta el valor con reglas de shell:
 // entrecomillarlo hace que las comillas se cuenten como parte de la ruta y el
 // servicio se rechaza con "WorkingDirectory= path is not absolute". Los

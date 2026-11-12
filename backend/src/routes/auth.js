@@ -16,6 +16,7 @@ import {
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { validate, schemas, validateParams } from '../middleware/validation.js';
 import { z } from 'zod';
+import { exportData, getMyDataRequests, requestDataAction } from '../controllers/privacyController.js';
 
 const router = Router();
 
@@ -38,6 +39,9 @@ router.post('/reset-password', validate(schemas.resetPassword), resetPassword);
 router.use(authenticate);
 
 router.get('/me', getMe);
+router.post('/data-export', validate(schemas.exportData), exportData);
+router.get('/data-requests', getMyDataRequests);
+router.post('/data-requests', validate(schemas.dataRequest), requestDataAction);
 router.patch('/profile', validate(schemas.updateProfile), updateProfile);
 router.patch('/password', validate(schemas.changePassword), changePassword);
 

@@ -14,7 +14,7 @@ dotenv.config({ path: envPath });
 
 // Puerto del servidor (3000 por defecto)
 export const HOST = process.env.HOST || '127.0.0.1';
-export const PORT = Number.parseInt(process.env.PORT || '3000', 10);
+export const PORT = Number(process.env.PORT || '3000');
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error('PORT debe ser un número entero entre 1 y 65535');
 }
@@ -67,6 +67,7 @@ export const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'by-jers-store';
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 export const SESSION_EXPIRES_IN = process.env.SESSION_EXPIRES_IN || '1d';
 export const REMEMBER_ME_EXPIRES_IN = process.env.REMEMBER_ME_EXPIRES_IN || '30d';
+export const ADMIN_SESSION_EXPIRES_IN = process.env.ADMIN_SESSION_EXPIRES_IN || '1h';
 
 const durationToMs = (value) => {
   const match = /^(\d+)\s*(s|m|h|d|w)$/i.exec(String(value).trim());
@@ -79,7 +80,7 @@ export const getDurationMs = durationToMs;
 export const JWT_COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'token';
 
 const parseOrigins = (value) => value.split(',').map(origin => origin.trim()).filter(Boolean);
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 let frontendUrlObject;
 try {
   frontendUrlObject = new URL(frontendUrl);
@@ -138,24 +139,34 @@ if (NODE_ENV === 'production' && !API_ORIGIN.startsWith('https://')) {
   throw new Error('API_ORIGIN debe usar HTTPS en producción');
 }
 
+const positiveLimit = (name, fallback) => {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} debe ser un entero positivo`);
+  return value;
+};
+
 // Rate limiting: ventana de tiempo en ms (15 min = 900000ms)
-export const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000;
+export const RATE_LIMIT_WINDOW_MS = positiveLimit('RATE_LIMIT_WINDOW_MS', 900000);
 
 // Rate limiting: máx peticiones por ventana
-export const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
+export const RATE_LIMIT_MAX_REQUESTS = positiveLimit('RATE_LIMIT_MAX_REQUESTS', 100);
 
 // Auth rate limiting: más estricto (5 req/min para login/register)
-export const AUTH_RATE_LIMIT_WINDOW_MS = parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS) || 60000; // 1 min
-export const AUTH_RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS) || 5;
-export const CONTACT_RATE_LIMIT_WINDOW_MS = parseInt(process.env.CONTACT_RATE_LIMIT_WINDOW_MS) || 900000;
-export const CONTACT_RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.CONTACT_RATE_LIMIT_MAX_REQUESTS) || 5;
+export const AUTH_RATE_LIMIT_WINDOW_MS = positiveLimit('AUTH_RATE_LIMIT_WINDOW_MS', 60000); // 1 min
+export const AUTH_RATE_LIMIT_MAX_REQUESTS = positiveLimit('AUTH_RATE_LIMIT_MAX_REQUESTS', 5);
+export const CONTACT_RATE_LIMIT_WINDOW_MS = positiveLimit('CONTACT_RATE_LIMIT_WINDOW_MS', 900000);
+export const CONTACT_RATE_LIMIT_MAX_REQUESTS = positiveLimit('CONTACT_RATE_LIMIT_MAX_REQUESTS', 5);
 
 // Redis configuration for rate limiting (producción)
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 export const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true' && NODE_ENV === 'production';
+export const RATE_LIMIT_STORE = process.env.RATE_LIMIT_STORE || (REDIS_ENABLED ? 'redis' : 'memory');
+if (!['redis', 'mongodb', 'memory'].includes(RATE_LIMIT_STORE)) {
+  throw new Error('RATE_LIMIT_STORE debe ser redis, mongodb o memory');
+}
 // Tope de espera al conectar a Redis. Sin esto el cliente reintenta y un
 // REDIS_URL inalcanzable deja el cold start colgado hasta el timeout de Vercel.
-export const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS) || 5000;
+export const REDIS_CONNECT_TIMEOUT_MS = positiveLimit('REDIS_CONNECT_TIMEOUT_MS', 5000);
 
 // ==========================================
 // REGLAS DE ENVÍO
@@ -270,7 +281,8 @@ export const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || SMTP_PORT === 4
 export const SMTP_USER = process.env.SMTP_USER || '';
 export const SMTP_PASS = process.env.SMTP_PASS || '';
 export const EMAIL_FROM = process.env.EMAIL_FROM || 'By Jers <noreply@byjers.com>';
-if (NODE_ENV === 'production' && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
+export const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== 'false';
+if (NODE_ENV === 'production' && EMAIL_ENABLED && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
   throw new Error('SMTP_HOST, SMTP_USER y SMTP_PASS son obligatorios en producción');
 }
 
@@ -288,6 +300,7 @@ export const validateSecurityEnvironment = () => {
     if (getDurationMs(JWT_EXPIRES_IN) > 90 * 24 * 60 * 60 * 1000) errors.push('JWT_EXPIRES_IN');
     if (getDurationMs(SESSION_EXPIRES_IN) > 7 * 24 * 60 * 60 * 1000) errors.push('SESSION_EXPIRES_IN');
     if (getDurationMs(REMEMBER_ME_EXPIRES_IN) > 30 * 24 * 60 * 60 * 1000) errors.push('REMEMBER_ME_EXPIRES_IN');
+    if (getDurationMs(ADMIN_SESSION_EXPIRES_IN) <= 0 || getDurationMs(ADMIN_SESSION_EXPIRES_IN) > 60 * 60 * 1000) errors.push('ADMIN_SESSION_EXPIRES_IN');
   } catch {
     errors.push('JWT_DURATION');
   }
@@ -295,7 +308,8 @@ export const validateSecurityEnvironment = () => {
   if (/[\r\n]/.test(EMAIL_FROM)) errors.push('EMAIL_FROM');
   if (NODE_ENV === 'production') {
     if (process.env.JEST_WORKER_ID) errors.push('JEST_WORKER_ID');
-    if (!REDIS_ENABLED) errors.push('REDIS_ENABLED');
+    if (RATE_LIMIT_STORE === 'memory') errors.push('RATE_LIMIT_STORE');
+    if (RATE_LIMIT_STORE === 'redis' && !REDIS_ENABLED) errors.push('REDIS_ENABLED');
     // Sin esto el rate limiting colapsa a una sola clave: `req.ip` sería la IP
     // del proxy, compartida por todas las invocaciones de la región, así que
     // 100 peticiones de CUALQUIER usuario en 15 minutos bloquearían la tienda
@@ -309,8 +323,9 @@ export const validateSecurityEnvironment = () => {
     } catch (error) {
       if (error.code !== 'ENOENT' || !SECRETS_FROM_ENV) errors.push('.env permissions');
     }
-    if (!REDIS_URL.startsWith('rediss://')) errors.push('REDIS_TLS');
+    if (RATE_LIMIT_STORE !== 'mongodb' && !REDIS_URL.startsWith('rediss://')) errors.push('REDIS_TLS');
     if (!MONGODB_URI.startsWith('mongodb+srv://') && !/[?&]tls=true(?:&|$)/.test(MONGODB_URI)) errors.push('MONGODB_URI_TLS');
+    if (/[?&](?:(?:tls|ssl)=false|(?:tlsInsecure|tlsAllowInvalidCertificates|tlsAllowInvalidHostnames)=true)(?:&|$)/i.test(MONGODB_URI)) errors.push('MONGODB_URI_TLS');
     if (!COOKIE_SECURE) errors.push('COOKIE_SECURE');
     if (CSP_REPORT_ONLY) errors.push('CSP_REPORT_ONLY');
     if (FRONTEND_ALLOWED_ORIGINS.some(origin => !origin.startsWith('https://'))) errors.push('FRONTEND_ALLOWED_ORIGINS');

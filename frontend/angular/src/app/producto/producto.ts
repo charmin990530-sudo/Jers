@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { formatearPrecio, mensajeError } from '../utils/format';
@@ -35,6 +36,8 @@ export class Producto {
     private api = inject(ApiService);
     private route = inject(ActivatedRoute);
     private router = inject(Router);
+    private destroyRef = inject(DestroyRef);
+    private solicitud = 0;
 
     readonly producto = signal<Producto | null>(null);
     readonly cargando = signal(true);
@@ -46,18 +49,22 @@ export class Producto {
     readonly formatearPrecio = formatearPrecio;
 
     ngOnInit(): void {
-        this.route.paramMap.subscribe((params) => {
+        this.destroyRef.onDestroy(() => this.solicitud++);
+        this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
             const id = params.get('id');
             if (id) void this.cargar(id);
         });
     }
 
     async cargar(id: string): Promise<void> {
+        const solicitud = ++this.solicitud;
         this.cargando.set(true);
         this.error.set(null);
         this.aviso.set(null);
+        this.errorAgregar.set(null);
         this.cantidad.set(1);
         const respuesta = await this.api.getProduct(id);
+        if (solicitud !== this.solicitud) return;
         if (!respuesta.ok) {
             this.error.set(mensajeError(respuesta, 'No se pudo cargar el producto.'));
             this.cargando.set(false);

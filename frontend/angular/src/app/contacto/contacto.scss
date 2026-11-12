@@ -1,0 +1,5 @@
+@use '../utils/editor';
+.contact-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 25px; align-items: start; }
+.note { margin-top: 25px; }
+.honey { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media(max-width:760px) { .contact-grid { grid-template-columns: minmax(0,1fr); gap: 0; } }

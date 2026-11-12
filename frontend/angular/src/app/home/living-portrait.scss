@@ -1,0 +1,60 @@
+:host { display: block; min-width: 0; width: 100%; }
+.portrait-shell { position: relative; isolation: isolate; width: 100%; padding: 34px 0 18px; }
+.portrait-halo { position: absolute; inset: 5% -8% 12%; z-index: -1; border-radius: 50%; background: radial-gradient(ellipse, #d3a4ae38, #ecd8cb24 45%, transparent 70%); pointer-events: none; }
+.portrait-halo::after { content: ''; position: absolute; inset: 14% 12% 6%; border: 1px solid #b9898d22; border-radius: 50%; transform: rotate(-18deg); }
+.portrait-edition { display: block; text-align: center; color: #866e6d; font-size: 9px; font-weight: 600; letter-spacing: .22em; margin-bottom: 18px; }
+.portrait-window { overflow: clip; padding: 8% 12% 7%; margin: -8% -2% -7%; }
+.portrait-camera { position: relative; transition: transform .72s cubic-bezier(.22,.68,.16,1); }
+.portrait-stage { position: relative; width: 100%; aspect-ratio: 1312 / 1199; touch-action: pan-y; cursor: grab; }
+.portrait-stage.is-grabbed { cursor: grabbing; }
+.portrait-fallback { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.portrait-canvas { position: absolute; inset: -25%; width: 150%; max-width: none; height: 150%; pointer-events: none; opacity: 0; }
+.portrait-zones { position: absolute; inset: 0; pointer-events: none; transition: opacity .18s; }
+.portrait-zone { position: absolute; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; transform: translate(-50%, -50%); color: #70404d; text-decoration: none; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+.zone-point { width: 9px; height: 9px; border: 2px solid white; background: #a65c70; border-radius: 50%; box-shadow: 0 0 0 5px #fff5, 0 2px 12px #62334233; transition: transform .25s, box-shadow .25s; }
+.zone-label { position: absolute; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-width: 94px; padding: 11px 14px; border-radius: 40px; border: 1px solid #ffffffed; background: #fffcf7ed; box-shadow: 0 8px 26px #5c373a0d; font-size: 11px; font-weight: 600; white-space: nowrap; backdrop-filter: blur(12px); transition: background .2s, color .2s, transform .25s; }
+.zone-label::before { content: ''; position: absolute; width: 28px; height: 1px; top: 50%; background: #fff9; }
+.zone-label > span { font-size: 14px; opacity: .65; }
+.zone-cabello { left: 91%; top: 26%; }
+.zone-cabello .zone-label { left: 28px; }
+.zone-cabello .zone-label::before { right: 100%; }
+.zone-ojos { left: 9%; top: 43%; }
+.zone-ojos .zone-label { right: 28px; }
+.zone-ojos .zone-label::before { left: 100%; width: 34px; }
+.zone-rostro { left: 9%; top: 60%; }
+.zone-rostro .zone-label { right: 28px; }
+.zone-rostro .zone-label::before { left: 100%; width: 34px; }
+.zone-labios { left: 91%; top: 66%; }
+.zone-labios .zone-label { left: 28px; }
+.zone-labios .zone-label::before { right: 100%; width: 42px; }
+.portrait-zone:hover .zone-label, .portrait-zone:focus-visible .zone-label { background: #8b4b5d; color: white; transform: translateY(-2px); }
+.portrait-zone:hover .zone-point, .portrait-zone:focus-visible .zone-point { transform: scale(1.3); box-shadow: 0 0 0 7px #ffffff80; }
+.portrait-zone:focus-visible { outline: 2px solid #8b4b5d; outline-offset: 3px; }
+.portrait-caption { position: relative; margin-top: 16px; text-align: center; min-height: 54px; }
+.caption-kicker { color: #886c6f; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .15em; }
+.portrait-caption p { margin: 7px 0 0; color: #69414f; font-family: var(--font-display); font-size: clamp(15px, 1.3vw, 20px); font-style: italic; }
+.portrait-motion { display: flex; align-items: center; gap: 7px; margin: 14px auto 0; padding: 7px 10px; border: 0; background: none; color: #806a6b; font: inherit; font-size: 10px; cursor: pointer; }
+.portrait-motion:hover { color: #633947; }
+.portrait-motion:focus-visible { outline: 2px solid #8b4b5d; outline-offset: 2px; border-radius: 20px; }
+.portrait-motion > span { font-size: 13px; }
+.portrait-error { text-align: center; font-size: 12px; color: #9e3047; }
+.is-selecting .portrait-camera { transform: translate(var(--pan-x), var(--pan-y)) scale(1.85); }
+.is-selecting .portrait-zones { opacity: 0; pointer-events: none; }
+.is-selecting .portrait-zone { pointer-events: none; }
+.is-selecting .portrait-halo { opacity: .4; transition: opacity .7s; }
+.motion-off .portrait-camera { transition: none; }
+@media (max-width: 1100px) and (min-width: 821px) { .zone-label { padding: 10px 12px; min-width: 82px; gap: 10px; } .zone-ojos .zone-label, .zone-rostro .zone-label { right: 20px; } .zone-cabello .zone-label, .zone-labios .zone-label { left: 20px; } }
+@media (max-width: 560px) {
+  .portrait-shell { padding-top: 16px; }
+  .portrait-window { padding: 8% 1% 80px; margin: -8% -2% 0; }
+  .portrait-edition { font-size: 7px; margin-bottom: 16px; }
+  .portrait-zones { inset: calc(100% + 14px) 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .portrait-zone { position: static; width: auto; min-width: 0; height: 46px; transform: none; border-radius: 30px; }
+  .zone-point { display: none; }
+  .zone-label { position: static; width: 100%; height: 46px; min-width: 0; padding: 10px; font-size: 10px; gap: 4px; justify-content: center; }
+  .zone-label::before, .zone-label > span { display: none; }
+  .portrait-caption { margin-top: 0; }
+  .caption-kicker { font-size: 7px; letter-spacing: .12em; }
+  .portrait-motion { margin-top: 5px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }

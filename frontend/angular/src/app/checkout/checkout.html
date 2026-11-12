@@ -49,6 +49,11 @@
           <a routerLink="/carrito">Volver al carrito</a>
         </div>
 
+        @if (direcciones().length) {
+          <label class="campo campo-ancho"><span>Dirección guardada</span><select name="direccionGuardada" [ngModel]="direccionElegida" (ngModelChange)="seleccionarDireccion($event)"><option value="">Escribir otra dirección</option>@for (dir of direcciones(); track dir._id) { <option [value]="dir._id">{{ dir.alias }} · {{ dir.ciudad }}{{ dir.esPrincipal ? ' (principal)' : '' }}</option> }</select></label>
+        }
+        <p class="campo-ancho"><a routerLink="/direcciones">Gestionar mis direcciones</a></p>
+
         <label class="campo">
           <span>Alias</span>
           <input [(ngModel)]="envio.alias" name="alias" required minlength="2" maxlength="30" autocomplete="off" />
@@ -86,7 +91,7 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
 
-        <button class="cardbtn" type="submit" [disabled]="enviando() || form.invalid">
+        <button class="cardbtn" type="submit" [disabled]="enviando() || calculandoPremio() || form.invalid">
           {{ enviando() ? 'Creando pedido…' : 'Confirmar pedido' }}
         </button>
         <p class="nota">Al confirmar, generaremos tu pedido y podrás enviarlo por WhatsApp.</p>
@@ -94,6 +99,16 @@
 
       <aside class="resumen">
         <h2 class="subtitulo">Tu pedido</h2>
+        <section class="premios-checkout" aria-labelledby="premios-checkout-title">
+          <h3 id="premios-checkout-title">Tus premios del estudio</h3>
+          @if (premios().length) {
+            <label for="checkout-reward">Elige un premio por pedido</label>
+            <select id="checkout-reward" [value]="premioElegido()" (change)="elegirPremio($event)" [disabled]="calculandoPremio() || enviando()"><option value="">Comprar sin premio</option>@for (premio of premios(); track premio.id) { <option [value]="premio.id">{{ premio.name }}{{ premio.minimumExclusive ? ' · subtotal > $150.000' : '' }}</option> }</select>
+            <p>Los premios no se acumulan entre sí. El descuento de toda la tienda exige un subtotal superior a $150.000 COP.</p>
+          } @else { <p>Puedes ganar descuentos jugando en el <a routerLink="/estudio">Estudio de maquillaje</a>.</p> }
+          @if (calculandoPremio()) { <p role="status">Comprobando el premio y el total…</p> }
+          @if (errorPremios()) { <p class="error" role="alert">{{ errorPremios() }}</p><button type="button" (click)="cargarPremios()">Reintentar premios</button> }
+        </section>
         <div class="resumen-items">
           @for (item of carrito()?.items ?? []; track item._id ?? item.producto?._id) {
             <div class="resumen-item">
@@ -111,6 +126,7 @@
           <div class="resumen-totales">
             <p><span>Artículos</span><span>{{ carrito.totalItems }}</span></p>
             <p><span>Subtotal</span><span>{{ formatearPrecio(carrito.subtotal) }}</span></p>
+            @if (carrito.descuento) { <p class="descuento-premio"><span>Premio del estudio · 10%</span><span>−{{ formatearPrecio(carrito.descuento) }}</span></p> }
             <p><span>Envío</span><span>{{ (carrito.costoEnvio ?? 0) === 0 ? 'Gratis' : formatearPrecio(carrito.costoEnvio) }}</span></p>
             <p><span>IVA</span><span>{{ formatearPrecio(carrito.impuestos) }}</span></p>
             <p class="total"><span>Total</span><span>{{ formatearPrecio(carrito.total) }}</span></p>

@@ -64,7 +64,7 @@ if (!jestBin) {
 // depender de la sintaxis de shell (que cambia entre Unix y Windows).
 const hijo = spawn(
   process.execPath,
-  ['--experimental-vm-modules', jestBin, ...process.argv.slice(2)],
+  ['--disable-proto=delete', '--experimental-vm-modules', jestBin, ...process.argv.slice(2)],
   { stdio: 'inherit' },
 );
 

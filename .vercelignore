@@ -15,3 +15,15 @@ backend/tests
 **/*.test.js
 *.md
 **/.DS_Store
+output
+.playwright-cli
+.agents
+.codex
+.aws
+docs
+frontend/angular/.angular
+frontend/angular/dist
+frontend/angular/coverage
+**/*.spec.ts
+**/.env
+**/.env.*

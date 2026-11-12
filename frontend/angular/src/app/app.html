@@ -1,16 +1,17 @@
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
+@if (!enBienvenida()) {
 <header class="topbar">
-  <a class="brand" routerLink="/" (click)="cerrarMenu()">
-    <span class="brand-mark">BJ</span>
+  <a class="brand" routerLink="/tienda" (click)="cerrarMenu()">
+    <img class="brand-logo" src="/img/logo/logo.webp" alt="" width="42" height="42" />
     <span class="brand-text">By Jers<small>Beauty studio</small></span>
   </a>
 
   <nav class="nav" [class.abierto]="menuAbierto()" aria-label="Navegación principal">
-    <a routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">Inicio</a>
+    <a routerLink="/tienda" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">Tienda</a>
     <a routerLink="/catalogo/maquillaje" routerLinkActive="activo" (click)="cerrarMenu()">Maquillaje</a>
     <a routerLink="/catalogo/cabello" routerLinkActive="activo" (click)="cerrarMenu()">Cabello</a>
-    <a routerLink="/looks" routerLinkActive="activo" (click)="cerrarMenu()">Looks</a>
+    <a routerLink="/estudio" routerLinkActive="activo" (click)="cerrarMenu()">Estudio</a>
     @if (api.estaLogueado()) {
       <a routerLink="/pedidos" routerLinkActive="activo" (click)="cerrarMenu()">Mis pedidos</a>
     }
@@ -26,6 +27,8 @@
         }
       </a>
       @if (api.estaLogueado()) {
+        <a routerLink="/perfil" (click)="cerrarMenu()">Mi perfil</a>
+        <a routerLink="/direcciones" (click)="cerrarMenu()">Mis direcciones</a>
         <a routerLink="/pedidos" (click)="cerrarMenu()">Mis pedidos</a>
         <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
       } @else {
@@ -54,7 +57,9 @@
         @if (menuCuenta()) {
           <div class="cuenta-menu">
             <p class="cuenta-menu-cabecera">{{ api.usuario()?.nombre }} {{ api.usuario()?.apellido }}</p>
-            <a routerLink="/pedidos" (click)="cerrarMenu()">Mis pedidos</a>
+            <a routerLink="/perfil" (click)="cerrarMenu()">Mi perfil</a>
+        <a routerLink="/direcciones" (click)="cerrarMenu()">Mis direcciones</a>
+        <a routerLink="/pedidos" (click)="cerrarMenu()">Mis pedidos</a>
             @if (api.esAdmin()) {
               <a routerLink="/admin" (click)="cerrarMenu()">Panel de administración</a>
             }
@@ -72,6 +77,7 @@
     <span></span>
   </button>
 </header>
+}
 
 <main id="contenido" class="app-shell">
   @if (errorSesion()) {
@@ -80,11 +86,12 @@
   <router-outlet />
 </main>
 
+@if (!enBienvenida()) {
 <footer class="footer">
   <div class="footer-grid">
     <div class="footer-marca">
-      <a class="brand" routerLink="/">
-        <span class="brand-mark">BJ</span>
+      <a class="brand" routerLink="/tienda">
+        <img class="brand-logo" src="/img/logo/logo.webp" alt="" width="42" height="42" />
         <span class="brand-text">By Jers<small>Beauty studio</small></span>
       </a>
       <p>Maquillaje y cuidado capilar seleccionados para realzar tu estilo todos los días.</p>
@@ -95,11 +102,16 @@
       <a routerLink="/catalogo/maquillaje">Maquillaje</a>
       <a routerLink="/catalogo/cabello">Cabello</a>
       <a routerLink="/looks">Looks</a>
+      <a routerLink="/estudio">Estudio de maquillaje</a>
+      <a routerLink="/">Vivir la experiencia</a>
     </div>
 
     <div>
       <h3>Tu cuenta</h3>
       <a routerLink="/carrito">Carrito</a>
+      <a routerLink="/perfil">Mi perfil</a>
+      <a routerLink="/mis-datos">Mis datos y solicitudes</a>
+      <a routerLink="/direcciones">Mis direcciones</a>
       <a routerLink="/pedidos">Mis pedidos</a>
       @if (api.esAdmin()) {
         <a routerLink="/admin">Administración</a>
@@ -110,6 +122,7 @@
 
     <div>
       <h3>Contacto</h3>
+      <a routerLink="/contacto">Escríbenos un mensaje</a>
       <a [href]="whatsappUrl" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
       <p>Lun a Sáb · 9:00 a 18:00</p>
       <p>Envíos a todo Colombia</p>
@@ -121,3 +134,4 @@
     <span>Hecho con cuidado en Colombia.</span>
   </div>
 </footer>
+}

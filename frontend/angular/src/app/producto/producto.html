@@ -8,7 +8,7 @@
     </div>
   } @else if (producto(); as producto) {
     <nav class="migas" aria-label="Ruta de navegación">
-      <a routerLink="/">Inicio</a>
+      <a routerLink="/tienda">Tienda</a>
       <span>/</span>
       @if (slugReferencia(producto.categoria); as slug) {
         <a [routerLink]="['/catalogo', slug]">{{ nombreReferencia(producto.categoria) }}</a>

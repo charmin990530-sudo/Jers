@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { FeedbackService } from './feedback.service';
 
 export interface ApiResponse<T = any> {
     ok: boolean;
@@ -36,6 +37,7 @@ const CLAVE_CSRF = 'jers_csrf';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
     private doc = inject(DOCUMENT);
+    private feedback = inject(FeedbackService);
 
     readonly usuario = signal<any>(null);
     readonly carritoCantidad = signal(0);
@@ -43,8 +45,6 @@ export class ApiService {
     readonly esAdmin = computed(() => this.usuario()?.role === 'admin');
 
     private expirada = false;
-    private readonly oyentesSesion = new Set<(usuario: any) => void>();
-    private redirigiendo = false;
     private versionSesion = 0;
 
     private apiBaseUrl: string;
@@ -59,7 +59,9 @@ export class ApiService {
 
     private normalizar(valor: string): string | null {
         try {
+            if (typeof valor !== 'string') return null;
             const url = new URL(valor);
+            if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.origin !== this.windowRef?.location?.origin) return null;
             const ruta = url.pathname.replace(/\/+$/, '');
             if (ruta !== '/api' && !ruta.endsWith('/api')) url.pathname = `${ruta}/api`;
             return url.toString().replace(/\/$/, '');
@@ -187,18 +189,27 @@ export class ApiService {
         }
 
         if (respuesta.ok) {
+            // Solo operaciones guardadas por el servidor disparan el aviso solicitado.
+            if (muta) {
+                const title = /^\/admin\/(?:productos|categorias|marcas|contactos|solicitudes-datos)(?:\/|$)/.test(endpoint)
+                    || /^\/auth\/(?:profile|addresses)(?:\/|$)/.test(endpoint)
+                    ? 'Los cambios se guardaron'
+                    : endpoint === '/auth/login' ? 'Inicio de sesión correcto'
+                    : endpoint === '/auth/logout' ? 'Sesión cerrada'
+                    : endpoint === '/auth/password' || endpoint === '/auth/reset-password' ? 'Contraseña actualizada'
+                    : endpoint === '/auth/data-requests' ? 'Solicitud registrada'
+                    : endpoint === '/contact' ? 'Mensaje recibido'
+                    : endpoint === '/orders' ? 'Pedido creado' : null;
+                if (title) void this.feedback.success(title);
+            }
             return { ok: true, msg: datos?.message || 'Operación exitosa', data: datos };
         }
 
         const error = this.construirError(respuesta, datos);
 
         if (CODIGOS_SESION.has(error.code) && !this.expirada && versionSesion === this.versionSesion) {
-            const teniaSesion = this.usuario() !== null;
             this.expirada = true;
             this.notificarSesion(null);
-            if (teniaSesion) {
-                this.windowRef?.dispatchEvent?.(new Event('sesion-caducada'));
-            }
         }
 
         if (!CODIGOS_SESION.has(error.code)) {
@@ -215,29 +226,6 @@ export class ApiService {
         this.versionSesion++;
         this.usuario.set(usuario || null);
         if (!usuario) this.carritoCantidad.set(0);
-        this.oyentesSesion.forEach((fn) => {
-            try { fn(this.usuario()); } catch { /* oyente falló */ }
-        });
-    }
-
-    alCambiarSesion(fn: (usuario: any) => void): () => void {
-        this.oyentesSesion.add(fn);
-        return () => this.oyentesSesion.delete(fn);
-    }
-
-    obtenerUsuario(): any {
-        return this.usuario();
-    }
-
-    irAlLogin(): void {
-        const w = this.windowRef;
-        if (typeof w === 'undefined') return;
-        if (this.redirigiendo) return;
-        const actual = `${w.location?.pathname ?? ''}${w.location?.search ?? ''}${w.location?.hash ?? ''}`;
-        if (actual.includes('/login') || actual.includes('/register')) return;
-        this.redirigiendo = true;
-        try { w.sessionStorage?.setItem('auth_redirect_url', actual); } catch { /* modo privado */ }
-        void w.location.assign(`/login?redirect=${encodeURIComponent(actual)}`);
     }
 
     private aplicarCarrito(data: any): void {
@@ -279,7 +267,6 @@ export class ApiService {
         if (r.ok) {
             this.notificarSesion(null);
             this.expirada = false;
-            this.windowRef?.dispatchEvent?.(new Event('auth-cambio'));
         }
         return r;
     }
@@ -297,11 +284,31 @@ export class ApiService {
 
     forgotPassword(email: string) { return this.request('/auth/forgot-password', { method: 'POST', body: { email } }); }
     resetPassword(datos: any) { return this.request('/auth/reset-password', { method: 'POST', body: datos }); }
-    updateProfile(datos: any) { return this.request('/auth/profile', { method: 'PATCH', body: datos }); }
+    async updateProfile(datos: any): Promise<ApiResponse> {
+        const version = ++this.versionSesion;
+        const response = await this.request('/auth/profile', { method: 'PATCH', body: datos });
+        if (response.ok && version === this.versionSesion && this.usuario() && response.data?.user) {
+            this.notificarSesion(response.data.user);
+        }
+        return response;
+    }
     changePassword(datos: any) { return this.request('/auth/password', { method: 'PATCH', body: datos }); }
-    addAddress(dir: any) { return this.request('/auth/addresses', { method: 'POST', body: dir }); }
-    updateAddress(id: any, dir: any) { return this.request(`/auth/addresses/${id}`, { method: 'PATCH', body: dir }); }
-    deleteAddress(id: any) { return this.request(`/auth/addresses/${id}`, { method: 'DELETE' }); }
+    exportData(currentPassword: string) { return this.request('/auth/data-export', { method: 'POST', body: { currentPassword } }); }
+    getDataRequests() { return this.request('/auth/data-requests'); }
+    requestDataAction(datos: any) { return this.request('/auth/data-requests', { method: 'POST', body: datos }); }
+    getAdminDataRequests(params: Record<string, any> = {}) { return this.request(this.conQuery('/admin/solicitudes-datos', params)); }
+    resolveDataRequest(id: string, respuesta: string) { return this.request(`/admin/solicitudes-datos/${encodeURIComponent(id)}`, { method: 'PATCH', body: { respuesta } }); }
+    private async cambiarDirecciones(endpoint: string, method: string, body?: any): Promise<ApiResponse> {
+        const version = ++this.versionSesion;
+        const response = await this.request(endpoint, { method, body });
+        if (response.ok && version === this.versionSesion && this.usuario() && Array.isArray(response.data?.direcciones)) {
+            this.notificarSesion({ ...this.usuario(), direcciones: response.data.direcciones });
+        }
+        return response;
+    }
+    addAddress(dir: any) { return this.cambiarDirecciones('/auth/addresses', 'POST', dir); }
+    updateAddress(id: any, dir: any) { return this.cambiarDirecciones(`/auth/addresses/${encodeURIComponent(id)}`, 'PATCH', dir); }
+    deleteAddress(id: any) { return this.cambiarDirecciones(`/auth/addresses/${encodeURIComponent(id)}`, 'DELETE'); }
 
     // -------------------------------------------------------------
     // Productos
@@ -332,37 +339,30 @@ export class ApiService {
     // -------------------------------------------------------------
     // Carrito
     // -------------------------------------------------------------
-    getCart(): Promise<ApiResponse> {
+    getCart(rewardId?: string): Promise<ApiResponse> {
         const versionSesion = this.versionSesion;
-        return this.request('/cart', { requiereCsrf: false }).then((r) => {
+        return this.request(this.conQuery('/cart', rewardId ? { rewardId } : {}), { requiereCsrf: false }).then((r) => {
             if (r.ok && versionSesion === this.versionSesion) this.aplicarCarrito(r.data);
             return r;
         });
     }
-    addToCart(item: any): Promise<ApiResponse> {
-        return this.request('/cart', { method: 'POST', body: item }).then((r) => {
-            if (r.ok) this.aplicarCarrito(r.data);
-            return r;
+    private mutarCarrito(endpoint: string, method: string, body?: any): Promise<ApiResponse> {
+        const version = this.versionSesion;
+        return this.request(endpoint, { method, body }).then(response => {
+            if (response.ok && version === this.versionSesion) this.aplicarCarrito(response.data);
+            return response;
         });
     }
-    updateCartItem(itemId: any, cantidad: number): Promise<ApiResponse> {
-        return this.request(`/cart/${itemId}`, { method: 'PATCH', body: { cantidad } }).then((r) => {
-            if (r.ok) this.aplicarCarrito(r.data);
-            return r;
-        });
-    }
-    removeFromCart(itemId: any): Promise<ApiResponse> {
-        return this.request(`/cart/${itemId}`, { method: 'DELETE' }).then((r) => {
-            if (r.ok) this.aplicarCarrito(r.data);
-            return r;
-        });
-    }
-    clearCart(): Promise<ApiResponse> {
-        return this.request('/cart', { method: 'DELETE' }).then((r) => {
-            if (r.ok) this.aplicarCarrito(r.data);
-            return r;
-        });
-    }
+    addToCart(item: any): Promise<ApiResponse> { return this.mutarCarrito('/cart', 'POST', item); }
+    updateCartItem(itemId: any, cantidad: number): Promise<ApiResponse> { return this.mutarCarrito(`/cart/${encodeURIComponent(itemId)}`, 'PATCH', { cantidad }); }
+    removeFromCart(itemId: any): Promise<ApiResponse> { return this.mutarCarrito(`/cart/${encodeURIComponent(itemId)}`, 'DELETE'); }
+    clearCart(): Promise<ApiResponse> { return this.mutarCarrito('/cart', 'DELETE'); }
+
+    getStudioProducts(): Promise<ApiResponse> { return this.request('/studio/products', { requiereCsrf: false }); }
+    getStudioRewards(): Promise<ApiResponse> { return this.request('/studio/rewards', { requiereCsrf: false }); }
+    startStudioAttempt(challenge: string): Promise<ApiResponse> { return this.request('/studio/attempts', { method: 'POST', body: { challenge } }); }
+    updateStudioStep(id: string, body: unknown): Promise<ApiResponse> { return this.request(`/studio/attempts/${encodeURIComponent(id)}/step`, { method: 'PATCH', body }); }
+    completeStudioAttempt(id: string): Promise<ApiResponse> { return this.request(`/studio/attempts/${encodeURIComponent(id)}/complete`, { method: 'POST', body: {} }); }
 
     // -------------------------------------------------------------
     // Pedidos
@@ -389,6 +389,13 @@ export class ApiService {
     // -------------------------------------------------------------
     getAdminDashboard(): Promise<ApiResponse> { return this.request('/admin/dashboard', { requiereCsrf: false }); }
     getAdminProducts(params: Record<string, any> = {}): Promise<ApiResponse> { return this.request(this.conQuery('/admin/productos', params), { requiereCsrf: false }); }
+    createAdminProduct(datos: any): Promise<ApiResponse> { return this.request('/admin/productos', { method: 'POST', body: datos }); }
+    createAdminCategory(datos: any): Promise<ApiResponse> { return this.request('/admin/categorias', { method: 'POST', body: datos }); }
+    updateAdminCategory(id: string, datos: any): Promise<ApiResponse> { return this.request(`/admin/categorias/${encodeURIComponent(id)}`, { method: 'PATCH', body: datos }); }
+    createAdminBrand(datos: any): Promise<ApiResponse> { return this.request('/admin/marcas', { method: 'POST', body: datos }); }
+    updateAdminBrand(id: string, datos: any): Promise<ApiResponse> { return this.request(`/admin/marcas/${encodeURIComponent(id)}`, { method: 'PATCH', body: datos }); }
+    getAdminContacts(params: Record<string, any> = {}): Promise<ApiResponse> { return this.request(this.conQuery('/admin/contactos', params), { requiereCsrf: false }); }
+    updateAdminContact(id: string, estado: 'nuevo' | 'atendido'): Promise<ApiResponse> { return this.request(`/admin/contactos/${encodeURIComponent(id)}`, { method: 'PATCH', body: { estado } }); }
     updateAdminProduct(id: any, datos: any): Promise<ApiResponse> { return this.request(`/admin/productos/${id}`, { method: 'PATCH', body: datos }); }
     getAdminCategories(): Promise<ApiResponse> { return this.request('/admin/categorias', { requiereCsrf: false }); }
     getAdminBrands(): Promise<ApiResponse> { return this.request('/admin/marcas', { requiereCsrf: false }); }
@@ -404,20 +411,4 @@ export class ApiService {
     toggleUserActive(id: any): Promise<ApiResponse> { return this.request(`/users/${id}/toggle-active`, { method: 'PATCH', body: {} }); }
     deleteUser(id: any): Promise<ApiResponse> { return this.request(`/users/${id}`, { method: 'DELETE' }); }
 
-    // -------------------------------------------------------------
-    // Utilidades
-    // -------------------------------------------------------------
-    apiErrorFromResponse(respuesta: ApiResponse, porDefecto = 'Error en la petición'): Error & { data: any; status: number | null } {
-        const error = new Error(respuesta?.msg || porDefecto) as Error & { data: any; status: number | null };
-        error.data = respuesta?.data ?? null;
-        error.status = respuesta?.data?.status ?? null;
-        return error;
-    }
-
-    handleApiError(error: any = {}, contexto = 'api'): any {
-        const status = error?.status || error?.data?.status;
-        const message = error?.message || error?.msg || 'Error inesperado en la API';
-        console.error(`[API:${contexto}]${status ? ` ${status}` : ''}: ${message}`);
-        return { ...error, message, status };
-    }
 }

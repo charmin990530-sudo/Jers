@@ -51,7 +51,7 @@ export const connectDB = async ({ allowRetry = false } = {}) => {
   try {
     return await globalThis.__byJersMongoPromise;
   } catch (error) {
-    console.error('Error conectando a MongoDB', { name: error.name, message: error.message });
+    console.error('Error conectando a MongoDB', { name: error.name });
     // ANTES aqui se hacia `process.exit(1)` cuando no venia `allowRetry`. Eso
     // hacia imposible que el llamador decidiera: con la base caida el proceso
     // moria antes de que el servidor HTTP llegara a escuchar, y el navegador se

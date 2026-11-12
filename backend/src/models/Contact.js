@@ -5,6 +5,9 @@ const contactSchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true, lowercase: true, maxlength: 254 },
   telefono: { type: String, trim: true, maxlength: 30 },
   mensaje: { type: String, required: true, trim: true, maxlength: 2000 },
+  consentimiento: { type: Boolean, default: false },
+  fechaConsentimiento: { type: Date },
+  versionAviso: { type: String },
   estado: { type: String, enum: ['nuevo', 'atendido'], default: 'nuevo' },
 }, { timestamps: true });
 

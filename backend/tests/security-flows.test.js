@@ -76,10 +76,10 @@ describe('Security and commerce flows', () => {
   });
 
   it('valida y persiste contacto, y descarta honeypot', async () => {
-    const valid = await request(app).post('/api/contact').send({ nombre: 'Cliente', telefono: '3001234567', email: 'cliente@example.com', mensaje: 'Mensaje de contacto sufficiently long' }).expect(201);
+    const valid = await request(app).post('/api/contact').send({ consentimiento: true, nombre: 'Cliente', telefono: '3001234567', email: 'cliente@example.com', mensaje: 'Mensaje de contacto sufficiently long' }).expect(201);
     expect(valid.body.success).toBe(true);
     expect(await Contact.countDocuments()).toBe(1);
-    await request(app).post('/api/contact').send({ nombre: 'Spam', telefono: '3001234567', email: 'spam@example.com', mensaje: 'Mensaje de contacto sufficiently long', website: 'https://spam.example' }).expect(202);
+    await request(app).post('/api/contact').send({ consentimiento: true, nombre: 'Spam', telefono: '3001234567', email: 'spam@example.com', mensaje: 'Mensaje de contacto sufficiently long', website: 'https://spam.example' }).expect(202);
     expect(await Contact.countDocuments()).toBe(1);
     await request(app).post('/api/contact').send({ nombre: 'X', telefono: 'bad', email: 'bad', mensaje: 'corto' }).expect(400);
   });

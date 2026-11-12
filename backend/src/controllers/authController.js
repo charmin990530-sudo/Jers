@@ -25,11 +25,15 @@
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { User } from '../models/index.js';
-import { JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER, JWT_AUDIENCE, JWT_EXPIRES_IN, SESSION_EXPIRES_IN, REMEMBER_ME_EXPIRES_IN, getDurationMs, JWT_COOKIE_NAME, COOKIE_SECURE, COOKIE_SAME_SITE, FRONTEND_URL } from '../config/env.js';
+import { JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER, JWT_AUDIENCE, JWT_EXPIRES_IN, SESSION_EXPIRES_IN, REMEMBER_ME_EXPIRES_IN, ADMIN_SESSION_EXPIRES_IN, getDurationMs, JWT_COOKIE_NAME, COOKIE_SECURE, COOKIE_SAME_SITE, FRONTEND_URL, EMAIL_ENABLED } from '../config/env.js';
 import { sendPasswordResetEmail, sendDuplicateRegistrationEmail } from '../services/emailService.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
+
+// Una cuenta ausente/inactiva debe realizar también una comparación bcrypt.
+const dummyPasswordHash = bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
 
 /**
  * Crea JWT firmado con userId
@@ -50,7 +54,7 @@ const createToken = (userId, tokenVersion = 0, expiresIn = JWT_EXPIRES_IN) => jw
  * @param {String} message - Mensaje para frontend
  */
 const sendTokenResponse = async (user, statusCode, res, message = 'Operación exitosa', rememberMe = false) => {
-  const expiresIn = rememberMe ? REMEMBER_ME_EXPIRES_IN : SESSION_EXPIRES_IN;
+  const expiresIn = user.role === 'admin' ? ADMIN_SESSION_EXPIRES_IN : (rememberMe ? REMEMBER_ME_EXPIRES_IN : SESSION_EXPIRES_IN);
   const token = createToken(user._id, user.tokenVersion, expiresIn);
   const cookieOptions = {
     httpOnly: true,
@@ -117,21 +121,22 @@ export const register = asyncHandler(async (req, res, next) => {
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
+    await bcrypt.compare(password, await dummyPasswordHash);
     try {
       await sendDuplicateRegistrationEmail({
         to: existingUser.email,
         nombre: existingUser.nombre,
       });
-    } catch (error) {
+    } catch {
       // Que falle el aviso NO puede cambiar la respuesta: si el aviso falla solo
       // unas veces, ese fallo es la señal que permite enumerar. Se registra y ya.
-      console.error('No se pudo avisar del intento de registro duplicado:', error.message);
+      console.error('No se pudo avisar del intento de registro duplicado');
     }
     return res.status(201).json({ success: true, message: MENSAJE });
   }
 
   // Crea usuario (password se hashea en pre-save middleware del modelo)
-  await User.create({
+  try { await User.create({
     nombre,
     apellido,
     email,
@@ -141,7 +146,10 @@ export const register = asyncHandler(async (req, res, next) => {
     aceptoPrivacidad,
     fechaAceptacionTerminos: new Date(),
     fechaAceptacionPrivacidad: new Date(),
-  });
+  }); } catch (error) {
+    // Dos registros concurrentes del mismo correo conservan la respuesta neutra.
+    if (error.code !== 11000) throw error;
+  }
 
   // Sin cookie a propósito: es la condición 2 de la nota de arriba. La contraseña
   // con la que se acaba de registrarse es la única forma de distinguir el caso
@@ -161,12 +169,8 @@ export const login = asyncHandler(async (req, res, next) => {
   // que tiene select: false en el schema
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
-  if (!user || !user.activo) {
-    return next(new AppError('Credenciales inválidas', 401, ErrorCodes.INVALID_CREDENTIALS));
-  }
-
-  const isMatch = await user.compararPassword(password);
-  if (!isMatch) {
+  const isMatch = await bcrypt.compare(password, user?.password || await dummyPasswordHash);
+  if (!user || !user.activo || !isMatch) {
     return next(new AppError('Credenciales inválidas', 401, ErrorCodes.INVALID_CREDENTIALS));
   }
 
@@ -378,6 +382,7 @@ export const deleteAddress = asyncHandler(async (req, res, next) => {
  * Por seguridad, SIEMPRE responde éxito aunque el email no exista (evita user enumeration)
  */
 export const forgotPassword = asyncHandler(async (req, res) => {
+  if (!EMAIL_ENABLED) throw new AppError('La recuperación por correo no está habilitada en esta presentación. Contacta con By Jers para recibir ayuda.', 503, ErrorCodes.EMAIL_UNAVAILABLE);
   const { email } = req.body;
   const user = await User.findOne({ email: email.toLowerCase(), activo: true });
 

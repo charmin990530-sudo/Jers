@@ -2,7 +2,8 @@ import { afterNextRender, Component, DestroyRef, ElementRef, inject, signal } fr
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { formatearPrecio, mensajeError } from '../utils/format';
-import { BeautyScene } from './beauty-scene';
+import { DepthCard } from '../utils/depth-card';
+import { LivingPortrait } from './living-portrait';
 
 interface Producto {
     _id?: string;
@@ -29,7 +30,7 @@ interface Marca {
 
 @Component({
     selector: 'app-home',
-    imports: [RouterLink, BeautyScene],
+    imports: [RouterLink, DepthCard, LivingPortrait],
     templateUrl: './home.html',
     styleUrl: './home.scss',
 })
@@ -149,9 +150,8 @@ export class Home {
     }
 
     private observarSecciones(): void {
-        const secciones = (this.host.nativeElement as HTMLElement).querySelectorAll('.scroll-reveal');
+        const host = this.host.nativeElement as HTMLElement;
         if (!('IntersectionObserver' in globalThis)) {
-            secciones.forEach((seccion) => seccion.classList.add('is-visible'));
             return;
         }
         const observador = new IntersectionObserver((entradas) => {
@@ -161,8 +161,18 @@ export class Home {
                 observador.unobserve(entrada.target);
             }
         }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-        secciones.forEach((seccion) => observador.observe(seccion));
-        this.destroyRef.onDestroy(() => observador.disconnect());
+        const observarNuevas = () => {
+            host.querySelectorAll<HTMLElement>('.scroll-reveal:not([data-reveal-observed])').forEach(seccion => {
+                seccion.dataset['revealObserved'] = 'true';
+                seccion.classList.add('reveal-pending');
+                observador.observe(seccion);
+            });
+        };
+        observarNuevas();
+        // Promociones y otras secciones aparecen después de las respuestas de la API.
+        const cambios = new MutationObserver(observarNuevas);
+        cambios.observe(host, { childList: true, subtree: true });
+        this.destroyRef.onDestroy(() => { observador.disconnect(); cambios.disconnect(); });
     }
 
     private safeAssetUrl(value: unknown): string | null {

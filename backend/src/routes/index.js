@@ -5,6 +5,7 @@ import orderRoutes from './orders.js';
 import userRoutes from './users.js';
 import adminRoutes from './admin.js';
 import contactRoutes from './contact.js';
+import studioRoutes from './studio.js';
 
 export const routes = {
   auth: authRoutes,
@@ -14,4 +15,5 @@ export const routes = {
   users: userRoutes,
   admin: adminRoutes,
   contact: contactRoutes,
+  studio: studioRoutes,
 };
