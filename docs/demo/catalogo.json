@@ -1,0 +1,669 @@
+{
+  "products": [
+    {
+      "nombre": "Base Atenea",
+      "descripcion": "Base de maquillaje profesional de alta cobertura con acabado natural. Contiene ácido hialurónico y FPS 15 para hidratar y proteger la piel.",
+      "descripcionCorta": "Base profesional alta cobertura con FPS 15",
+      "precio": 58000,
+      "precioAnterior": 68000,
+      "stock": 50,
+      "categoria": {
+        "nombre": "rostro",
+        "slug": "rostro",
+        "descripcion": "Bases, correctores, polvos y primers",
+        "orden": 1
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/base-atenea.webp",
+          "alt": "Base Atenea",
+          "esPrincipal": true,
+          "posicion": "center 80%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Ácido hialurónico",
+          "descripcion": "Hidratación profunda"
+        },
+        {
+          "nombre": "Pigmentos minerales",
+          "descripcion": "Cobertura natural"
+        },
+        {
+          "nombre": "FPS 15",
+          "descripcion": "Protección solar"
+        }
+      ],
+      "uso": "Aplicar sobre piel limpia e hidratada con brocha o esponja difuminando desde el centro hacia afuera.",
+      "destacado": true,
+      "enPromocion": true,
+      "_id": "producto-demo-1",
+      "slug": "producto-demo-1",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Corrector Atenea",
+      "descripcion": "Corrector de alta cobertura para ojeras e imperfecciones. Fórmula con vitamina E que no marca líneas de expresión.",
+      "descripcionCorta": "Corrector alta cobertura con vitamina E",
+      "precio": 38000,
+      "stock": 40,
+      "categoria": {
+        "nombre": "rostro",
+        "slug": "rostro",
+        "descripcion": "Bases, correctores, polvos y primers",
+        "orden": 1
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/corrector-atenea.webp",
+          "alt": "Corrector Atenea",
+          "esPrincipal": true,
+          "posicion": "center 50%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Vitamina E",
+          "descripcion": "Antioxidante y nutritivo"
+        },
+        {
+          "nombre": "Pigmentos de alta cobertura",
+          "descripcion": "Cubre imperfecciones"
+        }
+      ],
+      "uso": "Aplicar en zona de ojeras e imperfecciones y difuminar con golpecitos suaves.",
+      "destacado": true,
+      "_id": "producto-demo-2",
+      "slug": "producto-demo-2",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Base Matte L'Bel",
+      "descripcion": "Base matte de larga duración con control de brillo. Ideal para piel mixta a grasa.",
+      "descripcionCorta": "Base matte larga duración control brillo",
+      "precio": 62000,
+      "stock": 35,
+      "categoria": {
+        "nombre": "rostro",
+        "slug": "rostro",
+        "descripcion": "Bases, correctores, polvos y primers",
+        "orden": 1
+      },
+      "marca": {
+        "nombre": "L'Bel",
+        "slug": "lbel",
+        "descripcion": "Marca reconocida de cosméticos y cuidado personal",
+        "orden": 2,
+        "_id": "marca-demo-2"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/base-matte-lbel.webp",
+          "alt": "Base Matte L'Bel",
+          "esPrincipal": true,
+          "posicion": "center 50%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Polvo de sílice",
+          "descripcion": "Control de brillo"
+        },
+        {
+          "nombre": "Pigmentos micronizados",
+          "descripcion": "Acabado natural"
+        }
+      ],
+      "uso": "Aplicar con brocha kabuki para mejor cobertura mate.",
+      "enPromocion": false,
+      "_id": "producto-demo-3",
+      "slug": "producto-demo-3",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Sombras Atenea",
+      "descripcion": "Paleta de sombras profesionales con 9 tonos mate y shimmer. Alta pigmentación y larga duración.",
+      "descripcionCorta": "Paleta 9 sombras mate y shimmer",
+      "precio": 45000,
+      "precioAnterior": 55000,
+      "stock": 30,
+      "categoria": {
+        "nombre": "ojos",
+        "slug": "ojos",
+        "descripcion": "Sombras, delineadores, máscaras",
+        "orden": 2
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/sombras-atenea.webp",
+          "alt": "Sombras Atenea",
+          "esPrincipal": true,
+          "posicion": "center 50%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Mica",
+          "descripcion": "Efecto shimmer"
+        },
+        {
+          "nombre": "Talco cosmético",
+          "descripcion": "Textura sedosa"
+        },
+        {
+          "nombre": "Pigmentos de alta intensidad",
+          "descripcion": "Color vibrante"
+        }
+      ],
+      "uso": "Aplicar con pincel de sombras. Usar tonos mates en cuenca y shimmer en párpado móvil.",
+      "destacado": true,
+      "enPromocion": true,
+      "_id": "producto-demo-4",
+      "slug": "producto-demo-4",
+      "cosmeticType": "sombras"
+    },
+    {
+      "nombre": "Delineador en Gel JDG",
+      "descripcion": "Delineador en gel de larga duración, resistente al agua y al sudor. Punta precisa para trazos definidos.",
+      "descripcionCorta": "Delineador gel resistente al agua",
+      "precio": 34000,
+      "stock": 45,
+      "categoria": {
+        "nombre": "ojos",
+        "slug": "ojos",
+        "descripcion": "Sombras, delineadores, máscaras",
+        "orden": 2
+      },
+      "marca": {
+        "nombre": "Jorge de la Garza",
+        "slug": "jorge-de-la-garza",
+        "descripcion": "Marca de maquillaje profesional",
+        "orden": 3,
+        "_id": "marca-demo-3"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/delineador-en-gel-jdg.webp",
+          "alt": "Delineador en Gel JDG",
+          "esPrincipal": true,
+          "posicion": "center 90%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Ceras naturales",
+          "descripcion": "Textura cremosa"
+        },
+        {
+          "nombre": "Pigmentos de larga duración",
+          "descripcion": "No se corre"
+        }
+      ],
+      "uso": "Aplicar con pincel biselado junto a la línea de pestañas.",
+      "_id": "producto-demo-5",
+      "slug": "producto-demo-5",
+      "cosmeticType": "delineado"
+    },
+    {
+      "nombre": "Lip Gloss",
+      "descripcion": "Brillo labial hidratante con efecto volumen. No pegajoso, con aceites nutritivos.",
+      "descripcionCorta": "Gloss hidratante efecto volumen",
+      "precio": 32000,
+      "stock": 60,
+      "categoria": {
+        "nombre": "labios",
+        "slug": "labios",
+        "descripcion": "Labiales, gloss, delineadores de labios",
+        "orden": 3
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/lip-gloss.webp",
+          "alt": "Lip Gloss",
+          "esPrincipal": true,
+          "posicion": "30% 75%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Manteca de karité",
+          "descripcion": "Nutrición intensa"
+        },
+        {
+          "nombre": "Vitamina E",
+          "descripcion": "Protección antioxidante"
+        },
+        {
+          "nombre": "Aceite de jojoba",
+          "descripcion": "Hidratación"
+        }
+      ],
+      "uso": "Aplicar directamente sobre labios limpios. Reaplicar según deseo.",
+      "destacado": true,
+      "_id": "producto-demo-6",
+      "slug": "producto-demo-6",
+      "cosmeticType": "labial"
+    },
+    {
+      "nombre": "Labial Mate L'Bel",
+      "descripcion": "Labial mate de alta pigmentación y larga duración. Fórmula confortable que no reseca.",
+      "descripcionCorta": "Labial mate larga duración confortable",
+      "precio": 36000,
+      "precioAnterior": 42000,
+      "stock": 40,
+      "categoria": {
+        "nombre": "labios",
+        "slug": "labios",
+        "descripcion": "Labiales, gloss, delineadores de labios",
+        "orden": 3
+      },
+      "marca": {
+        "nombre": "L'Bel",
+        "slug": "lbel",
+        "descripcion": "Marca reconocida de cosméticos y cuidado personal",
+        "orden": 2,
+        "_id": "marca-demo-2"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/labial-mate-lbl.webp",
+          "alt": "Labial Mate L'Bel",
+          "esPrincipal": true,
+          "posicion": "center 90%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Manteca de karité",
+          "descripcion": "Hidratación"
+        },
+        {
+          "nombre": "Vitamina E",
+          "descripcion": "Antioxidante"
+        },
+        {
+          "nombre": "Pigmentos puros",
+          "descripcion": "Color intenso"
+        }
+      ],
+      "uso": "Aplicar sobre labios exfoliados e hidratados para mejor acabado.",
+      "enPromocion": true,
+      "_id": "producto-demo-7",
+      "slug": "producto-demo-7",
+      "cosmeticType": "labial"
+    },
+    {
+      "nombre": "Shampoo Hidratación Profunda",
+      "descripcion": "Shampoo profesional con keratina, argán y aloe vera. Limpia suavemente mientras hidrata intensamente.",
+      "descripcionCorta": "Shampoo con keratina, argán y aloe vera",
+      "precio": 46000,
+      "precioAnterior": 52000,
+      "stock": 55,
+      "categoria": {
+        "nombre": "shampoo",
+        "slug": "shampoo",
+        "descripcion": "Shampoos para todo tipo de cabello",
+        "orden": 4
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/shampoo-hidratacion-profunda.webp",
+          "alt": "Shampoo Hidratación Profunda",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Keratina",
+          "descripcion": "Fortalece la fibra capilar"
+        },
+        {
+          "nombre": "Aceite de argán",
+          "descripcion": "Nutrición y brillo"
+        },
+        {
+          "nombre": "Aloe vera",
+          "descripcion": "Hidratación y calma"
+        }
+      ],
+      "uso": "Aplicar sobre cabello mojado, masajear y enjuagar. Repetir si necesario.",
+      "destacado": true,
+      "enPromocion": true,
+      "_id": "producto-demo-8",
+      "slug": "producto-demo-8",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Shampoo Anticaída L'Bel",
+      "descripcion": "Shampoo fortalecedor con ingredientes activos que reducen la caída y estimulan el crecimiento.",
+      "descripcionCorta": "Shampoo anticaída fortalecedor",
+      "precio": 52000,
+      "stock": 30,
+      "categoria": {
+        "nombre": "shampoo",
+        "slug": "shampoo",
+        "descripcion": "Shampoos para todo tipo de cabello",
+        "orden": 4
+      },
+      "marca": {
+        "nombre": "L'Bel",
+        "slug": "lbel",
+        "descripcion": "Marca reconocida de cosméticos y cuidado personal",
+        "orden": 2,
+        "_id": "marca-demo-2"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/shampoo-anti-caida.webp",
+          "alt": "Shampoo Anticaída L'Bel",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Biotina",
+          "descripcion": "Fortalece el cabello"
+        },
+        {
+          "nombre": "Cafeína",
+          "descripcion": "Estimula folículos"
+        },
+        {
+          "nombre": "Ginseng",
+          "descripcion": "Revitaliza"
+        }
+      ],
+      "uso": "Masajear suavemente en cuero cabelludo, dejar actuar 2-3 minutos y enjuagar.",
+      "_id": "producto-demo-9",
+      "slug": "producto-demo-9",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Shampoo Nutritivo JDG",
+      "descripcion": "Shampoo nutritivo para cabello seco y dañado. Con proteínas de seda y pantenol.",
+      "descripcionCorta": "Shampoo nutritivo proteínas de seda",
+      "precio": 41000,
+      "stock": 40,
+      "categoria": {
+        "nombre": "shampoo",
+        "slug": "shampoo",
+        "descripcion": "Shampoos para todo tipo de cabello",
+        "orden": 4
+      },
+      "marca": {
+        "nombre": "Jorge de la Garza",
+        "slug": "jorge-de-la-garza",
+        "descripcion": "Marca de maquillaje profesional",
+        "orden": 3,
+        "_id": "marca-demo-3"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/shampoo-nutritivo.webp",
+          "alt": "Shampoo Nutritivo JDG",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Proteínas de seda",
+          "descripcion": "Suavidad y brillo"
+        },
+        {
+          "nombre": "Pantenol",
+          "descripcion": "Hidratación profunda"
+        }
+      ],
+      "uso": "Aplicar sobre cabello húmedo, emulsionar y enjuagar abundantemente.",
+      "_id": "producto-demo-10",
+      "slug": "producto-demo-10",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Acondicionador Reparador",
+      "descripcion": "Acondicionador reparador para cabello dañado. Sella cutículas y restaura elasticidad.",
+      "descripcionCorta": "Acondicionador reparador sella cutículas",
+      "precio": 46000,
+      "stock": 45,
+      "categoria": {
+        "nombre": "acondicionador",
+        "slug": "acondicionador",
+        "descripcion": "Acondicionadores y mascarillas",
+        "orden": 5
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/acondicionador-reparador.webp",
+          "alt": "Acondicionador Reparador",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Ceramidas",
+          "descripcion": "Restauración de barrera"
+        },
+        {
+          "nombre": "Queratina hidrolizada",
+          "descripcion": "Fortalecimiento"
+        }
+      ],
+      "uso": "Aplicar de medios a puntas tras el shampoo, dejar 3 minutos y enjuagar.",
+      "_id": "producto-demo-11",
+      "slug": "producto-demo-11",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Acondicionador Nutrición Intensa L'Bel",
+      "descripcion": "Acondicionador nutritivo intenso para cabello muy seco. Nutre en profundidad.",
+      "descripcionCorta": "Acondicionador nutrición intensa cabello seco",
+      "precio": 50000,
+      "stock": 35,
+      "categoria": {
+        "nombre": "acondicionador",
+        "slug": "acondicionador",
+        "descripcion": "Acondicionadores y mascarillas",
+        "orden": 5
+      },
+      "marca": {
+        "nombre": "L'Bel",
+        "slug": "lbel",
+        "descripcion": "Marca reconocida de cosméticos y cuidado personal",
+        "orden": 2,
+        "_id": "marca-demo-2"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/acondicionador-nutricion-intensa.webp",
+          "alt": "Acondicionador Nutrición Intensa L'Bel",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Manteca de karité",
+          "descripcion": "Nutrición intensa"
+        },
+        {
+          "nombre": "Aceite de coco",
+          "descripcion": "Penetración en fibra"
+        }
+      ],
+      "uso": "Distribuir uniformemente, dejar actuar 5 minutos y enjuagar con agua fría.",
+      "_id": "producto-demo-12",
+      "slug": "producto-demo-12",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Tratamiento Control de Frizz",
+      "descripcion": "Tratamiento profesional anti-frizz con keratina hidrolizada. Controla el encrespamiento por semanas.",
+      "descripcionCorta": "Tratamiento anti-frizz con keratina",
+      "precio": 58000,
+      "stock": 25,
+      "categoria": {
+        "nombre": "tratamientos",
+        "slug": "tratamientos",
+        "descripcion": "Tratamientos capilares, keratina, ampolletas",
+        "orden": 6
+      },
+      "marca": {
+        "nombre": "Atenea Profesional",
+        "slug": "atenea-profesional",
+        "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+        "orden": 1,
+        "_id": "marca-demo-1"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/tratamiento-control-de-frizz.webp",
+          "alt": "Tratamiento Control de Frizz",
+          "esPrincipal": true
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Keratina hidrolizada",
+          "descripcion": "Alisa y fortalece"
+        },
+        {
+          "nombre": "Aceite de argán",
+          "descripcion": "Brillo y nutrición"
+        }
+      ],
+      "uso": "Aplicar tras lavar, dejar actuar 15-20 min con calor, enjuagar y secar.",
+      "destacado": true,
+      "_id": "producto-demo-13",
+      "slug": "producto-demo-13",
+      "cosmeticType": null
+    },
+    {
+      "nombre": "Ampolletas de Keratina JDG",
+      "descripcion": "Ampolletas concentradas de keratina para tratamiento intensivo. Reparación profunda en cada aplicación.",
+      "descripcionCorta": "Ampolletas keratina tratamiento intensivo",
+      "precio": 39000,
+      "stock": 30,
+      "categoria": {
+        "nombre": "tratamientos",
+        "slug": "tratamientos",
+        "descripcion": "Tratamientos capilares, keratina, ampolletas",
+        "orden": 6
+      },
+      "marca": {
+        "nombre": "Jorge de la Garza",
+        "slug": "jorge-de-la-garza",
+        "descripcion": "Marca de maquillaje profesional",
+        "orden": 3,
+        "_id": "marca-demo-3"
+      },
+      "imagenes": [
+        {
+          "url": "/img/productos/keratina-ampolleta.webp",
+          "alt": "Ampolletas de Keratina JDG",
+          "esPrincipal": true,
+          "posicion": "center 70%"
+        }
+      ],
+      "ingredientes": [
+        {
+          "nombre": "Keratina pura",
+          "descripcion": "Reconstrucción capilar"
+        },
+        {
+          "nombre": "Ácido hialurónico",
+          "descripcion": "Hidratación"
+        }
+      ],
+      "uso": "Aplicar ampolla completa en cabello lavado, masajear, dejar 10 min y enjuagar.",
+      "_id": "producto-demo-14",
+      "slug": "producto-demo-14",
+      "cosmeticType": null
+    }
+  ],
+  "brands": [
+    {
+      "nombre": "Atenea Profesional",
+      "slug": "atenea-profesional",
+      "descripcion": "Marca profesional de maquillaje y cuidado capilar",
+      "orden": 1,
+      "_id": "marca-demo-1"
+    },
+    {
+      "nombre": "L'Bel",
+      "slug": "lbel",
+      "descripcion": "Marca reconocida de cosméticos y cuidado personal",
+      "orden": 2,
+      "_id": "marca-demo-2"
+    },
+    {
+      "nombre": "Jorge de la Garza",
+      "slug": "jorge-de-la-garza",
+      "descripcion": "Marca de maquillaje profesional",
+      "orden": 3,
+      "_id": "marca-demo-3"
+    },
+    {
+      "nombre": "Maybelline",
+      "slug": "maybelline",
+      "descripcion": "Marca global de maquillaje",
+      "orden": 4,
+      "_id": "marca-demo-4"
+    },
+    {
+      "nombre": "L'Oréal Paris",
+      "slug": "loreal-paris",
+      "descripcion": "Marca líder en belleza",
+      "orden": 5,
+      "_id": "marca-demo-5"
+    },
+    {
+      "nombre": "MAC",
+      "slug": "mac",
+      "descripcion": "Marca profesional de maquillaje",
+      "orden": 6,
+      "_id": "marca-demo-6"
+    }
+  ]
+}
