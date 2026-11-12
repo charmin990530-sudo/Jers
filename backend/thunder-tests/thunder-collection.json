@@ -22,7 +22,7 @@
     },
     {
       "key": "password",
-      "value": "ClientePrueba2026!",
+      "value": "{{password}}",
       "type": "string"
     },
     {
@@ -93,7 +93,7 @@
           "url": "{{baseUrl}}/api/auth/register",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Thunder\",\n  \"email\": \"{{emailRegistro}}\",\n  \"password\": \"ClaveSegura123\",\n  \"aceptoTerminos\": true,\n  \"aceptoPrivacidad\": true\n}",
+            "raw": "{\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Thunder\",\n  \"email\": \"{{emailRegistro}}\",\n  \"password\": \"{{password}}\",\n  \"aceptoTerminos\": true,\n  \"aceptoPrivacidad\": true\n}",
             "options": {
               "raw": {
                 "language": "json"
@@ -185,7 +185,7 @@
           "url": "{{baseUrl}}/api/auth/password",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"NuevaClave123\"\n}",
+            "raw": "{\n  \"currentPassword\": \"{{currentPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
             "options": {
               "raw": {
                 "language": "json"
@@ -228,7 +228,7 @@
           "url": "{{baseUrl}}/api/auth/reset-password",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"token\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"password\": \"NuevaClave123\",\n  \"confirmPassword\": \"NuevaClave123\"\n}",
+            "raw": "{\n  \"token\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"password\": \"{{password}}\",\n  \"confirmPassword\": \"{{confirmPassword}}\"\n}",
             "options": {
               "raw": {
                 "language": "json"
@@ -1290,7 +1290,7 @@
           "url": "{{baseUrl}}/api/auth/register",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"nombre\": \"A\",\n  \"apellido\": \"B\",\n  \"email\": \"no-es-un-correo\",\n  \"password\": \"123\",\n  \"aceptoTerminos\": false,\n  \"aceptoPrivacidad\": true\n}",
+            "raw": "{\n  \"nombre\": \"A\",\n  \"apellido\": \"B\",\n  \"email\": \"no-es-un-correo\",\n  \"password\": \"{{password}}\",\n  \"aceptoTerminos\": false,\n  \"aceptoPrivacidad\": true\n}",
             "options": {
               "raw": {
                 "language": "json"

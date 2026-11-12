@@ -30,6 +30,7 @@ import {
   CONTACT_RATE_LIMIT_MAX_REQUESTS,
   REDIS_URL,
   REDIS_ENABLED,
+  RATE_LIMIT_STORE,
   REDIS_CONNECT_TIMEOUT_MS,
   TRUST_PROXY_HOPS,
   CSP_NONCE_ENABLED,
@@ -39,12 +40,15 @@ import {
   SERVE_STATIC,
   FAIL_FAST_ON_DB_ERROR,
   HEALTH_DETAIL_TOKEN,
+  JWT_SECRET,
 } from './config/env.js';
 import { routes } from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { ErrorCodes, sendError, buildErrorBody } from './middleware/apiError.js';
 import RedisRateLimitStore from './middleware/redisRateLimitStore.js';
+import MongoRateLimitStore from './middleware/mongoRateLimitStore.js';
 import { securityMiddleware, csrfProtection } from './middleware/security.js';
+import { isPrivateStaticPath } from './middleware/staticSecurity.js';
 
 // El detalle de la configuración incompleta puede incluir el nombre de una
 // variable, nunca su valor. Se limita a un solo campo para no filtrar el
@@ -80,7 +84,7 @@ let redisGeneralStore = null;
 let redisAuthStore = null;
 let redisContactStore = null;
 
-if (REDIS_ENABLED) {
+if (REDIS_ENABLED && RATE_LIMIT_STORE === 'redis') {
   redisClient = createClient({
     url: REDIS_URL,
     socket: {
@@ -104,11 +108,15 @@ if (REDIS_ENABLED) {
     disableOfflineQueue: true,
   });
   redisClient.on('error', err => console.error('Redis Client Error', { name: err.name }));
+  let connectDeadline;
   try {
-    await redisClient.connect();
-    redisGeneralStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:general:' });
-    redisAuthStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:auth:' });
-    redisContactStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:contact:' });
+    await Promise.race([
+      redisClient.connect(),
+      new Promise((_, reject) => { connectDeadline = setTimeout(() => reject(new Error('Redis connection timeout')), REDIS_CONNECT_TIMEOUT_MS); }),
+    ]);
+    redisGeneralStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:general:', fallbackStore: new MongoRateLimitStore({ prefix: 'redis-fallback:general:' }) });
+    redisAuthStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:auth:', fallbackStore: new MongoRateLimitStore({ prefix: 'redis-fallback:auth:' }) });
+    redisContactStore = new RedisRateLimitStore({ client: redisClient, prefix: 'rl:contact:', fallbackStore: new MongoRateLimitStore({ prefix: 'redis-fallback:contact:' }) });
   } catch (error) {
     // Sin Redis se cae al store en memoria: menos estricto, pero la API
     // sigue respondiendo en vez de desaparecer por completo.
@@ -120,12 +128,18 @@ if (REDIS_ENABLED) {
       if (redisClient.isOpen) await redisClient.disconnect();
     } catch { /* ya estaba cerrado */ }
     redisClient = null;
-    redisGeneralStore = null;
-    redisAuthStore = null;
-    redisContactStore = null;
-    console.error('Redis no disponible, se usara rate limit en memoria:', error.message);
+    redisGeneralStore = new MongoRateLimitStore({ prefix: 'redis-fallback:general:' });
+    redisAuthStore = new MongoRateLimitStore({ prefix: 'redis-fallback:auth:' });
+    redisContactStore = new MongoRateLimitStore({ prefix: 'redis-fallback:contact:' });
+    console.error('Redis no disponible; se usará el respaldo compartido en MongoDB', { name: error.name });
+  } finally {
+    clearTimeout(connectDeadline);
   }
 }
+
+const mongoGeneralStore = RATE_LIMIT_STORE === 'mongodb' ? new MongoRateLimitStore({ prefix: 'general:' }) : undefined;
+const mongoAuthStore = RATE_LIMIT_STORE === 'mongodb' ? new MongoRateLimitStore({ prefix: 'auth:' }) : undefined;
+const mongoContactStore = RATE_LIMIT_STORE === 'mongodb' ? new MongoRateLimitStore({ prefix: 'contact:' }) : undefined;
 
 // ==========================================
 // CSP NONCE MIDDLEWARE
@@ -141,50 +155,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Dominios externos que el sitio carga de verdad. Deben coincidir con los que
-// usan las cabeceras de Vercel (vercel.json), o el sitio funciona en un
-// despliegue y da errores de consola en el otro.
-//
-// - cdn.jsdelivr.net: GSAP y ScrollTrigger, que carga bienvenida.html.
-//
-// Ya no está fonts.googleapis.com: las tipografías se sirven desde el repo
-// (font/, declaradas en css/fuentes.css). Ver B-35 en css/fuentes.css, que
-// explica por qué el arreglo clásico con onload= no valía aquí: la CSP bloquea
-// los manejadores inline. Por eso CDN_STYLES se queda vacío; si algún día
-// vuelve a hacer falta un CSS externo, hay que volver a añadir el dominio AQUÍ y
-// en vercel.json, porque las dos CSP tienen que seguir coincidiendo.
-const CDN_SCRIPTS = ['https://cdn.jsdelivr.net'];
+// Todos los scripts y estilos se sirven desde el mismo origen.
+const CDN_SCRIPTS = [];
 const CDN_STYLES = [];
 
 // ==========================================
-// CSP — por que hay otra en vercel.json (B-26)
-// ==========================================
-//
-// SON DOS, Y NO SE PUEDE DEJAR UNA SOLA.
-//
-// - Esta (helmet) es la unica que corre cuando Express sirve el sitio: en local y
-//   en cualquier despliegue propio. Ademas es la unica que puede leer del
-//   entorno `API_ORIGIN` y `FRONTEND_ALLOWED_ORIGINS`, porque una cabecera
-//   estatica de Vercel no interpola variables.
-// - La de `vercel.json` es la unica que aplica al sitio publicado en Vercel:
-//   alla el HTML, el CSS y el JS los sirve el edge desde `frontend/public/` y
-//   Express no se ejecuta para esas peticiones. Sin ella, las paginas no
-//   tendrian CSP.
-//
-// En un despliegue en Vercel, las respuestas de /api llevan las dos (el
-// navegador se queda con la mas restrictiva de todas las que reciba) y las del
-// sitio llevan solo la de vercel.json. Por eso van alineadas directiva por
-// directiva; lo que faltaba en la de Vercel (frame-src, script-src-attr y
-// upgrade-insecure-requests) se le anadio alli.
-//
-// `connect-src` es la unica que no se puede alinear, porque vercel.json no lee
-// el entorno. Y no hace falta: frontend/js/config.js deriva la URL de la API de
-// `window.location.origin`, sin ningun host escrito, de modo que en Vercel la
-// API siempre es same-origin y `'self'` es completo.
-//
-// `script-src-attr 'none'` y `frame-src 'none'` no rompen nada: el sitio no usa
-// manejadores `onclick=` en linea ni iframes (comprobado en las 22 paginas), y
-// los eventos van por addEventListener desde js/.
+// CSP alineada con Vercel; Express adapta los orígenes y HTTPS al entorno.
 const cspDirectives = (nonce, conexionSegura) => ({
   defaultSrc: ["'self'"],
   scriptSrc: nonce ? ["'self'", `'nonce-${nonce}'`, ...CDN_SCRIPTS] : ["'self'", ...CDN_SCRIPTS],
@@ -192,6 +168,7 @@ const cspDirectives = (nonce, conexionSegura) => ({
   // Sin fonts.gstatic.com: las tipografías son del mismo origen (B-35).
   fontSrc: ["'self'", 'data:'],
   imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+  mediaSrc: ["'self'"],
   connectSrc: ["'self'", API_ORIGIN, ...FRONTEND_ALLOWED_ORIGINS],
   frameSrc: ["'none'"],
   objectSrc: ["'none'"],
@@ -228,9 +205,7 @@ const cspDirectives = (nonce, conexionSegura) => ({
  * true. Se comprueba tambien `x-forwarded-proto` por si el proxy no estuviera
  * declarado, porque de este valor depende que la tienda cargue o no.
  */
-const esConexionSegura = req =>
-  req.secure === true
-  || String(req.get('x-forwarded-proto') || '').split(',')[0].trim() === 'https';
+const esConexionSegura = req => req.secure === true;
 
 app.use((req, res, next) => {
   const nonce = req.cspNonce || (CSP_NONCE_ENABLED ? randomBytes(16).toString('base64') : null);
@@ -252,6 +227,7 @@ app.use((req, res, next) => {
 // cabecera Access-Control-Allow-Origin no volvía y el navegador bloqueaba la
 // respuesta de las peticiones que mutan.
 const esMismoServidor = (origin, req) => {
+  if (NODE_ENV === 'production') return false;
   try {
     const host = req.get('host');
     return !!host && new URL(origin).host === host;
@@ -313,21 +289,21 @@ const limiter = createRateLimiter(
   RATE_LIMIT_MAX_REQUESTS,
   'Demasiadas solicitudes. Intenta de nuevo más tarde.',
   ErrorCodes.RATE_LIMIT_EXCEEDED,
-  redisGeneralStore,
+  mongoGeneralStore ?? redisGeneralStore,
   noEsEstatico
 );
 
 app.use(limiter);
 
-const normalizedAuthPath = req => String(req.originalUrl || '').split('?')[0].replace(/\/{2,}/g, '/');
-const isAuthRateLimitedPath = req => /^\/api\/auth\/(?:register|login|forgot-password|reset-password)(?:\/|$)/i.test(normalizedAuthPath(req));
+const normalizedAuthPath = req => `${req.baseUrl || ''}${req.path || ''}`.replace(/\/{2,}/g, '/');
+const isAuthRateLimitedPath = req => /^\/api\/auth\/(?:register|login|forgot-password|reset-password|password|data-export|data-requests)(?:\/|$)/i.test(normalizedAuthPath(req));
 
 const authLimiter = createRateLimiter(
   AUTH_RATE_LIMIT_WINDOW_MS,
   AUTH_RATE_LIMIT_MAX_REQUESTS,
   'Demasiados intentos de autenticación. Intenta de nuevo en un minuto.',
   ErrorCodes.AUTH_RATE_LIMIT_EXCEEDED,
-  redisAuthStore,
+  mongoAuthStore ?? redisAuthStore,
   req => !isAuthRateLimitedPath(req)
 );
 const contactLimiter = createRateLimiter(
@@ -335,12 +311,24 @@ const contactLimiter = createRateLimiter(
   CONTACT_RATE_LIMIT_MAX_REQUESTS,
   'Demasiados mensajes. Intenta de nuevo más tarde.',
   ErrorCodes.CONTACT_RATE_LIMIT_EXCEEDED,
-  redisContactStore,
+  mongoContactStore ?? redisContactStore,
 );
+
+// El límite por cuenta también se comparte entre IP distintas. El identificador
+// se seudonimiza con HMAC y no conserva el correo en el almacén de límites.
+const accountAuthLimiter = rateLimit({
+  windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
+  limit: AUTH_RATE_LIMIT_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: buildErrorBody(ErrorCodes.AUTH_RATE_LIMIT_EXCEEDED, 'Demasiados intentos. Intenta de nuevo más tarde.'),
+  skip: req => !isAuthRateLimitedPath(req) || typeof req.body?.email !== 'string',
+  keyGenerator: req => crypto.createHmac('sha256', JWT_SECRET).update(String(req.body.email).trim().toLowerCase()).digest('hex'),
+  ...(RATE_LIMIT_STORE !== 'memory' ? { store: new MongoRateLimitStore({ prefix: 'auth-account:' }) } : {}),
+});
 
 // Parseo de body
 app.use(express.json({ limit: '256kb', strict: true }));
-app.use(express.urlencoded({ extended: false, limit: '256kb' }));
 
 // Cookie Parser
 app.use(cookieParser());
@@ -430,9 +418,10 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
-app.use('/api/auth', authLimiter, routes.auth);
+app.use('/api/auth', authLimiter, accountAuthLimiter, routes.auth);
 app.use('/api/products', routes.products);
 app.use('/api/cart', routes.cart);
+app.use('/api/studio', routes.studio);
 app.use('/api/orders', routes.orders);
 app.use('/api/users', routes.users);
 app.use('/api/contact', contactLimiter, routes.contact);
@@ -448,7 +437,7 @@ app.use('/api/admin', routes.admin);
 //   - no existe ya el segundo servidor (frontend-server.js) con su propio puerto,
 //     que era el origen del desfase de puertos entre back y front.
 // `frontend/public/` es la carpeta de salida de `scripts/preparar-estatico.mjs`;
-// los originales viven en `frontend/` y el build los copia. `npm start` reconstruye
+// el código activo vive en `frontend/angular/`. `npm start` reconstruye
 // antes de arrancar, asi que lo servido nunca queda desfasado del fuente.
 //
 // Se registra DESPUES de las rutas de la API para que ninguna peticion /api/*
@@ -456,43 +445,17 @@ app.use('/api/admin', routes.admin);
 // limita a /api/* para que el resto de rutas las atienda la pagina 404 del sitio.
 const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/public');
 
-// Lo que no debe servirse como archivo estatico aunque alguien lo dejara dentro
-// de frontend/public/.
-//
-// `.json` NO va a proposito, y conviene no añadirlo: `data/producto-destacado.json`
-// lo lee js/bienvenida.js y se sirve hoy (HTTP 200). Bloquear los .json rompe la
-// pagina de bienvenida. Lo que hay que impedir es la basura sensible: el .env, los
-// logs, el lockfile y un node_modules que alguien copiara dentro.
-// (El .env real y el package.json estan en la raiz y en backend/, fuera de
-// frontend/public/, asi que express.static no puede verlos de todos modos.)
-const STATIC_DENY = /\.(?:env|log|lock)$|^\.|^node_modules\//i;
-
-
 // 404 de la API: JSON, como espera cualquier cliente de API.
 app.use('/api', notFound);
 
 if (SERVE_STATIC) {
-  // 404 del sitio. Se reutiliza en los dos sitios que hacen falta: al final de
-  // la cadena, y cuando STATIC_DENY deniega un archivo.
+  // Los archivos privados se rechazan antes de poder servir sus bytes.
   const pagina404 = (req, res) => {
-    res.status(404).sendFile(join(PUBLIC_DIR, '404.html'), err => {
-      if (err) {
-        res.status(404).type('text/plain; charset=utf-8')
-          .send('404 - Pagina no encontrada. Regenera frontend/public/ con: node scripts/preparar-estatico.mjs');
-      }
-    });
+    res.status(404).type('text/plain; charset=utf-8').send('Página no encontrada');
   };
 
-  // Barrera real, y va ANTES de express.static a proposito: despues ya estarian
-  // los bytes en camino. Antes solo se comprobaba STATIC_DENY en la ruta de HTML
-  // abreviado, que es donde no podia llegar a hacer nada (su expresion regular
-  // solo acepta [a-z0-9_-] por segmento, asi que ningun path con punto — que es
-  // justo lo que STATIC_DENY busca — llega a esa ruta). Verificado con la
-  // expresion real de ambas: no hay ningun path que las satisfaga a las dos.
   app.use((req, res, next) => {
-    if (!STATIC_DENY.test(req.path)) return next();
-    // Denegado: NO se sirve y NO se pasa a express.static. Un `next()` aqui
-    // dejaria el archivo served igual, que es justo el bug que se arregla.
+    if (!isPrivateStaticPath(req.path)) return next();
     return pagina404(req, res);
   });
 
@@ -505,8 +468,7 @@ if (SERVE_STATIC) {
       }
     },
     // `dotfiles: 'deny'` cubre el caso de un archivo que empieza por punto; lo
-    // pone tambien STATIC_DENY, pero por separado: este es comportamiento de
-    // serve-static y el otro es nuestro, por si se cambia la opcion.
+    // cubre también el filtro de archivos privados como defensa adicional.
     dotfiles: 'deny',
     // Si el archivo no esta o esta denegado, la peticion sigue hasta la pagina
     // 404 del sitio en vez de cortar aqui.
@@ -521,17 +483,9 @@ if (SERVE_STATIC) {
     res.sendFile(join(PUBLIC_DIR, 'index.html'), err => { if (err) next(); });
   });
 
-  // HTML abreviado: /carrito -> /carrito.html y /admin/dashboard ->
-  // /admin/dashboard.html. Admite varios segmentos, pero SOLO con caracteres
-  // [a-z0-9_-]. Ese filtro es la barrera de verdad de esta ruta, y por eso aqui
-  // no hace falta STATIC_DENY: como `..` no puede pasar, no hay forma de subir de
-  // directorio ni de pedir un archivo con punto, extension o no.
-  app.get(/^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/i, (req, res, next) => {
-    const relativo = `${req.path.slice(1)}.html`;
-    const destino = join(PUBLIC_DIR, relativo);
-    // Defensa extra: el destino resuelto tiene que seguir dentro de frontend/public/.
-    if (!destino.startsWith(PUBLIC_DIR)) return next();
-    res.sendFile(destino, err => { if (err) next(); });
+  // La bienvenida original ahora vive dentro de Angular; conservar su enlace.
+  app.get(/^\/(?:index|bienvenida|login|register|checkout|carrito|mis-pedidos|mi-perfil|mis-direcciones|contacto|reset-password|recuperar|producto|resenas|maquillaje|cabello|admin\/(?:dashboard|productos|pedidos|usuarios|categorias|marcas))\.html$/, (req, res, next) => {
+    res.sendFile(join(PUBLIC_DIR, 'index.html'), err => { if (err) next(); });
   });
 
   // Fallback de la SPA Angular: las rutas del router deben devolver index.html
@@ -554,7 +508,7 @@ if (SERVE_STATIC) {
 
 // Sentry error handler (debe ir después de las rutas, antes del errorHandler propio)
 if (SENTRY_DSN && NODE_ENV === 'production') {
-  app.use(Sentry.setupExpressErrorHandler(app));
+  Sentry.setupExpressErrorHandler(app);
 }
 
 // Middleware global de errores
@@ -596,16 +550,16 @@ process.on('SIGINT', () => shutdown('SIGINT'));
  */
 const syncModelIndexes = async () => {
   try {
-    const { User, Product, Category, Brand, Cart, Order, Contact } = await import('./models/index.js');
-    const models = { User, Product, Category, Brand, Cart, Order, Contact };
+    const { User, Product, Category, Brand, Cart, Order, Contact, DataRequest, GameReward, GameAttempt } = await import('./models/index.js');
+    const models = { User, Product, Category, Brand, Cart, Order, Contact, DataRequest, GameReward, GameAttempt };
     for (const [name, model] of Object.entries(models)) {
-      await model.syncIndexes();
+      await model.createIndexes();
       console.log(`  [db] indices de ${name} sincronizados`);
     }
   } catch (error) {
     // Un fallo aqui no debe impedir arrancar la API: la app funciona sin indice
     // nuevo, solo que mas lenta. Se avisa para que se investigue.
-    console.error('No se pudieron sincronizar los indices:', error.message);
+    console.error('No se pudieron crear los índices', { name: error.name });
   }
 };
 
@@ -631,7 +585,7 @@ export const startServer = async () => {
   try {
     validateSecurityEnvironment();
   } catch (error) {
-    console.error('Error iniciando servidor', { name: error.name, message: error.message });
+    console.error('Error iniciando servidor', { name: error.name });
     process.exit(1);
   }
 
@@ -641,11 +595,11 @@ export const startServer = async () => {
     await syncModelIndexes();
   } catch (error) {
     if (failFast) {
-      console.error('Error iniciando servidor', { name: error.name, message: error.message });
+      console.error('Error iniciando servidor', { name: error.name });
       process.exit(1);
     }
     console.warn(
-      `\n  ⚠ No se pudo conectar con MongoDB al arrancar: ${error.message}\n` +
+      `\n  ⚠ No se pudo conectar con MongoDB al arrancar: ${error.name}\n` +
       '    El servidor igualmente escuchara peticiones. Cada ruta que necesite la\n' +
       '    base devolvera 503 DATABASE_UNAVAILABLE y reintentara en la siguiente\n' +
       '    peticion. Arranca MongoDB y recarga la pagina para recuperarte.\n',

@@ -1,0 +1,17 @@
+Source: js/canvas.js
+Commit: 4fd5adcf48640e238401bb2b4dd75c3702be644c
+Copyright 2024 wolfderechter. MIT; see LICENSE.md.
+
+  removeAllOptionsFromCategory(category) {
+    //we have to loop backwards here and splice when there is a match or else not all options will be reached
+    var i;
+    i = this.options.length;
+    while (i--) {
+      if (this.options[i].category == category) {
+        this.options.splice(i, 1);
+      }
+    }
+
+    renderAppliedOptionsList();
+  }
+

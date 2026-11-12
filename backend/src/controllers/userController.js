@@ -15,6 +15,7 @@
 import { User } from '../models/index.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../middleware/apiError.js';
+import { withTransaction } from '../services/transaction.js';
 
 /**
  * GET /api/users
@@ -30,17 +31,26 @@ const withAdminMutation = async fn => {
   adminMutationQueue = new Promise(resolve => { release = resolve; });
   await previous;
   try {
-    return await fn();
+    const { result } = await withTransaction(async ({ session }) => {
+      // Compartir una escritura evita el write skew al modificar administradores
+      // desde varias instancias serverless sobre un replica set.
+      if (session) await User.db.collection('admin_mutation_locks').updateOne(
+        { _id: 'roles' }, { $inc: { version: 1 } }, { upsert: true, session },
+      );
+      return fn(session);
+    });
+    // La respuesta se envía solo después de confirmar la transacción.
+    return typeof result === 'function' ? result() : result;
   } finally {
     release();
   }
 };
 
-const activeAdminCount = (excludeId = null) => User.countDocuments({
+const activeAdminCount = (excludeId = null, session = null) => User.countDocuments({
   role: 'admin',
   activo: true,
   ...(excludeId ? { _id: { $ne: excludeId } } : {}),
-});
+}).session(session);
 
 export const getUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, search, role, activo } = req.query;
@@ -61,13 +71,13 @@ export const getUsers = asyncHandler(async (req, res) => {
   // `optionalBooleanQuery` convierte el valor a booleano. Comparar contra las
   // cadenas 'true'/'false' no era cierto nunca, asi que `filter.activo` no se
   // asignaba jamas y el endpoint devolvia siempre la lista completa: el admin
-  // pedia "ver solo desactivados" y recibia todos. `API.md` documenta `activo`
+  // pedia "ver solo desactivados" y recibia todos. `README.md` documenta `activo`
   // como soportado.
   if (activo !== undefined) filter.activo = activo;
 
   const [users, total] = await Promise.all([
     User.find(filter)
-      .select('-password')           // Nunca devolver password
+      .select('nombre apellido email role activo createdAt ultimoAcceso')
       .sort({ createdAt: -1 })       // Más recientes primero
       .skip(skip)
       .limit(limit)
@@ -90,9 +100,9 @@ export const getUsers = asyncHandler(async (req, res) => {
  * Detalle de usuario (sin password)
  */
 export const getUser = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.id).select('-password');
+  const user = await User.findById(req.params.id).select('nombre apellido email telefono role activo createdAt ultimoAcceso');
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
+    throw new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND);
   }
   res.status(200).json({ success: true, user });
 });
@@ -102,21 +112,22 @@ export const getUser = asyncHandler(async (req, res, next) => {
  * Cambia rol: 'user' | 'admin'
  * Valida rol permitido
  */
-export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
+export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMutation(async session => {
   const { role } = req.body;
   if (!['user', 'admin'].includes(role)) {
-    return next(new AppError('Rol inválido', 400, ErrorCodes.INVALID_ROLE));
+    throw new AppError('Rol inválido', 400, ErrorCodes.INVALID_ROLE);
   }
 
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).session(session);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
+    throw new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND);
   }
-  if (user.role === 'admin' && role !== 'admin' && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
+  if (user.role === 'admin' && role !== 'admin' && await activeAdminCount(user._id, session) === 0) {
+    throw new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN);
   }
   user.role = role;
-  await user.save();
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save({ session });
   const safeUser = {
     id: user._id,
     nombre: user.nombre,
@@ -125,7 +136,7 @@ export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMu
     role: user.role,
     activo: user.activo,
   };
-  res.status(200).json({ success: true, message: 'Rol actualizado', user: safeUser });
+  return () => res.status(200).json({ success: true, message: 'Rol actualizado', user: safeUser });
 }));
 
 /**
@@ -133,10 +144,10 @@ export const updateUserRole = asyncHandler(async (req, res, next) => withAdminMu
  * Alterna estado activo/inactivo (soft delete)
  * Usuario inactivo no puede loguearse
  */
-export const toggleUserActive = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
-  const user = await User.findById(req.params.id);
+export const toggleUserActive = asyncHandler(async (req, res, next) => withAdminMutation(async session => {
+  const user = await User.findById(req.params.id).session(session);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
+    throw new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND);
   }
 
   // Alternar es el comportamiento por defecto (cuerpo vacio), pero si el cliente
@@ -148,7 +159,7 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
 
   if (activar === user.activo) {
     // Peticion idempotente: ya estaba en ese estado. No cuenta como cambio.
-    return res.status(200).json({
+    return () => res.status(200).json({
       success: true,
       message: `Usuario ya estaba ${activar ? 'activado' : 'desactivado'}`,
       user: { id: user._id, email: user.email, activo: user.activo },
@@ -160,16 +171,17 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
   // estado actual, para que las dos guardas sirvan tambien cuando el cliente
   // fija `activo` en vez de alternar.
   if (!activar && user._id.toString() === req.userId.toString()) {
-    return next(new AppError('No puedes desactivar tu propia cuenta de administrador', 400, ErrorCodes.SELF_DEACTIVATE));
+    throw new AppError('No puedes desactivar tu propia cuenta de administrador', 400, ErrorCodes.SELF_DEACTIVATE);
   }
-  if (!activar && user.role === 'admin' && user.activo && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
+  if (!activar && user.role === 'admin' && user.activo && await activeAdminCount(user._id, session) === 0) {
+    throw new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN);
   }
 
   user.activo = activar;
-  await user.save();
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save({ session });
 
-  res.status(200).json({
+  return () => res.status(200).json({
     success: true,
     message: `Usuario ${user.activo ? 'activado' : 'desactivado'}`,
     user: { id: user._id, email: user.email, activo: user.activo },
@@ -196,22 +208,23 @@ export const toggleUserActive = asyncHandler(async (req, res, next) => withAdmin
  * Protección: el admin no puede desactivarse a sí mismo ni dejar la tienda sin
  * ningún administrador activo.
  */
-export const deleteUser = asyncHandler(async (req, res, next) => withAdminMutation(async () => {
-  const user = await User.findById(req.params.id);
+export const deleteUser = asyncHandler(async (req, res, next) => withAdminMutation(async session => {
+  const user = await User.findById(req.params.id).session(session);
   if (!user) {
-    return next(new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND));
+    throw new AppError('Usuario no encontrado', 404, ErrorCodes.USER_NOT_FOUND);
   }
 
   if (user._id.toString() === req.userId.toString()) {
-    return next(new AppError('No puedes eliminarte a ti mismo', 400, ErrorCodes.SELF_DELETE));
+    throw new AppError('No puedes eliminarte a ti mismo', 400, ErrorCodes.SELF_DELETE);
   }
 
-  if (user.role === 'admin' && await activeAdminCount(user._id) === 0) {
-    return next(new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN));
+  if (user.role === 'admin' && await activeAdminCount(user._id, session) === 0) {
+    throw new AppError('Debe existir al menos un administrador activo', 400, ErrorCodes.LAST_ADMIN);
   }
 
   user.activo = false;
-  await user.save();
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save({ session });
 
-  res.status(200).json({ success: true, message: 'Usuario desactivado' });
+  return () => res.status(200).json({ success: true, message: 'Usuario desactivado' });
 }));

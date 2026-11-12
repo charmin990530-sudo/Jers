@@ -12,6 +12,9 @@ export const createContact = asyncHandler(async (req, res) => {
     email: req.body.email,
     telefono: req.body.telefono,
     mensaje: req.body.mensaje,
+    consentimiento: true,
+    fechaConsentimiento: new Date(),
+    versionAviso: 'contacto-2026-11-10',
   });
 
   try {

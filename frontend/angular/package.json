@@ -23,7 +23,6 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^20.3.35",
     "@angular/common": "^20.3.0",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
@@ -32,9 +31,8 @@
     "@angular/router": "^20.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
-    "gsap": "^3.15.1",
     "rxjs": "~7.8.0",
-    "three": "^0.187.0",
+    "sweetalert2": "^11.26.25",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
@@ -43,7 +41,6 @@
     "@angular/cli": "^20.3.42",
     "@angular/compiler-cli": "^20.3.0",
     "@types/jasmine": "~5.1.0",
-    "@types/three": "^0.187.0",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -51,5 +48,13 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "glob": "14.0.4",
+    "minimatch": "11.0.8",
+    "karma": {
+      "glob": "7.2.3",
+      "minimatch": "3.1.5"
+    }
   }
 }

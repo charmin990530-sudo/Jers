@@ -13,7 +13,7 @@
  * ensancha el patrón a propósito. Prefiere romperse a dejar pasar lo que no debe.
  */
 import { describe, it, expect } from '@jest/globals';
-import { validarSubruta, patronSubruta, INVALID_API_PATH } from '../../api/validar-subruta.js';
+import { validarSubruta, patronSubruta, INVALID_API_PATH } from '../src/utils/validar-subruta.js';
 
 describe('validar-subruta: rutas que existen de verdad', () => {
   // Las tres formas que monta backend/src/app.js: un prefijo suelto, un id de

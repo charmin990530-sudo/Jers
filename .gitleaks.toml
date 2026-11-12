@@ -1,0 +1,12 @@
+title = "By Jers - secretos del proyecto"
+
+[extend]
+useDefault = true
+
+# Literales ficticios revisados; no se excluyen archivos completos de pruebas.
+[[allowlists]]
+description = "Contraseñas ficticias de pruebas con MongoDB temporal"
+condition = "AND"
+paths = ['''(?:^|/)backend/tests/(financial|register-aviso|register-enumeracion|redact)\.test\.js$''']
+regexTarget = "secret"
+regexes = ['''^(ClaveSegura123|MiClaveSecreta123)$''']

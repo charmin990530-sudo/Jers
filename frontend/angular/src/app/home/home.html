@@ -1,11 +1,11 @@
 <section class="hero hero-motion scroll-reveal">
   <div class="hero-texto">
-    <p class="eyebrow text-accent"><span class="hero-punto"></span> Una nueva forma de sentir la belleza</p>
+    <p class="eyebrow text-accent"><span class="hero-punto"></span> Tu belleza cobra vida</p>
     <h1>Tu belleza.<br /><em>Tu universo.</em></h1>
-    <p class="lead">Maquillaje y productos capilares elegidos para acompañar tu rutina, realzar tu estilo y cuidar de ti todos los días.</p>
+    <p class="lead">Elige una zona de nuestro avatar y descubre el maquillaje y cuidado que van contigo. Tu próximo favorito está a un toque.</p>
     <div class="hero-acciones">
       <a class="btn primario" routerLink="/catalogo/maquillaje">Descubre la colección <span aria-hidden="true">↗</span></a>
-      <a class="btn secundario" routerLink="/looks">Encuentra tu look</a>
+      <a class="btn secundario" routerLink="/estudio">Crea tu look y gana descuentos</a>
     </div>
     <dl class="hero-datos">
       <div>
@@ -24,12 +24,7 @@
   </div>
 
   <div class="hero-visual">
-    <span class="hero-edicion">BY JERS / BEAUTY IN MOTION</span>
-    <figure class="hero-foto">
-      <img src="/img/hero/soficora-editorial-v2.webp" alt="Modelo de By Jers con maquillaje de ojos y labios brillantes" fetchpriority="high" />
-    </figure>
-    <app-beauty-scene />
-    <a class="hero-firma" routerLink="/looks"><span class="look-swatch" aria-hidden="true"></span><span><small>El look de la semana</small><strong>Glow, a tu manera</strong></span><span aria-hidden="true">↗</span></a>
+    <app-living-portrait />
   </div>
 </section>
 
@@ -118,8 +113,8 @@
   } @else {
     <div class="grid">
       @for (producto of destacados(); track producto._id ?? producto.id ?? producto.nombre) {
-        <article class="card">
-          <a class="cardimage-link" [routerLink]="['/producto', producto._id ?? producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
+        <article class="card" appDepth>
+          <a class="cardimage-link" [class.tiene-alterna]="!!imagenAlterna(producto)" [routerLink]="['/producto', producto._id ?? producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
             @if (imagenAlterna(producto); as alterna) {
               <img class="cardimage cardimage-alterna" [src]="alterna" [alt]="producto.nombre + ', vista alternativa'" loading="lazy" decoding="async" />
             }
@@ -143,8 +138,8 @@
             </p>
           </div>
           <div class="card-acciones">
-            <button class="cardbtn" type="button" [disabled]="agregandoId() === (producto._id ?? producto.id)" (click)="agregarAlCarrito(producto)">
-              {{ agregandoId() === (producto._id ?? producto.id) ? 'Añadiendo…' : 'Añadir al carrito' }}
+            <button class="cardbtn" type="button" [disabled]="agregandoId() === (producto._id ?? producto.id) || (producto.stock ?? 1) < 1" (click)="agregarAlCarrito(producto)">
+              {{ (producto.stock ?? 1) < 1 ? 'Agotado' : agregandoId() === (producto._id ?? producto.id) ? 'Añadiendo…' : 'Añadir al carrito' }}
             </button>
           </div>
         </article>

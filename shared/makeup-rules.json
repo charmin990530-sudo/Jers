@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "categories": [
+    {"id":"labios","name":"Labial","hint":"Toca los labios para aplicar el color.","shades":["nude","rose","coral","berry"]},
+    {"id":"sombras","name":"Sombras","hint":"Toca un párpado para aplicar las sombras.","shades":["nude","bronze","cocoa","plum"]},
+    {"id":"rubor","name":"Rubor","hint":"Toca una mejilla para aplicar el rubor.","shades":["rose","coral","nude","berry"]},
+    {"id":"delineado","name":"Delineado","hint":"Toca junto a los ojos para delinear.","shades":["cocoa","ink","plum"]}
+  ],
+  "shades": [
+    {"id":"nude","name":"Rosa nude","hex":"#b97073"},
+    {"id":"rose","name":"Rosa pétalo","hex":"#c87087"},
+    {"id":"coral","name":"Coral","hex":"#c86155"},
+    {"id":"berry","name":"Frambuesa","hex":"#8f304d"},
+    {"id":"bronze","name":"Bronce","hex":"#9e6941"},
+    {"id":"cocoa","name":"Cacao","hex":"#6c493c"},
+    {"id":"plum","name":"Ciruela","hex":"#653e70"},
+    {"id":"ink","name":"Negro suave","hex":"#29202b"}
+  ],
+  "challenges": [
+    {"id":"natural","name":"Natural de día","subtitle":"Un toque suave, mucha luz.","description":"Sigue una paleta suave y controla la intensidad. El reto evalúa tus elecciones, nunca la belleza del rostro.","steps":[
+      {"category":"labios","shades":["nude","rose"],"min":20,"max":65,"instruction":"Labial rosa nude o rosa pétalo, entre 20 y 65%."},
+      {"category":"sombras","shades":["nude","bronze"],"min":10,"max":45,"instruction":"Sombras nude o bronce, entre 10 y 45%."},
+      {"category":"rubor","shades":["coral","rose"],"min":10,"max":40,"instruction":"Rubor coral o rosa pétalo, entre 10 y 40%."},
+      {"category":"delineado","shades":["cocoa"],"min":15,"max":55,"instruction":"Delineado cacao, entre 15 y 55%."}
+    ]},
+    {"id":"noche","name":"Noche","subtitle":"Profundidad y un acento intenso.","description":"Combina frambuesa, sombras profundas y un delineado definido. Completa los cuatro pasos a tu ritmo.","steps":[
+      {"category":"labios","shades":["berry"],"min":55,"max":95,"instruction":"Labial frambuesa, entre 55 y 95%."},
+      {"category":"sombras","shades":["cocoa","plum"],"min":50,"max":90,"instruction":"Sombras cacao o ciruela, entre 50 y 90%."},
+      {"category":"rubor","shades":["rose"],"min":20,"max":60,"instruction":"Rubor rosa pétalo, entre 20 y 60%."},
+      {"category":"delineado","shades":["ink"],"min":60,"max":100,"instruction":"Delineado negro suave, entre 60 y 100%."}
+    ]},
+    {"id":"editorial","name":"Editorial","subtitle":"Juega con el color sin miedo.","description":"Un ejercicio de color: tonos marcados, ciruela y contraste. No hay reloj ni penalización por experimentar.","steps":[
+      {"category":"labios","shades":["coral","berry"],"min":65,"max":100,"instruction":"Labial coral o frambuesa, entre 65 y 100%."},
+      {"category":"sombras","shades":["plum","bronze"],"min":65,"max":100,"instruction":"Sombras ciruela o bronce, entre 65 y 100%."},
+      {"category":"rubor","shades":["berry","rose"],"min":40,"max":85,"instruction":"Rubor frambuesa o rosa pétalo, entre 40 y 85%."},
+      {"category":"delineado","shades":["plum","ink"],"min":65,"max":100,"instruction":"Delineado ciruela o negro suave, entre 65 y 100%."}
+    ]}
+  ]
+}

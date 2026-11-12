@@ -328,15 +328,19 @@ const promoProductsData = [
 ];
 
 async function seed() {
+  let validating = true;
   try {
     if (NODE_ENV === 'production') throw new Error('El seed está deshabilitado en producción');
+    if (process.env.SEED_CONFIRM_RESET !== 'BORRAR_DATOS_DE_PRUEBA') throw new Error('El seed reemplaza datos: requiere SEED_CONFIRM_RESET=BORRAR_DATOS_DE_PRUEBA en una base exclusiva de pruebas');
     const adminPassword = process.env.SEED_ADMIN_PASSWORD;
     const userPassword = process.env.SEED_USER_PASSWORD;
     if (!adminPassword || adminPassword.length < 12 || !userPassword || userPassword.length < 12) {
       throw new Error('SEED_ADMIN_PASSWORD y SEED_USER_PASSWORD deben tener al menos 12 caracteres');
     }
+    if (Buffer.byteLength(adminPassword, 'utf8') > 72 || Buffer.byteLength(userPassword, 'utf8') > 72) throw new Error('Las contraseñas del seed no pueden superar 72 bytes UTF-8');
     const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@byjers.com';
     const userEmail = process.env.SEED_USER_EMAIL || 'cliente@test.com';
+    validating = false;
     await connectDB();
 
     console.log('🗑️  Limpiando base de datos...');
@@ -425,10 +429,10 @@ async function seed() {
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error en seed:', error.message);
+    console.error('Error en seed', { name: error.name, ...(validating ? { message: error.message } : {}) });
     if (error.writeErrors) {
       for (const we of error.writeErrors) {
-        console.error(`   · ${we.path?.join('.') ?? 'desconocido'}: ${we.err?.errmsg ?? we.err?.message}`);
+        console.error('Escritura del seed rechazada', { index: we.index, code: we.code });
       }
     }
     process.exit(1);

@@ -1,0 +1,62 @@
+<section class="editor-page">
+  <p class="eyebrow">Tu espacio en By Jers</p>
+  <h1>{{ modo() === 'perfil' ? 'Mi perfil' : 'Mis direcciones' }}</h1>
+  <p class="intro">Mantén tus datos al día y prepara tus próximos pedidos.</p>
+  <nav class="editor-nav" aria-label="Tu cuenta">
+    <a routerLink="/perfil" [class.activo]="modo() === 'perfil'">Mi perfil</a>
+    <a routerLink="/direcciones" [class.activo]="modo() === 'direcciones'">Mis direcciones</a>
+    <a routerLink="/pedidos">Mis pedidos</a>
+    <a routerLink="/mis-datos">Mis datos y solicitudes</a>
+  </nav>
+  @if (aviso()) { <p class="message" role="status">{{ aviso() }}</p> }
+  @if (error() && estado() !== 'login') { <p class="message error" role="alert">{{ error() }}</p> }
+  @if (estado() === 'cargando') {
+    <p class="empty" role="status">Cargando tu cuenta…</p>
+  } @else if (estado() === 'login') {
+    <div class="panel"><h2>Inicia sesión</h2><p class="muted">Accede a tu cuenta para ver y actualizar tus datos.</p><div class="actions"><a class="btn" routerLink="/login" [queryParams]="{redirect: modo() === 'perfil' ? '/perfil' : '/direcciones'}">Ingresar</a></div></div>
+  } @else if (estado() === 'error') {
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  } @else if (modo() === 'perfil') {
+    <form class="panel" #profileForm="ngForm" (ngSubmit)="guardarPerfil()">
+      <h2>Datos personales</h2>
+      <div class="fields">
+        <label class="field">Nombre<input name="nombre" [(ngModel)]="perfil.nombre" required minlength="2" maxlength="50" autocomplete="given-name" /></label>
+        <label class="field">Apellido<input name="apellido" [(ngModel)]="perfil.apellido" required minlength="2" maxlength="50" autocomplete="family-name" /></label>
+        <label class="field">Correo electrónico<input [value]="api.usuario()?.email ?? ''" type="email" readonly /><small>Es el correo con el que accedes a la cuenta.</small></label>
+        <label class="field">Teléfono (opcional)<input name="telefono" [(ngModel)]="perfil.telefono" pattern="[\d\s\-+()]{7,20}" maxlength="20" autocomplete="tel" inputmode="tel" /></label>
+      </div>
+      <div class="actions"><button class="btn" type="submit" [disabled]="guardando() || profileForm.invalid">{{ guardando() ? 'Guardando…' : 'Guardar perfil' }}</button><a class="btn secondary" routerLink="/recuperar">Recuperar contraseña</a></div>
+    </form>
+  } @else {
+    <div class="actions"><button class="btn" type="button" (click)="abrirDireccion()" [disabled]="guardando()">Añadir dirección</button></div>
+    <div class="address-grid">
+      @for (item of direcciones(); track item._id) {
+        <article class="panel address-card">
+          <h2>{{ item.alias }} @if (item.esPrincipal) { <span class="badge">Principal</span> }</h2>
+          <p>{{ item.nombreCompleto }}</p><p class="muted">{{ item.direccion }}<br />{{ item.ciudad }}, {{ item.departamento }}<br />{{ item.telefono }}</p>
+          @if (confirmarEliminar() === item._id) {
+            <p class="message error">¿Eliminar esta dirección guardada?</p><div class="actions"><button class="btn danger" type="button" [disabled]="guardando()" (click)="eliminarDireccion(item._id!)">Confirmar eliminación</button><button class="btn secondary" type="button" (click)="confirmarEliminar.set(null)">Conservar</button></div>
+          } @else {
+            <div class="actions"><button class="btn secondary" type="button" [disabled]="guardando()" (click)="abrirDireccion(item)">Editar</button><button class="btn danger" type="button" [disabled]="guardando()" (click)="confirmarEliminar.set(item._id!)">Eliminar</button></div>
+          }
+        </article>
+      } @empty { <p class="empty">Aún no tienes direcciones guardadas.</p> }
+    </div>
+    @if (formularioDireccion()) {
+      <form class="panel" #addressForm="ngForm" (ngSubmit)="guardarDireccion()">
+        <h2>{{ editandoId() ? 'Editar dirección' : 'Nueva dirección' }}</h2>
+        <div class="fields">
+          <label class="field">Alias<input name="alias" [(ngModel)]="direccion.alias" required minlength="2" maxlength="30" placeholder="Casa, trabajo…" /></label>
+          <label class="field">Nombre de quien recibe<input name="nombreCompleto" [(ngModel)]="direccion.nombreCompleto" required minlength="2" maxlength="100" autocomplete="name" /></label>
+          <label class="field">Teléfono de contacto<input name="telefonoDireccion" [(ngModel)]="direccion.telefono" required pattern="[\d\s\-+()]{7,20}" maxlength="20" autocomplete="tel" inputmode="tel" /></label>
+          <label class="field">Dirección<input name="direccion" [(ngModel)]="direccion.direccion" required minlength="5" maxlength="200" autocomplete="street-address" /></label>
+          <label class="field">Ciudad<input name="ciudad" [(ngModel)]="direccion.ciudad" required minlength="2" maxlength="50" autocomplete="address-level2" /></label>
+          <label class="field">Departamento<input name="departamento" [(ngModel)]="direccion.departamento" required minlength="2" maxlength="50" autocomplete="address-level1" /></label>
+          <label class="field">Código postal (opcional)<input name="codigoPostal" [(ngModel)]="direccion.codigoPostal" maxlength="10" autocomplete="postal-code" /></label>
+        </div>
+        <label class="check"><input type="checkbox" name="esPrincipal" [(ngModel)]="direccion.esPrincipal" />Usar como dirección principal</label>
+        <div class="actions"><button class="btn" type="submit" [disabled]="guardando() || addressForm.invalid">{{ guardando() ? 'Guardando…' : 'Guardar dirección' }}</button><button class="btn secondary" type="button" [disabled]="guardando()" (click)="formularioDireccion.set(false)">Cancelar</button></div>
+      </form>
+    }
+  }
+</section>

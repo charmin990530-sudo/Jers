@@ -23,6 +23,7 @@ import { getContacts, updateContact } from '../controllers/contactController.js'
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate, schemas, validateParams, validateQuery } from '../middleware/validation.js';
 import { z } from 'zod';
+import { getDataRequests, resolveDataRequest } from '../controllers/privacyController.js';
 
 const router = Router();
 const idParam = z.object({ id: z.string().regex(/^[0-9a-fA-F]{24}$/) });
@@ -30,6 +31,8 @@ const idParam = z.object({ id: z.string().regex(/^[0-9a-fA-F]{24}$/) });
 router.use(authenticate, authorize('admin'));
 
 router.get('/dashboard', getDashboardStats);
+router.get('/solicitudes-datos', validateQuery(schemas.dataRequestQuery), getDataRequests);
+router.patch('/solicitudes-datos/:id', validateParams(idParam), validate(schemas.resolveDataRequest), resolveDataRequest);
 router.get('/productos', validateQuery(schemas.productQuery), getAdminProducts);
 router.get('/categorias', getAdminCategories);
 router.get('/marcas', getAdminBrands);

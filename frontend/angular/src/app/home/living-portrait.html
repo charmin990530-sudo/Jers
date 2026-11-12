@@ -1,0 +1,40 @@
+<div class="portrait-shell" [class.is-selecting]="selected()" [class.motion-off]="!motion()">
+  <div class="portrait-halo" aria-hidden="true"></div>
+  <span class="portrait-edition">BY JERS · BEAUTY, ALIVE.</span>
+  <div class="portrait-window">
+    <div class="portrait-camera"
+      [style.transform-origin]="selected() ? (selected()!.u * 100) + '% ' + (selected()!.v * 100) + '%' : '50% 50%'"
+      [style.--pan-x]="selected() ? ((.5 - selected()!.u) * 100) + '%' : '0%'"
+      [style.--pan-y]="selected() ? ((.5 - selected()!.v) * 100) + '%' : '0%'">
+      <div #stage class="portrait-stage">
+        <img #fallback class="portrait-fallback" src="/img/avatar-jers/neutral.webp" alt="Avatar de By Jers con cabello oscuro y maquillaje rosa" width="1312" height="1199" fetchpriority="high" draggable="false" />
+        <canvas #canvas class="portrait-canvas" aria-hidden="true"></canvas>
+        <nav class="portrait-zones" aria-label="Explora la tienda desde el avatar">
+          @for (category of categories; track category.slug) {
+            <a [href]="'/catalogo/' + category.slug" [class]="'portrait-zone zone-' + category.slug"
+              [attr.aria-label]="category.accessible" [attr.aria-disabled]="selected() ? 'true' : null"
+              (pointerenter)="highlighted.set(category)" (pointerleave)="highlighted.set(null)"
+              (focus)="highlighted.set(category)" (blur)="highlighted.set(null)"
+              (click)="choose($event, category)">
+              <span class="zone-point" aria-hidden="true"></span>
+              <span class="zone-label">{{ category.label }} <span aria-hidden="true">↗</span></span>
+            </a>
+          }
+        </nav>
+      </div>
+    </div>
+  </div>
+  <div class="portrait-caption" aria-live="polite" aria-atomic="true">
+    @if (selected(); as category) {
+      <span class="caption-kicker">Tu próximo imprescindible</span>
+      <p>Descubriendo {{ category.label.toLowerCase() }}<span class="loading-dots" aria-hidden="true">…</span></p>
+    } @else {
+      <span class="caption-kicker">Toca una zona. Encuentra tu universo.</span>
+      <p>{{ highlighted()?.detail || 'La belleza empieza donde tú elijas.' }}</p>
+    }
+  </div>
+  <button type="button" class="portrait-motion" [attr.aria-pressed]="!motion()" (click)="toggleMotion()" [disabled]="!!selected()">
+    <span aria-hidden="true">{{ motion() ? 'Ⅱ' : '▷' }}</span> {{ motion() ? 'Pausar movimiento' : 'Activar movimiento' }}
+  </button>
+  @if (error()) { <p class="portrait-error" role="alert">{{ error() }}</p> }
+</div>

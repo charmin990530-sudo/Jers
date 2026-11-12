@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { mensajeError } from '../utils/format';
+import { returnPath } from '../utils/return-path';
 
 type Modo = 'login' | 'registro' | 'recuperar' | 'reset-password';
 
@@ -49,6 +50,10 @@ export class Auth {
         }
         if (modo === 'reset-password') {
             this.tokenRecuperacion.set(this.route.snapshot.queryParamMap.get('token'));
+            // Conservar el token solo en memoria; quitarlo de la entrada de historial.
+            const url = new URL(window.location.href);
+            url.searchParams.delete('token');
+            window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
         }
     }
 
@@ -106,8 +111,8 @@ export class Auth {
             this.error.set('Ingresa un email válido.');
             return;
         }
-        if (this.password.length < 8) {
-            this.error.set('La contraseña debe tener al menos 8 caracteres.');
+        if (this.password.length < 8 || new TextEncoder().encode(this.password).length > 72) {
+            this.error.set('Usa al menos 8 caracteres y hasta 72 bytes UTF-8 para la contraseña.');
             return;
         }
         if (!this.aceptoTerminos || !this.aceptoPrivacidad) {
@@ -137,7 +142,7 @@ export class Auth {
 
         if (!sesion.ok) {
             this.modo.set('login');
-            this.error.set('Cuenta creada. Inicia sesión con tu email y contraseña.');
+            this.error.set('Revisa tus datos para iniciar sesión o solicita recuperar el acceso.');
             return;
         }
 
@@ -187,8 +192,8 @@ export class Auth {
             this.error.set('El enlace no es válido o ya caducó. Pide uno nuevo.');
             return;
         }
-        if (this.password.length < 8) {
-            this.error.set('La contraseña debe tener al menos 8 caracteres.');
+        if (this.password.length < 8 || new TextEncoder().encode(this.password).length > 72) {
+            this.error.set('Usa al menos 8 caracteres y hasta 72 bytes UTF-8 para la contraseña.');
             return;
         }
         if (this.password !== this.confirmarPassword) {
@@ -212,7 +217,7 @@ export class Auth {
         await this.api.getMe();
         this.exito.set(true);
         this.aviso.set('Tu contraseña quedó actualizada. Entrando…');
-        setTimeout(() => void this.router.navigateByUrl('/'), 1200);
+        setTimeout(() => void this.router.navigateByUrl('/tienda'), 1200);
     }
 
     private irAlDestino(): void {
@@ -222,18 +227,6 @@ export class Auth {
 
     private obtenerDestino(): string {
         const redirect = this.route.snapshot.queryParamMap.get('redirect');
-        const guardado = this.leerRedirectGuardado();
-        const destino = redirect || guardado || '/';
-        if (!destino.startsWith('/') || destino.startsWith('//')) return '/';
-        if (destino.includes('/login') || destino.includes('/register')) return '/';
-        return destino;
-    }
-
-    private leerRedirectGuardado(): string | null {
-        try {
-            return sessionStorage.getItem('auth_redirect_url');
-        } catch {
-            return null;
-        }
+        return returnPath(redirect || '/tienda');
     }
 }

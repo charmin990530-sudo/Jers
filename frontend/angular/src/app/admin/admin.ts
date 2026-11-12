@@ -3,8 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { etiquetaEstado, formatearFecha, formatearPrecio, mensajeError } from '../utils/format';
+import { GestionCatalogo } from './gestion/gestion';
 
-type Tab = 'resumen' | 'productos' | 'pedidos';
+type Tab = 'resumen' | 'productos' | 'pedidos' | 'gestion';
 
 interface UsuarioResumen {
     nombre?: string;
@@ -61,7 +62,7 @@ const SIGUIENTE_ESTADO: Record<string, string> = {
 
 @Component({
     selector: 'app-admin',
-    imports: [RouterLink, FormsModule],
+    imports: [RouterLink, FormsModule, GestionCatalogo],
     templateUrl: './admin.html',
     styleUrl: './admin.scss',
 })
@@ -132,6 +133,10 @@ export class Admin {
             return;
         }
         this.estadisticas.set(respuesta.data?.stats ?? null);
+    }
+
+    async actualizarCatalogo(): Promise<void> {
+        await Promise.all([this.cargarProductos(), this.cargarResumen()]);
     }
 
     async cambiarTab(tab: Tab): Promise<void> {

@@ -48,6 +48,8 @@
   text-decoration: none;
 }
 
+.brand-logo { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
 .brand-mark {
   display: grid;
   place-items: center;
@@ -445,6 +447,6 @@
   .topbar .nav { gap: 4px; }
   .topbar .nav > a { padding: 14px 18px; font-size: 1rem; }
 }
-.footer h3, .footer .brand { color: #f4eefb; }
-.footer .brand-text small { color: #bcb2ce; }
-.footer-grid a:hover { color: #e3c6ff; }
+.footer h3, .footer .brand { color: var(--text); }
+.footer .brand-text small { color: var(--text-muted); }
+.footer-grid a:hover { color: var(--accent); }

@@ -34,35 +34,35 @@ const LOOKS: Look[] = [
         id: 2,
         nombre: 'Noche intensa',
         descripcion: 'Ojos protagonistas con sombras cálidas y un delineado que sostiene la mirada hasta el final de la noche.',
-        imagen: '/img/hero-secuencia/frame_0034.webp',
+        imagen: '/img/productos/sombras-atenea.webp',
         tags: ['Ojos', 'Ahumado', 'Noche'],
     },
     {
         id: 3,
         nombre: 'Labios que hablan',
         descripcion: 'Un labial mate de larga duración para un look mínimo con un gesto de color muy claro.',
-        imagen: '/img/hero-secuencia/frame_0059.webp',
+        imagen: '/img/productos/labial-mate-lbl.webp',
         tags: ['Labios', 'Mate', 'Editorial'],
     },
     {
         id: 4,
         nombre: 'Base impecable',
         descripcion: 'Cobertura modulable y textura ligera para una piel uniforme sin perder la naturalidad.',
-        imagen: '/img/hero-secuencia/frame_0087.webp',
+        imagen: '/img/productos/base-atenea.webp',
         tags: ['Rostro', 'Cobertura', 'Natural'],
     },
     {
         id: 5,
         nombre: 'Ritual capilar',
         descripcion: 'Limpieza profunda y nutrición para devolverle el movimiento y el brillo a tu cabello.',
-        imagen: '/img/hero-secuencia/frame_0115.webp',
+        imagen: '/img/productos/shampoo-hidratacion-profunda.webp',
         tags: ['Cabello', 'Hidratación', 'Rutina'],
     },
     {
         id: 6,
         nombre: 'Edición regalo',
         descripcion: 'Una selección de favoritos para regalar o regalarte. Detalles que siempre suman.',
-        imagen: '/img/hero-secuencia/frame_0148.webp',
+        imagen: '/img/promociones/paleta-de-sombras.webp',
         tags: ['Regalo', 'Favoritos', 'Selección'],
     },
 ];
@@ -92,8 +92,6 @@ export class Looks {
 
     private inicioX = 0;
     private arrastrando = false;
-    private ultimoWheel = 0;
-    private timeoutArrastre: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
         void this.cargarProductos();
@@ -129,7 +127,6 @@ export class Looks {
     alPresionar(event: PointerEvent): void {
         this.arrastrando = true;
         this.inicioX = event.clientX;
-        if (this.timeoutArrastre) clearTimeout(this.timeoutArrastre);
     }
 
     alSoltar(event: PointerEvent): void {
@@ -144,15 +141,6 @@ export class Looks {
 
     alCancelarArrastre(): void {
         this.arrastrando = false;
-    }
-
-    alRodar(event: WheelEvent): void {
-        event.preventDefault();
-        const ahora = Date.now();
-        if (ahora - this.ultimoWheel < 420) return;
-        this.ultimoWheel = ahora;
-        if (event.deltaY > 0 || event.deltaX > 0) this.siguiente();
-        else if (event.deltaY < 0 || event.deltaX < 0) this.anterior();
     }
 
     alTeclear(event: KeyboardEvent): void {

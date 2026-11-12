@@ -1,0 +1,75 @@
+<section class="studio" aria-labelledby="studio-title">
+  <header class="studio-heading">
+    <div><a class="back-link" routerLink="/tienda">← Volver a la tienda</a><p class="eyebrow">By Jers / Beauty playground</p><h1 id="studio-title">Un look.<br /><em>Mil posibilidades.</em></h1><p class="intro">Tu estudio de maquillaje. Prueba, juega y encuentra tu próxima combinación.</p></div>
+    <div class="studio-stamp"><span aria-hidden="true">✳</span><p>Un toque de color.<br />Un premio para ti.</p><a href="#premios-estudio">Descubre los premios ↓</a></div>
+  </header>
+
+  <nav class="modes" aria-label="Modo de juego">
+    <button type="button" [class.selected]="mode() === 'libre'" [attr.aria-pressed]="mode() === 'libre'" [disabled]="finishing()" (click)="selectMode('libre')"><small>Sin reglas</small><strong>Modo libre</strong><span>Tu color, tu ritmo.</span></button>
+    @for (challenge of rules.challenges; track challenge.id; let i = $index) {
+      <button type="button" [class.selected]="mode() === challenge.id" [attr.aria-pressed]="mode() === challenge.id" [disabled]="finishing()" (click)="selectMode(challenge.id)"><small>Reto 0{{ i + 1 }}</small><strong>{{ challenge.name }}</strong><span>{{ challenge.subtitle }}</span></button>
+    }
+  </nav>
+
+  <div class="studio-grid">
+    <div class="portrait-column">
+      <figure class="portrait-card">
+        <div class="portrait-heading"><span>{{ compare() ? 'Antes' : 'Tu creación' }}</span><span>JERS / 01</span></div>
+        <canvas #portrait class="portrait" tabindex="0" role="button" aria-label="Rostro para maquillar. Toca la zona de la herramienta elegida o pulsa Enter para aplicarla." aria-describedby="paint-hint" (click)="paintAt($event)" (keydown.enter)="apply()" (keydown.space)="$event.preventDefault(); apply()"></canvas>
+        @if (loading()) { <p class="portrait-loading" role="status">Preparando tu lienzo…</p> }
+        @if (imageError()) { <div class="portrait-failure" role="alert"><p>{{ imageError() }}</p><button type="button" (click)="loadPortrait()">Reintentar rostro</button></div> }
+        <figcaption id="paint-hint">{{ category().hint }} También puedes pulsar «Aplicar».</figcaption>
+      </figure>
+      <div class="canvas-actions" aria-label="Controles del lienzo">
+        <button type="button" (click)="undo()" [disabled]="!canUndo() || finishing()"><span aria-hidden="true">↶</span> Deshacer</button>
+        <button type="button" (click)="reset()" [disabled]="!options().length || finishing()">Reiniciar</button>
+        <button type="button" (click)="toggleCompare()" [disabled]="!ready()" [attr.aria-pressed]="compare()">{{ compare() ? 'Ver mi look' : 'Antes / después' }}</button>
+      </div>
+      <p class="illustration-note">Es una previsualización artística sobre nuestro avatar. Los tonos no reproducen una variante comercial exacta.</p>
+    </div>
+
+    <div class="tools-column">
+      <section class="tool-card" aria-labelledby="tools-title">
+        <div class="section-label"><p class="eyebrow">Tu tocador</p><span>{{ options().length }} / 4 capas</span></div><h2 id="tools-title">El siguiente toque es tuyo.</h2>
+        <div class="tool-tabs" role="group" aria-label="Herramientas de maquillaje">
+          @for (category of rules.categories; track category.id; let i = $index) { <button type="button" (click)="selectTool(category.id)" [disabled]="finishing()" [class.active]="tool() === category.id" [attr.aria-pressed]="tool() === category.id"><span aria-hidden="true">0{{ i + 1 }}</span>{{ category.name }}</button> }
+        </div>
+        <fieldset [disabled]="finishing()"><legend>01 / Elige el tono</legend><div class="swatches">
+          @for (color of shades(); track color.id) { <button type="button" class="swatch" [class.active]="shade() === color.id" [attr.aria-pressed]="shade() === color.id" (click)="selectShade(color.id)" [attr.aria-label]="color.name"><span class="color" [style.background-color]="color.hex" aria-hidden="true">{{ shade() === color.id ? '✓' : '' }}</span><small>{{ color.name }}</small></button> }
+        </div></fieldset>
+        <label class="intensity" for="makeup-intensity"><span>02 / Ajusta la intensidad <strong>{{ intensity() }}%</strong></span><input id="makeup-intensity" type="range" min="1" max="100" step="1" [value]="intensity()" (input)="setIntensity($event)" [disabled]="finishing()" /><span class="range-labels"><small>Sutil</small><small>Intenso</small></span></label>
+        <div class="apply-actions"><button type="button" class="primary" (click)="apply()" [disabled]="!ready() || finishing()">Aplicar {{ category().name.toLowerCase() }} <span aria-hidden="true">↗</span></button><button type="button" class="remove-layer" (click)="remove()" [disabled]="!hasCurrentLayer() || finishing()">Quitar capa</button></div>
+        <p class="tool-tip">03 / Toca la zona del rostro o usa el botón para aplicar. Puedes cambiar de idea todas las veces que quieras.</p>
+      </section>
+
+      @if (challenge(); as current) {
+        <section class="challenge-card" aria-labelledby="challenge-title"><div class="section-label"><p class="eyebrow">Tu misión</p><strong>{{ progress() }} / 4</strong></div><h2 id="challenge-title">{{ current.name }}</h2><p>{{ current.description }}</p><progress [value]="progress()" max="4" [attr.aria-label]="progress() + ' de 4 pasos completados'"></progress><ol class="steps">
+          @for (step of current.steps; track step.category; let i = $index) { <li [class.done]="stepDone(i)"><span aria-hidden="true">{{ stepDone(i) ? '✓' : i + 1 }}</span><button type="button" (click)="selectTool(step.category)"><strong>{{ rules.categories[i].name }}</strong><small>{{ step.instruction }}</small><span class="sr-only">{{ stepDone(i) ? 'Paso completado' : 'Paso pendiente' }}</span></button></li> }
+        </ol></section>
+      } @else {
+        <section class="free-note"><span aria-hidden="true">✳</span><div><h2>Sin reloj. Sin juicios.</h2><p>Explora colores y capas a tu ritmo. Aplica al menos una capa para terminar tu look, o elige un reto para ganar el premio de toda la tienda.</p></div></section>
+      }
+      <button type="button" class="finish-button" (click)="finish()" [disabled]="!canFinish() || finishing() || !ready()">{{ finishing() ? 'Comprobando tu creación…' : mode() === 'libre' ? 'Terminar mi look' : 'Comprobar y terminar reto' }} <span aria-hidden="true">✓</span></button>
+      @if (mode() !== 'libre' && !canFinish()) { <p class="finish-hint">Completa los cuatro pasos de la guía para terminar el reto.</p> }
+    </div>
+  </div>
+
+  <p class="studio-status" role="status" aria-live="polite">{{ message() }}</p>
+  @if (serverError()) { <p class="alert" role="alert">{{ serverError() }} <button type="button" (click)="finish()" [disabled]="!canFinish() || finishing()">Reintentar validación</button></p> }
+  @if (finished()) { <section class="result" aria-label="Resultado del juego"><span aria-hidden="true">✳</span><div><p class="eyebrow">Hecho por ti</p><h2>{{ mode() === 'libre' ? 'Tu look está listo.' : '¡Reto completado!' }}</h2><p>{{ mode() === 'libre' ? 'Guarda tu combinación y vuelve cuando quieras.' : 'Seguiste la paleta y la intensidad de los cuatro pasos. Ahora puedes crear otro look.' }}</p>@if (!api.estaLogueado()) { <p>Guarda tu look antes de <a routerLink="/login" [queryParams]="{redirect:'/estudio'}">iniciar sesión</a>. Al volver, aplica un toque para validar tus premios.</p> }</div><button type="button" class="primary" (click)="reset()">Crear otro look ↗</button></section> }
+
+  <section class="save-bar" aria-label="Guardar y exportar look"><div><h2>Hazlo tuyo.</h2><p>Tu look se guarda solo en este navegador. Sin cámara ni fotos personales.</p></div><div class="save-actions"><button type="button" (click)="save()">Guardar look</button><button type="button" (click)="download()" [disabled]="!ready() || exporting()">{{ exporting() ? 'Preparando PNG…' : 'Descargar PNG ↓' }}</button><button type="button" class="text-button" (click)="clearSaved()">Borrar look guardado</button></div>@if (storageMessage()) { <p class="storage-status" role="status">{{ storageMessage() }}</p> }</section>
+
+  <section id="premios-estudio" class="rewards-section" aria-labelledby="rewards-title"><header><p class="eyebrow">Juega. Crea. Disfruta.</p><h2 id="rewards-title">Tu creatividad tiene premio.</h2><p>Juega sin cuenta. Para guardar y usar tus premios, inicia sesión.</p></header><div class="reward-grid"><article><span class="reward-number">10<span>%</span></span><div><h3>En labiales, por jugar.</h3><p>Aplica una capa y gana el 10% en los productos identificados como labiales. Sin compra mínima.</p></div></article><article><span class="reward-number">10<span>%</span></span><div><h3>En toda la tienda, por ganar.</h3><p>Completa cualquiera de los tres retos. Úsalo con un subtotal de productos <strong>superior a $150.000 COP</strong>.</p></div></article></div>
+    <p class="reward-terms">Un premio de cada tipo por cuenta, de un uso cada uno. Elige uno por pedido: no se acumulan entre sí. Se aplican sobre los precios vigentes de productos, antes de envío e impuestos, y se consumen al crear el pedido, aunque luego se cancele. Sin vencimiento configurado.</p>
+    @if (savingReward()) { <p role="status">Validando tu actividad para los premios…</p> }
+    @if (api.estaLogueado()) {
+      <div class="earned-rewards">@for (reward of activeRewards(); track reward.id) { <p class="earned"><span aria-hidden="true">✓</span> {{ reward.name }} <strong>Disponible en checkout</strong></p> }@if (!activeRewards().length && rewards().length) { <p>Ya utilizaste tus premios de esta cuenta. Puedes seguir jugando y crear todos los looks que quieras.</p> }@if (!rewards().length) { <p>Aplica una capa para conseguir tu primer premio.</p> }</div><a class="primary" routerLink="/carrito">Ver mi carrito ↗</a>
+    } @else { <a class="primary" routerLink="/login" [queryParams]="{redirect:'/estudio'}">Ingresar para guardar premios ↗</a> }
+  </section>
+
+  <section class="related-section" aria-labelledby="related-title"><header><p class="eyebrow">Del juego a tu tocador</p><h2 id="related-title">Productos relacionados.</h2><p>Selección del catálogo para {{ category().name.toLowerCase() }}. La previsualización es ilustrativa; revisa los tonos y detalles en cada ficha.</p></header>
+    @if (productLoading()) { <p role="status">Consultando el catálogo…</p> } @else if (productError()) { <div class="alert" role="alert"><p>{{ productError() }}</p><button type="button" (click)="loadProducts()">Reintentar catálogo</button></div> } @else if (!related().length) { <p class="empty-products">No hay un producto confirmado para esta herramienta. Puedes seguir jugando o <a routerLink="/catalogo/maquillaje">explorar el catálogo</a>.</p> } @else { <div class="products-grid">@for (product of related(); track product._id) { <article class="studio-product"><a [routerLink]="['/producto',product._id]"><img [src]="image(product)" [alt]="product.nombre" loading="lazy" width="320" height="320" /><h3>{{ product.nombre }}</h3></a><p>{{ formatearPrecio(product.precio) }}</p><small>{{ product.stock > 0 ? 'Disponible' : 'Agotado' }}</small><button type="button" (click)="addProduct(product)" [disabled]="product.stock < 1 || !!adding()">{{ adding() === product._id ? 'Añadiendo…' : product.stock < 1 ? 'Agotado' : api.estaLogueado() ? 'Añadir al carrito +' : 'Ingresar para añadir' }}</button></article> }</div> }<a class="catalog-link" routerLink="/catalogo/maquillaje">Ver toda la colección ↗</a>
+  </section>
+  <p class="studio-credit">Lógica de capas adaptada de DollMaker, por wolfderechter · <a href="/licenses/dollmaker.txt" target="_blank" rel="noopener">Licencia MIT</a>. Rostro y experiencia visual de By Jers.</p>
+</section>

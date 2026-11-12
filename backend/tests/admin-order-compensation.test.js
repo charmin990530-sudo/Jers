@@ -67,6 +67,7 @@ const createTestApp = () => {
   app.use(express.json());
   app.use(cookieParser());
   app.use('/api/admin', routes.admin);
+  app.use('/api/orders', routes.orders);
   app.use(notFound);
   app.use(errorHandler);
   return app;
@@ -162,7 +163,7 @@ describe('updateAdminOrder: compensacion sin replica set', () => {
     const pedido = await crearPedido({ producto, usuario });
     // El primer bulkWrite (dentro del callback) falla; el estado ya quedo escrito
     // porque sin transaccion cada opcion va por separado.
-    jest.spyOn(Product, 'bulkWrite').mockRejectedValueOnce(new Error('stock: fallo simulado'));
+    jest.spyOn(Product, 'updateOne').mockRejectedValueOnce(new Error('stock: fallo simulado'));
 
     const res = await request(app)
       .patch(`/api/admin/pedidos/${pedido._id}`)
@@ -181,9 +182,7 @@ describe('updateAdminOrder: compensacion sin replica set', () => {
     const producto = await crearProducto();
     const usuario = await crearUsuario();
     const pedido = await crearPedido({ producto, usuario });
-    jest.spyOn(Product, 'bulkWrite')
-      .mockRejectedValueOnce(new Error('stock: fallo simulado'))
-      .mockResolvedValueOnce({ ok: 1, modifiedCount: 1 });
+    jest.spyOn(Product, 'updateOne').mockRejectedValueOnce(new Error('stock: fallo simulado'));
 
     await request(app)
       .patch(`/api/admin/pedidos/${pedido._id}`)
@@ -198,5 +197,49 @@ describe('updateAdminOrder: compensacion sin replica set', () => {
     const productoFinal = await Product.findById(producto._id).lean();
     expect(productoFinal.stock).toBe(50);
     expect(productoFinal.vendidos).toBe(2);
+  });
+
+  for (const caller of ['administrador', 'cliente']) {
+    it(`una devolución parcial de ${caller} no descuenta líneas que nunca se repusieron`, async () => {
+      const a = await crearProducto(), b = await crearProducto();
+      const usuario = await crearUsuario();
+      const pedido = await crearPedido({ producto: a, usuario });
+      pedido.items.push({ producto: b._id, nombre: b.nombre, precioUnitario: b.precio, cantidad: 1, subtotal: b.precio });
+      pedido.subtotal += b.precio; pedido.total += b.precio;
+      await pedido.save();
+      const update = Product.updateOne.bind(Product);
+      let calls = 0;
+      jest.spyOn(Product, 'updateOne').mockImplementation((...args) => {
+        if (++calls === 2) return Promise.reject(new Error('Fallo de segunda línea'));
+        return update(...args);
+      });
+      const response = caller === 'administrador'
+        ? await request(app).patch(`/api/admin/pedidos/${pedido._id}`).set('Cookie', cookie).send({ estado: 'cancelado', notas: 'No debe persistir al fallar' })
+        : await request(app).patch(`/api/orders/${pedido._id}/cancelar`).set('Cookie', cookieDe(usuario)).send({ motivo: 'Prueba' });
+      expect(response.status).toBeGreaterThanOrEqual(500);
+      const final = await Order.findById(pedido._id).lean();
+      expect(final.estado).toBe('confirmado');
+      expect(final.notas).toBe(pedido.notas);
+      for (const original of [a, b]) {
+        const product = await Product.findById(original._id);
+        expect(product.stock).toBe(original.stock);
+        expect(product.vendidos).toBe(original.vendidos);
+      }
+    });
+  }
+
+  it('no cancela si el pago se confirmó después de leer el pedido', async () => {
+    const producto = await crearProducto(), usuario = await crearUsuario();
+    const pedido = await crearPedido({ producto: producto, usuario });
+    const update = Order.findOneAndUpdate.bind(Order);
+    jest.spyOn(Order, 'findOneAndUpdate').mockImplementationOnce(async (...args) => {
+      await Order.updateOne({ _id: pedido._id }, { $set: { estadoPago: 'pagado' } });
+      return update(...args);
+    });
+    const response = await request(app).patch(`/api/admin/pedidos/${pedido._id}`).set('Cookie', cookie).send({ estado: 'cancelado' });
+    expect(response.status).toBe(409);
+    const final = await Order.findById(pedido._id);
+    expect(final.estado).toBe('confirmado'); expect(final.estadoPago).toBe('pagado');
+    expect((await Product.findById(producto._id)).stock).toBe(producto.stock);
   });
 });

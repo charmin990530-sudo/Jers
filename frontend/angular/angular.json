@@ -25,18 +25,14 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               {
-                "glob": "**/*",
-                "input": "public"
+                "glob": "*.txt",
+                "input": "public/licenses",
+                "output": "/licenses"
               },
               {
                 "glob": "**/*",
                 "input": "../img",
                 "output": "/img"
-              },
-              {
-                "glob": "**/*",
-                "input": "../data",
-                "output": "/data"
               },
               {
                 "glob": "**/*",
@@ -112,17 +108,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
-              },
-              {
-                "glob": "**/*",
                 "input": "../img",
                 "output": "/img"
-              },
-              {
-                "glob": "**/*",
-                "input": "../data",
-                "output": "/data"
               },
               {
                 "glob": "**/*",

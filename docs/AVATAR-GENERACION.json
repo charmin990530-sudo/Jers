@@ -1,0 +1,58 @@
+{
+  "tool": "image_gen built-in",
+  "approvedBase": "docs/assets/avatar-neutral-original.png",
+  "normalization": "Full images resized to the approved frame dimensions; no eye patches or face composites.",
+  "variants": [
+    {
+      "name": "closed",
+      "prompt": "Use case: identity-preserve. Edit target: the provided approved 3D beauty avatar. Produce ONE COMPLETE HEAD PNG on true transparent background, same 1312x1199 framing. Change ONLY the eyes: BOTH EYES FULLY CLOSED, relaxed eyelids, a natural gentle blink. No change to mouth or expression. Preserve EXACTLY the same adult woman, face outline, head angle, scale, position, hair silhouette and strands, nose, lips, pink makeup, brows, lighting, transparent cutout and short neck as the source. Pixel registration is essential: this is a full-picture frame for an interactive portrait, no new pose, no head movement, no crop, no camera change, no decorations, no text, no overlay or collage. Keep every non-eye detail unchanged.",
+      "output": "frontend/img/avatar-jers/closed.webp"
+    },
+    {
+      "name": "half",
+      "prompt": "Use case: identity-preserve. Edit target: the provided approved 3D beauty avatar. Produce ONE COMPLETE HEAD PNG on true transparent background, same 1312x1199 framing. Change ONLY the eyes: BOTH EYELIDS HALFWAY CLOSED in a natural intermediate blink. No change to mouth or expression. Preserve EXACTLY the same adult woman, face outline, head angle, scale, position, hair silhouette and strands, nose, lips, pink makeup, brows, lighting, transparent cutout and short neck as the source. Pixel registration is essential: this is a full-picture frame for an interactive portrait, no new pose, no head movement, no crop, no camera change, no decorations, no text, no overlay or collage. Keep every non-eye detail unchanged.",
+      "output": "frontend/img/avatar-jers/half.webp"
+    },
+    {
+      "name": "left",
+      "prompt": "Use case: identity-preserve. Edit target: the provided approved 3D beauty avatar. Produce ONE COMPLETE HEAD PNG on true transparent background, same 1312x1199 framing. Change ONLY the eyes: BOTH EYES looking toward the LEFT EDGE OF THE IMAGE (viewer left), iris shifted left inside each eye, head still perfectly frontal. Preserve EXACTLY the same adult woman, face outline, head angle, scale, position, hair silhouette and strands, nose, lips, pink makeup, brows, lighting, transparent cutout and short neck as the source. Pixel registration is essential: this is a full-picture frame for an interactive portrait, no new pose, no head movement, no crop, no camera change, no decorations, no text, no overlay or collage. Keep every non-eye detail unchanged.",
+      "output": "frontend/img/avatar-jers/left.webp"
+    },
+    {
+      "name": "right",
+      "prompt": "Use case: identity-preserve. Edit target: the provided approved 3D beauty avatar. Produce ONE COMPLETE HEAD PNG on true transparent background, same 1312x1199 framing. Change ONLY the eyes: BOTH EYES looking toward the RIGHT EDGE OF THE IMAGE (viewer right), iris shifted right inside each eye, head still perfectly frontal. Preserve EXACTLY the same adult woman, face outline, head angle, scale, position, hair silhouette and strands, nose, lips, pink makeup, brows, lighting, transparent cutout and short neck as the source. Pixel registration is essential: this is a full-picture frame for an interactive portrait, no new pose, no head movement, no crop, no camera change, no decorations, no text, no overlay or collage. Keep every non-eye detail unchanged.",
+      "output": "frontend/img/avatar-jers/right.webp"
+    },
+    {
+      "name": "up",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look UP. Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/up.webp"
+    },
+    {
+      "name": "down",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look DOWN. Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/down.webp"
+    },
+    {
+      "name": "upleft",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look toward the TOP LEFT corner of the image (viewer left). Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/upleft.webp"
+    },
+    {
+      "name": "upright",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look toward the TOP RIGHT corner of the image (viewer right). Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/upright.webp"
+    },
+    {
+      "name": "downleft",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look toward the BOTTOM LEFT corner of the image (viewer left). Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/downleft.webp"
+    },
+    {
+      "name": "downright",
+      "prompt": "Use case: identity-preserve. Edit target: provided approved 3D avatar. One COMPLETE head on true transparent background, same exact 1312x1199 framing. Change ONLY her gaze: both irises look toward the BOTTOM RIGHT corner of the image (viewer right). Head and nose remain perfectly frontal. Mouth and eyelids otherwise unchanged. Pixel alignment essential: preserve EXACT same adult woman, head size/position, face shape, nose, glossy pink lips, black bob silhouette/strands, eyebrows, pink eye makeup, neck, light, materials, camera, cutout. Do not rotate or tilt head. No crop, zoom, text, jewelry, collage, extra objects. Only pupil/iris direction changes; the rest is identical.",
+      "output": "frontend/img/avatar-jers/downright.webp"
+    }
+  ],
+  "finalAssets": "frontend/img/avatar-jers/*.webp"
+}

@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-11",
+  "status": "render-original-exportado",
+  "design": "Boutique conceptual JERS aprobada por el usuario en la conversación.",
+  "palette": [
+    "#003D2F",
+    "#F7F4E7",
+    "#C8A36B"
+  ],
+  "sources": [
+    "scripts/render-boutique.py",
+    "scripts/render-boutique-film.py",
+    "scripts/preparar-video-boutique.mjs"
+  ],
+  "renderer": "Blender 3.6.23 LTS / Eevee / NVIDIA GeForce GTX 1050 / OpenGL PRIME",
+  "encoding": "FFmpeg 6.1.1 / libx264 / fotogramas I independientes para seek; NVENC requiere un controlador posterior al instalado.",
+  "frameCount": 241,
+  "fps": 24,
+  "durationSeconds": 10.041666666666666,
+  "desktop": {
+    "width": 1440,
+    "height": 810
+  },
+  "mobile": {
+    "width": 540,
+    "height": 960
+  },
+  "tablet": {
+    "width": 720,
+    "height": 960
+  },
+  "originalScene": "output/boutique/jers-boutique.blend (local, no publicado)",
+  "externalGenerationServices": [],
+  "thirdPartyPaidAssets": [],
+  "artifacts": [
+    {
+      "file": "/video/jers-store-entry-v1.mp4",
+      "bytes": 9251381
+    },
+    {
+      "file": "/video/jers-store-entry-mobile-v1.mp4",
+      "bytes": 2988497
+    },
+    {
+      "file": "/video/jers-store-entry-tablet-v1.mp4",
+      "bytes": 4509474
+    }
+  ]
+}

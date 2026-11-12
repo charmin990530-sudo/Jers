@@ -85,6 +85,20 @@ body::before { content: ''; position: fixed; inset: -15%; z-index: -1; pointer-e
 @keyframes liquid-light { from { transform: translate3d(-2%, 0, 0); } to { transform: translate3d(2%, 4%, 0); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
 
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  app-root.liquid-ui .card.depth-card:hover {
+    transform: perspective(1000px) rotateX(var(--depth-x, 0deg)) rotateY(var(--depth-y, 0deg)) translateY(-5px);
+    transition: transform 140ms ease-out, box-shadow 260ms ease;
+    box-shadow: inset 0 1px 0 #fff, 0 24px 46px #55332626;
+  }
+  .depth-card::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+    background: radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 0%), #ffffff35, transparent 55%);
+    opacity: 0; transition: opacity 250ms;
+  }
+  .depth-card:hover::after { opacity: 1; }
+}
+
 app-root.liquid-ui app-home {
   /* El cristal acompaña la paleta original marfil y rosa de By Jers. */
   .hero-motion {
@@ -110,7 +124,8 @@ app-root.liquid-ui app-home {
   .look-swatch { border-color: #ffffff; }
 
   /* Entrada narrativa al avanzar por las secciones de la portada. */
-  .scroll-reveal { opacity: 0; transform: translateY(28px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); }
+  .scroll-reveal { opacity: 1; transform: none; }
+  .scroll-reveal.reveal-pending { opacity: 0; transform: translateY(28px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); }
   .scroll-reveal.is-visible { opacity: 1; transform: translateY(0); }
   .categorias-grid .categoria-card,
   .grid > .card,
@@ -123,8 +138,8 @@ app-root.liquid-ui app-home {
   .cardimage-link { isolation: isolate; background: var(--bg-elev); }
   .cardimage-link .cardimage { position: relative; z-index: 1; }
   .cardimage-link .cardimage-alterna { position: absolute; inset: 0; z-index: 0; transform: scale(1.035); }
-  .cardimage-link:hover .cardimage:not(.cardimage-alterna),
-  .cardimage-link:focus-visible .cardimage:not(.cardimage-alterna) { opacity: 0; transform: scale(1.045); }
+  .cardimage-link.tiene-alterna:hover .cardimage:not(.cardimage-alterna),
+  .cardimage-link.tiene-alterna:focus-visible .cardimage:not(.cardimage-alterna) { opacity: 0; transform: scale(1.045); }
   .cardimage-link:hover .cardimage-alterna,
   .cardimage-link:focus-visible .cardimage-alterna { transform: scale(1); }
   .cardimage-link .cardimage { transition: opacity 380ms ease, transform 650ms var(--ease-out); }
@@ -150,10 +165,10 @@ app-root.liquid-ui app-home {
   .oferta > a { position: relative; display: block; width: 88px; height: 88px; overflow: hidden; border-radius: var(--radius-sm); }
   .oferta img { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 350ms ease, transform 600ms var(--ease-out); }
   .oferta .oferta-img-alterna { opacity: 0; }
-  .oferta > a:hover img:not(.oferta-img-alterna), .oferta > a:focus-visible img:not(.oferta-img-alterna) { opacity: 0; transform: scale(1.06); }
+  .oferta > a:has(.oferta-img-alterna):hover img:not(.oferta-img-alterna), .oferta > a:has(.oferta-img-alterna):focus-visible img:not(.oferta-img-alterna) { opacity: 0; transform: scale(1.06); }
   .oferta > a:hover .oferta-img-alterna, .oferta > a:focus-visible .oferta-img-alterna { opacity: 1; transform: scale(1.04); }
   .marcas-carrusel-shell { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-  .marcas-lista { display: flex; overflow-x: auto; border-block: 1px solid var(--line); scrollbar-width: none; }
+  .marcas-lista { display: flex; flex-wrap: nowrap; gap: 18px; overflow-x: auto; border-block: 1px solid var(--line); scrollbar-width: none; }
   .marcas-pista { flex: 0 0 auto; display: flex; align-items: center; gap: 18px; width: max-content; padding: 15px 9px; animation: marcas-flujo 32s linear infinite; }
   .marcas-carrusel-shell:hover .marcas-pista, .marcas-carrusel-shell:focus-within .marcas-pista { animation-play-state: paused; }
   .marca-chip { display: grid; place-items: center; min-width: 145px; min-height: 62px; padding: 12px 22px; border: 1px solid #ffffff; border-radius: 22px; background: linear-gradient(135deg, #ffffffc9, #fffaf477); color: var(--text-muted); font-family: var(--font-display); font-size: clamp(1rem, .88rem + .7vw, 1.35rem); white-space: nowrap; box-shadow: inset 0 1px 0 #fff, 0 8px 24px #5533260c; backdrop-filter: blur(16px); transition: color 200ms ease, transform 300ms var(--ease-out); }
@@ -177,7 +192,7 @@ app-root.liquid-ui app-home {
     .marca-chip { min-width: 122px; min-height: 54px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .scroll-reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-reveal, .scroll-reveal.reveal-pending { opacity: 1; transform: none; transition: none; }
     .marcas-pista { animation: none; }
     .cardimage-link .cardimage, .oferta img { transition: none; }
   }

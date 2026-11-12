@@ -51,7 +51,7 @@ const assetUrl = z.string().trim().min(1).refine(value => {
   if (value.startsWith('/')) return !value.startsWith('//') && !value.includes('..');
   try {
     const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol);
+    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
   } catch {
     return false;
   }
@@ -79,6 +79,12 @@ const optionalBooleanQuery = z.preprocess(
   z.boolean().optional()
 );
 
+// bcrypt solo utiliza los primeros 72 bytes, también con caracteres Unicode.
+const newPassword = z.string().min(8, 'La contraseña debe tener al menos 8 caracteres')
+  .max(72).refine(value => Buffer.byteLength(value, 'utf8') <= 72, 'La contraseña no puede superar 72 bytes UTF-8');
+const passwordInput = z.string().min(1, 'Contraseña requerida').max(72)
+  .refine(value => Buffer.byteLength(value, 'utf8') <= 72, 'La contraseña no puede superar 72 bytes UTF-8');
+
 /**
  * Factory: Crea middleware de validación para req.body
  * @param {z.ZodSchema} schema - Esquema Zod
@@ -104,12 +110,16 @@ export const validate = (schema) => (req, res, next) => {
 // ==========================================
 
 export const schemas = {
+  exportData: z.object({ currentPassword: passwordInput }).strict(),
+  dataRequest: z.object({ currentPassword: passwordInput, tipo: z.enum(['acceso', 'supresion', 'revocacion']), mensaje: z.string().trim().max(500).optional() }).strict(),
+  dataRequestQuery: z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), estado: z.enum(['pendiente', 'resuelta']).optional() }),
+  resolveDataRequest: z.object({ respuesta: z.string().trim().min(10).max(1000) }).strict(),
   // POST /api/auth/register
   register: z.object({
     nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(50),
     apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(50),
     email: z.string().email('Email inválido').toLowerCase(),  // Normaliza
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
+    password: newPassword,
     telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/, 'Teléfono inválido').optional(),
     // z.literal(true) = DEBE ser exactamente true (no "true", no 1)
     aceptoTerminos: z.literal(true, { error: () => ({ message: 'Debe aceptar los términos y condiciones' }) }),
@@ -119,7 +129,7 @@ export const schemas = {
   // POST /api/auth/login
   login: z.object({
     email: z.string().email('Email inválido').toLowerCase(),
-    password: z.string().min(1, 'La contraseña es obligatoria'),
+    password: passwordInput,
     rememberMe: z.boolean().optional().default(false),
   }),
 
@@ -127,13 +137,13 @@ export const schemas = {
   updateProfile: z.object({
     nombre: z.string().min(2).max(50).optional(),
     apellido: z.string().min(2).max(50).optional(),
-    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/).optional(),
+    telefono: z.string().regex(/^[\d\s\-+()]{7,20}$/).or(z.literal('')).optional(),
   }),
 
   // PATCH /api/auth/password
   changePassword: z.object({
-    currentPassword: z.string().min(1, 'Contraseña actual requerida'),
-    newPassword: z.string().min(8, 'La nueva contraseña debe tener al menos 8 caracteres').max(128),
+    currentPassword: passwordInput,
+    newPassword,
   }).refine(data => data.currentPassword !== data.newPassword, {
     message: 'La nueva contraseña debe ser diferente a la actual',
     path: ['newPassword'],  // Error asociado a este campo
@@ -179,6 +189,8 @@ export const schemas = {
 
   // POST /api/orders
   createOrder: z.object({
+    rewardId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Premio inválido').optional(),
+    expectedTotal: minorAmount('El total confirmado').optional(),
     direccionEnvio: z.object({
       alias: z.string().min(2).max(30),
       nombreCompleto: z.string().min(2).max(100),
@@ -250,6 +262,7 @@ export const schemas = {
   }),
 
   contact: z.object({
+    consentimiento: z.literal(true, { error: 'Debes autorizar el uso de tus datos para responder a la consulta' }),
     nombre: z.string().trim().min(2).max(100),
     email: z.string().trim().email('Email inválido').toLowerCase(),
     telefono: z.string().trim().regex(/^[\d\s\-+()]{7,20}$/).optional().or(z.literal('')),
@@ -347,7 +360,7 @@ export const schemas = {
   // POST /api/auth/reset-password
   resetPassword: z.object({
     token: z.string().regex(/^[a-f0-9]{64}$/i, 'Token inválido'),
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
+    password: newPassword,
     confirmPassword: z.string().min(1, 'Confirma la contraseña'),
   }).refine(data => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden',

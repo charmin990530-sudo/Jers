@@ -78,7 +78,7 @@ export const authenticate = async (req, res, next) => {
     // un token caducado se resuelve iniciando sesión otra vez, mientras que uno
     // corrupto o malfirmado significa que hay que limpiar la cookie. Antes los
     // dos devolvían INVALID_TOKEN, así que la rama TOKEN_EXPIRED del
-    // `errorHandler` era código muerto y `API.md` publicaba una distinción que
+    // `errorHandler` era código muerto y `README.md` publicaba una distinción que
     // nunca se emitía.
     if (error.name === 'TokenExpiredError') {
       return sendError(res, 401, ErrorCodes.TOKEN_EXPIRED, 'Tu sesión expiró. Inicia sesión nuevamente.');
@@ -132,7 +132,7 @@ export const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, JWT_SECRET, JWT_VERIFY_OPTIONS);
       const legacyTokenAllowed = NODE_ENV === 'test';
-      if (decoded.ver === undefined && !legacyTokenAllowed) return;
+      if (decoded.ver === undefined && !legacyTokenAllowed) return next();
       const user = await User.findById(decoded.id);
       if (user && user.activo && (decoded.ver === undefined || decoded.ver === user.tokenVersion)) {
         req.user = user;

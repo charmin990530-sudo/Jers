@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { formatearPrecio, mensajeError } from '../utils/format';
+import { DepthCard } from '../utils/depth-card';
 
 interface Producto {
     _id?: string;
@@ -22,6 +23,9 @@ interface Producto {
 }
 
 const TITULOS: Record<string, { titulo: string; descripcion: string }> = {
+    labios: { titulo: 'Labios', descripcion: 'Labiales, brillos y color para expresarte a tu manera.' },
+    ojos: { titulo: 'Ojos', descripcion: 'Sombras, delineadores y pestañas para una mirada única.' },
+    rostro: { titulo: 'Rostro', descripcion: 'Bases, correctores, rubores e iluminadores para tu piel.' },
     maquillaje: {
         titulo: 'Maquillaje',
         descripcion: 'Color, textura y acabados para crear tu rutina ideal.',
@@ -34,7 +38,7 @@ const TITULOS: Record<string, { titulo: string; descripcion: string }> = {
 
 @Component({
     selector: 'app-catalogo',
-    imports: [FormsModule, RouterLink],
+    imports: [FormsModule, RouterLink, DepthCard],
     templateUrl: './catalogo.html',
     styleUrl: './catalogo.scss',
 })

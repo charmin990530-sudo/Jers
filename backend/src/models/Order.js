@@ -99,6 +99,11 @@ const orderSchema = new mongoose.Schema({
   },
   items: [orderItemSchema],
   subtotal: { type: Number, required: true, min: 0, ...minorAmount('El subtotal') },
+  descuento: { type: Number, default: 0, min: 0, ...minorAmount('El descuento') },
+  premio: {
+    type: new mongoose.Schema({ rewardId: { type: mongoose.Schema.Types.ObjectId, ref: 'GameReward' }, kind: String, name: String, percent: Number }, { _id: false }),
+    default: undefined,
+  },
   costoEnvio: { type: Number, default: 0, min: 0, ...minorAmount('El costo de envio') },
   impuestos: { type: Number, default: 0, min: 0, ...minorAmount('El IVA') },
   tasaImpuestosBp: { type: Number, default: 0, min: 0, ...minorAmount('La tasa de IVA') },

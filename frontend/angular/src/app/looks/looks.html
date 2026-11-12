@@ -18,7 +18,6 @@
       (pointerup)="alSoltar($event)"
       (pointercancel)="alCancelarArrastre()"
       (pointerleave)="alCancelarArrastre()"
-      (wheel)="alRodar($event)"
       (keydown)="alTeclear($event)"
     >
       @for (look of looks; track look.id; let i = $index) {

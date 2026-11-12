@@ -47,6 +47,10 @@ export const ErrorCodes = Object.freeze({
   // 400
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   INVALID_ID: 'INVALID_ID',
+  REWARD_UNAVAILABLE: 'REWARD_UNAVAILABLE',
+  REWARD_NOT_ELIGIBLE: 'REWARD_NOT_ELIGIBLE',
+  GAME_STATE_CHANGED: 'GAME_STATE_CHANGED',
+  GAME_INCOMPLETE: 'GAME_INCOMPLETE',
   DUPLICATE_FIELD: 'DUPLICATE_FIELD',
   INVALID_PATH: 'INVALID_PATH',
   INVALID_ROLE: 'INVALID_ROLE',
@@ -67,7 +71,7 @@ export const ErrorCodes = Object.freeze({
   INVALID_RESET_TOKEN: 'INVALID_RESET_TOKEN',
   // Antes estos códigos se emitían como cadenas literales desde los
   // controladores, sin existir como clave aquí. El archivo declara que el
-  // contrato es auditable leyéndolo, y `API.md` publica la tabla: cualquiera
+  // contrato es auditable leyéndolo, y `README.md` publica la tabla: cualquiera
   // que ramifique por `error.code` (el patrón que el propio proyecto
   // recomienda) no podía tipar nada, y cinco de ellos ni siquiera estaban
   // documentados. Ahora cada clave vale lo mismo que se llama.
@@ -105,12 +109,13 @@ export const ErrorCodes = Object.freeze({
   // 409
   CHECKOUT_IN_PROGRESS: 'CHECKOUT_IN_PROGRESS',
   CHECKOUT_STATE_CHANGED: 'CHECKOUT_STATE_CHANGED',
+  PRICE_CHANGED: 'PRICE_CHANGED',
   PAID_ORDER_REQUIRES_REFUND: 'PAID_ORDER_REQUIRES_REFUND',
   ORDER_STATE_CHANGED: 'ORDER_STATE_CHANGED',
   INVALID_ORDER_TRANSITION: 'INVALID_ORDER_TRANSITION',
   CANNOT_CANCEL: 'CANNOT_CANCEL',
   // 400 de negocio que son en realidad conflictos de estado. La tabla de
-  // `API.md` los documentaba como 400; se mantienen aquí el código de negocio
+  // `README.md` los documentaba como 400; se mantienen aquí el código de negocio
   // y el estado, y la tabla se corrige en su sitio.
   INSUFFICIENT_STOCK: 'INSUFFICIENT_STOCK',
   LAST_ADMIN: 'LAST_ADMIN',
@@ -130,6 +135,7 @@ export const ErrorCodes = Object.freeze({
   DATABASE_UNAVAILABLE: 'DATABASE_UNAVAILABLE',
   // 503
   API_NOT_CONFIGURED: 'API_NOT_CONFIGURED',
+  EMAIL_UNAVAILABLE: 'EMAIL_UNAVAILABLE',
 });
 
 /**

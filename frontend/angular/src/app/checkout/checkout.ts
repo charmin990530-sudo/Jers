@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { formatearPrecio, mensajeError } from '../utils/format';
+import { StudioReward } from '../estudio/studio.types';
 
 interface ItemCarrito {
     _id?: string;
@@ -24,6 +25,8 @@ interface CarritoResumen {
     costoEnvio?: number;
     impuestos?: number;
     total?: number;
+    descuento?: number;
+    premio?: { id: string; name: string } | null;
     envioGratisDesde?: number;
 }
 
@@ -47,6 +50,8 @@ interface EstadoEnvio {
     notas: string;
 }
 
+interface DireccionGuardada extends Omit<EstadoEnvio, 'notas'> { _id: string; esPrincipal?: boolean; }
+
 @Component({
     selector: 'app-checkout',
     imports: [FormsModule, RouterLink],
@@ -65,6 +70,12 @@ export class Checkout {
     readonly carrito = signal<CarritoResumen | null>(null);
     readonly orden = signal<OrdenCreada | null>(null);
     readonly formatearPrecio = formatearPrecio;
+    readonly premios = signal<StudioReward[]>([]);
+    readonly premioElegido = signal('');
+    readonly calculandoPremio = signal(false);
+    readonly errorPremios = signal('');
+    readonly direcciones = computed<DireccionGuardada[]>(() => this.api.usuario()?.direcciones ?? []);
+    direccionElegida = '';
 
     private idempotencyKey = this.crearIdempotencyKey();
 
@@ -93,7 +104,7 @@ export class Checkout {
         this.error.set(null);
         this.errorCarga.set(null);
         this.requiereLogin.set(false);
-        const respuesta = await this.api.getCart();
+        const respuesta = await this.api.getCart(this.premioElegido() || undefined);
         if (!respuesta.ok) {
             if (respuesta.data?.status === 401) {
                 this.requiereLogin.set(true);
@@ -104,17 +115,56 @@ export class Checkout {
             return;
         }
         this.carrito.set(respuesta.data?.cart ?? null);
+        await this.cargarPremios();
 
+        if (!this.api.usuario()) await this.api.getMe();
         const usuario = this.api.usuario();
         if (usuario) {
             this.envio.nombreCompleto = `${usuario.nombre ?? ''} ${usuario.apellido ?? ''}`.trim();
             this.envio.telefono = usuario.telefono ?? '';
+            const principal = this.direcciones().find(d => d.esPrincipal) ?? this.direcciones()[0];
+            if (principal) this.seleccionarDireccion(principal._id);
         }
         this.cargando.set(false);
     }
 
+    async cargarPremios(): Promise<void> {
+        const respuesta = await this.api.getStudioRewards();
+        if (respuesta.ok) { this.premios.set((respuesta.data?.rewards ?? []).filter((reward: StudioReward) => !reward.redeemedAt)); this.errorPremios.set(''); }
+        else this.errorPremios.set('No se pudieron consultar los premios. Puedes comprar sin premio o reintentar.');
+    }
+
+    async aplicarPremio(id: string): Promise<void> {
+        if (this.calculandoPremio() || this.enviando()) return;
+        this.calculandoPremio.set(true); this.errorPremios.set('');
+        try {
+            const response = await this.api.getCart(id || undefined);
+            if (response.ok) { this.carrito.set(response.data?.cart ?? null); this.premioElegido.set(id); }
+            else this.errorPremios.set(mensajeError(response, 'No se pudo aplicar el premio.'));
+        } finally { this.calculandoPremio.set(false); }
+    }
+
+    async elegirPremio(event: Event): Promise<void> {
+        const select = event.target as HTMLSelectElement;
+        await this.aplicarPremio(select.value);
+        select.value = this.premioElegido();
+    }
+
+    seleccionarDireccion(id: string): void {
+        this.direccionElegida = id;
+        const address = this.direcciones().find(d => d._id === id);
+        const user = this.api.usuario();
+        this.envio.alias = address?.alias ?? 'Casa';
+        this.envio.nombreCompleto = address?.nombreCompleto ?? `${user?.nombre ?? ''} ${user?.apellido ?? ''}`.trim();
+        this.envio.telefono = address?.telefono ?? user?.telefono ?? '';
+        this.envio.direccion = address?.direccion ?? '';
+        this.envio.ciudad = address?.ciudad ?? '';
+        this.envio.departamento = address?.departamento ?? '';
+        this.envio.codigoPostal = address?.codigoPostal ?? '';
+    }
+
     async confirmar(): Promise<void> {
-        if (this.enviando() || this.exito()) return;
+        if (this.enviando() || this.exito() || this.calculandoPremio()) return;
         const e = this.envio;
         const faltantes: string[] = [];
         if (!e.alias.trim() || e.alias.trim().length < 2) faltantes.push('alias');
@@ -133,6 +183,8 @@ export class Checkout {
         this.error.set(null);
         const respuesta = await this.api.createOrder(
             {
+                expectedTotal: this.carrito()?.total,
+                rewardId: this.premioElegido() || undefined,
                 direccionEnvio: {
                     alias: e.alias.trim(),
                     nombreCompleto: e.nombreCompleto.trim(),
@@ -148,6 +200,11 @@ export class Checkout {
         );
         this.enviando.set(false);
         if (!respuesta.ok) {
+            if (respuesta.data?.code === 'PRICE_CHANGED') {
+                const actualizado = await this.api.getCart(this.premioElegido() || undefined);
+                if (actualizado.ok) this.carrito.set(actualizado.data?.cart ?? null);
+                else this.errorCarga.set(mensajeError(actualizado, 'No se pudo actualizar el total. Reintenta antes de confirmar.'));
+            }
             this.error.set(mensajeError(respuesta, 'No se pudo crear el pedido.'));
             return;
         }

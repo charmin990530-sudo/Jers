@@ -14,22 +14,36 @@ export class App {
   readonly api = inject(ApiService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private sessionRequested = false;
 
   readonly menuAbierto = signal(false);
   readonly menuCuenta = signal(false);
   readonly errorSesion = signal<string | null>(null);
   readonly cerrandoSesion = signal(false);
+  readonly enBienvenida = signal(this.esBienvenida(this.router.url));
   readonly anio = new Date().getFullYear();
   readonly whatsappUrl = 'https://wa.me/573114333561';
 
   constructor() {
-    void this.api.getMe();
+    this.requestSession();
     this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((evento) => {
       if (evento instanceof NavigationEnd) {
+        this.enBienvenida.set(this.esBienvenida(evento.urlAfterRedirects));
         this.menuAbierto.set(false);
         this.menuCuenta.set(false);
+        this.requestSession();
       }
     });
+  }
+
+  private requestSession(): void {
+    if (this.enBienvenida() || this.sessionRequested) return;
+    this.sessionRequested = true;
+    void this.api.getMe();
+  }
+
+  private esBienvenida(url: string): boolean {
+    return ['/', '/bienvenida', '/bienvenida.html', '/index.html'].includes(url.split(/[?#]/)[0]);
   }
 
   alternarMenu(): void {
@@ -56,6 +70,6 @@ export class App {
       return;
     }
     this.cerrarMenu();
-    await this.router.navigateByUrl('/');
+    await this.router.navigateByUrl('/tienda');
   }
 }

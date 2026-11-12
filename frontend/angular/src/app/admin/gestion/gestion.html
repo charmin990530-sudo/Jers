@@ -1,0 +1,75 @@
+<section class="editor-page editor-admin">
+  <h2>Gestionar catálogo y mensajes</h2>
+  <nav class="editor-nav" aria-label="Gestión del catálogo">
+    <button type="button" [class.activo]="seccion() === 'producto'" (click)="cambiarSeccion('producto')">Nuevo producto</button>
+    <button type="button" [class.activo]="seccion() === 'categorias'" (click)="cambiarSeccion('categorias')">Categorías</button>
+    <button type="button" [class.activo]="seccion() === 'marcas'" (click)="cambiarSeccion('marcas')">Marcas</button>
+    <button type="button" [class.activo]="seccion() === 'mensajes'" (click)="cambiarSeccion('mensajes')">Mensajes</button>
+    <button type="button" [class.activo]="seccion() === 'datos'" (click)="cambiarSeccion('datos')">Solicitudes de datos</button>
+  </nav>
+  @if (aviso()) { <p class="message" role="status">{{ aviso() }}</p> }
+  @if (error()) { <p class="message error" role="alert">{{ error() }}</p><div class="actions"><button class="btn secondary" type="button" (click)="seccion() === 'mensajes' ? cargarMensajes(paginaMensajes()) : cargar()">Actualizar datos</button></div> }
+  @if (cargando()) { <p class="empty" role="status">Cargando datos…</p> }
+  @else if (seccion() === 'producto') {
+    <form class="panel" #productForm="ngForm" (ngSubmit)="crearProducto()">
+      <h2>Nuevo producto</h2>
+      @if (!activas().length || !marcasActivas().length) { <p class="message">Antes de crear un producto, registra una categoría y una marca activas desde las pestañas de arriba.</p> }
+      <div class="fields">
+        <label class="field wide">Nombre del producto<input name="nombreProducto" [(ngModel)]="producto.nombre" required minlength="2" maxlength="100" /></label>
+        <label class="field">Categoría<select name="categoria" [(ngModel)]="producto.categoria" required><option value="">Selecciona una categoría</option>@for (item of activas(); track item._id) { <option [value]="item._id">{{ item.nombre }}</option> }</select></label>
+        <label class="field">Marca<select name="marca" [(ngModel)]="producto.marca" required><option value="">Selecciona una marca</option>@for (item of marcasActivas(); track item._id) { <option [value]="item._id">{{ item.nombre }}</option> }</select></label>
+        <label class="field">Precio en pesos<input type="number" name="precio" [(ngModel)]="producto.precio" required min="0" step="1" inputmode="numeric" /></label>
+        <label class="field">Precio anterior (opcional)<input type="number" name="precioAnterior" [(ngModel)]="producto.precioAnterior" min="0" step="1" inputmode="numeric" /></label>
+        <label class="field">Stock<input type="number" name="stock" [(ngModel)]="producto.stock" required min="0" step="1" inputmode="numeric" /></label>
+        <label class="field">Imagen principal<input name="imagen" [(ngModel)]="producto.imagen" required maxlength="2048" placeholder="/img/productos/… o https://…" /><small>URL de la imagen o ruta de una imagen de la tienda.</small></label>
+        <label class="field wide">Descripción corta<input name="descripcionCorta" [(ngModel)]="producto.descripcionCorta" maxlength="200" /></label>
+        <label class="field wide">Descripción del producto<textarea name="descripcion" [(ngModel)]="producto.descripcion" required minlength="10" maxlength="1000" rows="4"></textarea></label>
+      </div>
+      @if (imagenValida(producto.imagen.trim())) { <img class="preview" [src]="producto.imagen.trim()" alt="Vista previa de la imagen del producto" /> }
+      <div class="checks"><label class="check"><input type="checkbox" name="destacado" [(ngModel)]="producto.destacado" />Destacar en novedades</label><label class="check"><input type="checkbox" name="enPromocion" [(ngModel)]="producto.enPromocion" />Mostrar en promociones</label><label class="check"><input type="checkbox" name="activo" [(ngModel)]="producto.activo" />Visible en la tienda</label></div>
+      <div class="actions"><button type="submit" class="btn" [disabled]="guardando() || productForm.invalid || !activas().length || !marcasActivas().length">{{ guardando() ? 'Creando…' : 'Crear producto' }}</button></div>
+    </form>
+  } @else if (seccion() === 'categorias' || seccion() === 'marcas') {
+    <div class="entity-grid">
+      <div class="panel">
+        <h2>{{ seccion() === 'categorias' ? 'Categorías' : 'Marcas' }} registradas</h2>
+        @for (item of (seccion() === 'categorias' ? categorias() : marcas()); track item._id) {
+          <div class="entity-row"><div><strong>{{ item.nombre }}</strong><small>{{ item.activo === false ? 'Oculta' : 'Activa' }}</small></div><button class="btn secondary" type="button" [disabled]="guardando()" (click)="editarEntidad(item)">Editar</button></div>
+        } @empty { <p class="muted">Todavía no hay registros.</p> }
+      </div>
+      <form class="panel" #entityForm="ngForm" (ngSubmit)="guardarEntidad()">
+        <h2>{{ editandoId() ? 'Editar' : 'Crear' }} {{ seccion() === 'categorias' ? 'categoría' : 'marca' }}</h2>
+        @if (seccion() === 'categorias' && !editandoId() && !categoriasNuevas().length) {
+          <p class="muted">Las seis categorías de maquillaje y cabello ya están creadas. Puedes editar su descripción, orden y visibilidad en la lista.</p>
+        } @else {
+          <div class="fields">
+            <label class="field wide">Nombre
+              @if (seccion() === 'categorias') {
+                <select name="nombreEntidad" [(ngModel)]="entidad.nombre" required [disabled]="!!editandoId()"><option value="">Selecciona una categoría</option>@for (nombre of (editandoId() ? categoriasPermitidas : categoriasNuevas()); track nombre) { <option [value]="nombre">{{ nombre }}</option> }</select>
+              } @else { <input name="nombreEntidad" [(ngModel)]="entidad.nombre" required minlength="2" maxlength="100" /> }
+            </label>
+            <label class="field wide">Descripción<textarea name="descripcionEntidad" [(ngModel)]="entidad.descripcion" [maxlength]="seccion() === 'categorias' ? 200 : 300" rows="3"></textarea></label>
+            <label class="field">Orden<input type="number" name="orden" [(ngModel)]="entidad.orden" required min="0" step="1" /></label>
+          </div>
+          <label class="check"><input type="checkbox" name="activoEntidad" [(ngModel)]="entidad.activo" />Activa en el catálogo</label>
+          <div class="actions"><button class="btn" type="submit" [disabled]="guardando() || entityForm.invalid">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button><button class="btn secondary" type="button" [disabled]="guardando()" (click)="cancelarEdicion()">Limpiar formulario</button></div>
+        }
+      </form>
+    </div>
+  } @else if (seccion() === 'datos') {
+    <p class="muted">Verifica la identidad y la procedencia de cada petición. No marques una solicitud como resuelta hasta realizar las actuaciones y explicar cualquier conservación necesaria. Este formulario registra la respuesta; no elimina datos.</p>
+    @for (item of solicitudesDatos(); track item._id) {
+      <article class="panel"><h2>{{ item.tipo }} · {{ item.estado }}</h2><p>{{ item.usuario?.email || 'Cuenta no disponible' }} · {{ formatearFecha(item.createdAt) }}</p><p class="message-body">{{ item.mensaje }}</p>
+      @if (item.estado === 'pendiente') {
+        <label class="field">Respuesta al titular<textarea [name]="'respuesta-' + item._id" [(ngModel)]="respuestasDatos[item._id]" maxlength="1000" rows="3"></textarea></label>
+        <div class="actions"><button class="btn" type="button" [disabled]="guardando() || (respuestasDatos[item._id] || '').trim().length < 10" (click)="responderSolicitud(item._id)">Registrar respuesta y cerrar solicitud</button></div>
+      } @else { <p>{{ item.respuesta }}</p> }</article>
+    } @empty { <p class="empty">No hay solicitudes de datos.</p> }
+    @if (paginasDatos() > 1) { <div class="actions"><button class="btn secondary" type="button" [disabled]="paginaDatos() <= 1" (click)="cargarSolicitudes(paginaDatos() - 1)">Anterior</button><span>{{ paginaDatos() }} / {{ paginasDatos() }}</span><button class="btn secondary" type="button" [disabled]="paginaDatos() >= paginasDatos()" (click)="cargarSolicitudes(paginaDatos() + 1)">Siguiente</button></div> }
+  } @else {
+    @for (item of mensajes(); track item._id) {
+      <article class="panel"><div class="message-heading"><h2>{{ item.nombre }}</h2><span class="badge">{{ item.estado === 'atendido' ? 'Atendido' : 'Nuevo' }}</span></div><p class="muted">{{ item.email }} · {{ item.telefono || 'Sin teléfono' }}<br />{{ formatearFecha(item.createdAt) }}</p><p class="message-body">{{ item.mensaje }}</p><div class="actions"><button class="btn secondary" type="button" [disabled]="guardando()" (click)="marcarMensaje(item)">{{ item.estado === 'nuevo' ? 'Marcar como atendido' : 'Marcar como nuevo' }}</button></div></article>
+    } @empty { <p class="empty">No hay mensajes recibidos.</p> }
+    @if (paginasMensajes() > 1) { <div class="actions"><button class="btn secondary" type="button" [disabled]="paginaMensajes() <= 1 || guardando()" (click)="cargarMensajes(paginaMensajes() - 1)">Anterior</button><span class="muted">Página {{ paginaMensajes() }} de {{ paginasMensajes() }}</span><button class="btn secondary" type="button" [disabled]="paginaMensajes() >= paginasMensajes() || guardando()" (click)="cargarMensajes(paginaMensajes() + 1)">Siguiente</button></div> }
+  }
+</section>

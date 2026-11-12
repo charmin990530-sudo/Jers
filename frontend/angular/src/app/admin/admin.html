@@ -5,7 +5,7 @@
       <h1>Panel de administración</h1>
     </div>
     @if (acceso() === 'ok') {
-      <a class="btn secundario" routerLink="/">Ver tienda</a>
+      <a class="btn secundario" routerLink="/tienda">Ver tienda</a>
     }
   </header>
 
@@ -21,13 +21,14 @@
     <div class="vacio">
       <h2>Acceso restringido</h2>
       <p>Tu cuenta no tiene permisos de administración.</p>
-      <a class="btn" routerLink="/">Volver a la tienda</a>
+      <a class="btn" routerLink="/tienda">Volver a la tienda</a>
     </div>
   } @else {
     <nav class="admin-tabs" aria-label="Secciones del panel">
       <button type="button" [class.activo]="tab() === 'resumen'" (click)="cambiarTab('resumen')">Resumen</button>
       <button type="button" [class.activo]="tab() === 'productos'" (click)="cambiarTab('productos')">Productos</button>
       <button type="button" [class.activo]="tab() === 'pedidos'" (click)="cambiarTab('pedidos')">Pedidos</button>
+      <button type="button" [class.activo]="tab() === 'gestion'" (click)="cambiarTab('gestion')">Gestionar catálogo</button>
     </nav>
 
     @if (aviso()) {
@@ -36,6 +37,8 @@
     @if (error()) {
       <p class="aviso error" role="alert">{{ error() }}</p>
     }
+
+    @if (tab() === 'gestion') { <app-gestion-catalogo (productoCreado)="actualizarCatalogo()" /> }
 
     @if (tab() === 'resumen') {
       @if (cargando()) {
