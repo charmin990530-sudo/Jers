@@ -2,7 +2,35 @@
 
 Tienda de maquillaje y cuidado capilar con Angular 20, una API Express y MongoDB. La raíz abre un recorrido arquitectónico 3D original de la boutique JERS; el scroll mueve la cámara desde la fachada hacia el interior. El comercio y el avatar aprobado viven en `/tienda`.
 
-Revisión local: **11 de noviembre de 2026**. Este documento reúne instalación, arquitectura, funcionamiento, auditoría, privacidad y pendientes operativos. Entrega académica de graduación en desarrollo web full stack: el objetivo actual es ejecutar y verificar el proyecto en local y entregar el código en GitHub. Dominio y alojamiento público se abordarán en una fase posterior; no se ha contratado ningún servicio nuevo ni una suscripción para producir el video.
+## Demo y recorrido visual
+
+**[Abrir demo del frontend](https://by-jers-demo-juan-david.brightmanta3.chatgpt.site)** · [Cómo generar la demo](docs/demo/README.md)
+
+Proyecto propio de formación y portafolio Full Stack. La demo pública permite explorar la bienvenida, la tienda, el catálogo, las fichas y el estudio de maquillaje. Usa productos de muestra del seed público; no está conectada a MongoDB ni admite cuentas, pedidos o pagos reales. El flujo de pedidos por WhatsApp del proyecto completo permanece sin cambios. No hay pasarela de pagos integrada.
+
+### Recorrido 3D
+
+![Vista animada del recorrido de la boutique By Jers](docs/media/recorrido-3d.gif)
+
+[Ver video MP4 de escritorio](frontend/video/jers-store-entry-v1.mp4) · [Video móvil](frontend/video/jers-store-entry-mobile-v1.mp4) · [Video tablet](frontend/video/jers-store-entry-tablet-v1.mp4)
+
+El GIF resume el video existente. El recorrido de la web reproduce un render 3D mediante el desplazamiento; no es una escena 3D renderizada en tiempo real.
+
+### Capturas de la demo
+
+| Bienvenida | Tienda y avatar |
+| --- | --- |
+| ![Bienvenida a la boutique](docs/media/01-bienvenida.jpg) | ![Tienda con avatar interactivo](docs/media/02-tienda.jpg) |
+
+| Catálogo | Ficha de producto |
+| --- | --- |
+| ![Catálogo de maquillaje de muestra](docs/media/03-catalogo.jpg) | ![Ficha de un producto de muestra](docs/media/04-producto.jpg) |
+
+![Estudio interactivo de maquillaje](docs/media/05-estudio.jpg)
+
+Capturas reales del frontend ejecutado en modo demo, tomadas el 12 de noviembre de 2026 (UTC). Los precios y las existencias son datos de demostración.
+
+Revisión local: **11 de noviembre de 2026**. Este documento reúne instalación, arquitectura, funcionamiento, auditoría, privacidad y pendientes operativos. Entrega académica de graduación en desarrollo web full stack. La demo visual se publica por separado; el despliegue operativo del backend y un dominio propio siguen pendientes. No se ha contratado ningún servicio nuevo ni una suscripción para producir el video.
 
 ## Componentes y estructura
 
