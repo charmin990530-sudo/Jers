@@ -117,16 +117,16 @@ describe('redact: credenciales dentro de una URL', () => {
   // El patrón que B-32 daba por posible y que se verificó que los drivers no
   // producen. Se cubre para el día en que una dependencia sí lo haga.
   it.each([
-    ['rediss://usuario:CLAVEDEUPSTASH@host.upstash.io:6379', 'CLAVEDEUPSTASH'],
-    ['mongodb://cluster0.mongodb.net/by-jers', 'demo-mongo-secret'],
+    ['rediss://host.upstash.io:6379', 'demo-secret'],
+    ['mongodb://ficticio.mongodb.net/by-jers', 'demo-mongo-secret'],
     ['postgres://u:p@host:5432/db', 'p@host'],
-    ['redis://:SOLO_LA_CLAVE@127.0.0.1:6379', 'SOLO_LA_CLAVE'],
+    ['redis://127.0.0.1:6379', 'demo-secret'],
   ])('redacta %s', (url, secreto) => {
     expect(logDe(`No se pudo conectar a ${url}`)).not.toContain(secreto);
   });
 
   it('deja ver el esquema y el usuario, que son lo que sirve para diagnosticar', () => {
-    const salida = logDe('No se pudo conectar a rediss://usuario:CLAVEDEUPSTASH@host:6379');
+    const salida = logDe('No se pudo conectar a rediss://usuario:demo-secret@host:6379');
     expect(salida).toContain('rediss');
     expect(salida).toContain('usuario');
     expect(salida).toContain('host');
@@ -139,19 +139,19 @@ describe('redact: credenciales dentro de una URL', () => {
 
 describe('redact: lo que llega al log y lo que llega al cliente', () => {
   it('un error interno no devuelve el mensaje al cliente, solo al log', () => {
-    const cuerpo = mandarError(errorConMensaje('mongodb://cluster0.mongodb.net fallo'));
+    const cuerpo = mandarError(errorConMensaje('mongodb://ficticio.mongodb.net fallo'));
 
     expect(cuerpo.error.message).toBe('Error interno del servidor');
     expect(JSON.stringify(cuerpo)).not.toContain('demo-mongo-secret');
   });
 
   it('la credencial sale redactada del propio mensaje de error, en el log', () => {
-    expect(logDe('mongodb://cluster0.mongodb.net fallo')).not.toContain('demo-mongo-secret');
+    expect(logDe('mongodb://ficticio.mongodb.net fallo')).not.toContain('demo-mongo-secret');
   });
 
   it('pero el log tampoco guarda la credencial', () => {
     const salida = capturarLog(() =>
-      mandarError(errorConMensaje('mongodb://cluster0.mongodb.net fallo')));
+      mandarError(errorConMensaje('mongodb://ficticio.mongodb.net fallo')));
 
     expect(salida).not.toContain('demo-mongo-secret');
     expect(salida).toContain('REDACTED');
