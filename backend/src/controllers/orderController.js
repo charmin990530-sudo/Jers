@@ -427,6 +427,8 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     telefono: cliente?.telefono,
     items: validItems,
     subtotal,
+    descuento: order.descuento,
+    premio: order.premio,
     costoEnvio,
     impuestos,
     tasaImpuestosBp: TAX_RATE_BP,

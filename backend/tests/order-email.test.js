@@ -277,3 +277,19 @@ describe('crear un pedido no depende del correo', () => {
     expect(producto.stock).toBe(8);
   });
 });
+describe('Descuentos y remitente del pedido', () => {
+  it.each([construirCorreoConfirmacionPedido, construirAvisoPedidoNuevo])('desglosa el descuento sin recalcular el total persistido', construir => {
+    const mail = construir({ nombre: 'Cliente Ficticio', numeroOrden: 'BJ-FICTICIO', items: [],
+      subtotal: 50000, descuento: 5000, premio: { name: '<Premio de prueba>' }, costoEnvio: 15000,
+      impuestos: 11400, total: 71400, direccionEnvio: {} });
+    expect(mail.text).toContain('Descuento (<Premio de prueba>): −$5.000');
+    expect(mail.html).toContain('&lt;Premio de prueba&gt;');
+    expect(mail.text).toContain('Total: $71.400');
+    expect(mail.html).not.toContain('<Premio de prueba>');
+  });
+  it('el aviso interno acepta el nombre que envía el checkout', () => {
+    const mail = construirAvisoPedidoNuevo({ nombre: 'Cliente Ficticio', numeroOrden: 'BJ-FICTICIO', items: [], total: 0 });
+    expect(mail.text).toContain('Cliente: Cliente Ficticio');
+  });
+});
+
