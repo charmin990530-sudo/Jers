@@ -142,10 +142,15 @@ export class Admin {
     async cambiarTab(tab: Tab): Promise<void> {
         this.tab.set(tab);
         this.aviso.set(null);
-        if (tab === 'productos' && this.productos().length === 0) {
+        if (tab === 'resumen') {
+            this.cargando.set(true);
+            await this.cargarResumen();
+            this.cargando.set(false);
+        }
+        if (tab === 'productos') {
             await this.cargarProductos();
         }
-        if (tab === 'pedidos' && this.pedidos().length === 0) {
+        if (tab === 'pedidos') {
             await this.cargarPedidos();
         }
     }

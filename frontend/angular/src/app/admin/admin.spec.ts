@@ -14,6 +14,23 @@ describe('Edición de productos en el panel', () => {
 
     const producto = { _id: 'p1', nombre: 'Labial Mate', precio: 29000, stock: 4, activo: true };
 
+    it('recarga los ingresos al volver al resumen después de una conciliación', async () => {
+        admin.tab.set('pedidos');
+        admin.estadisticas.set({ totalRevenue: 0 });
+        api.getAdminDashboard.and.resolveTo({ ok: true, msg: '', data: { stats: { totalRevenue: 71400 } } });
+        await admin.cambiarTab('resumen');
+        expect(api.getAdminDashboard).toHaveBeenCalledTimes(1);
+        expect(admin.estadisticas()?.totalRevenue).toBe(71400);
+        expect(admin.cargando()).toBeFalse();
+    });
+
+    it('recarga pedidos al volver a la pestaña aunque ya tuviera datos', async () => {
+        admin.pedidos.set([{ _id: 'anterior' }]);
+        api.getAdminOrders.and.resolveTo({ ok: true, msg: '', data: { orders: [{ _id: 'nuevo' }] } });
+        await admin.cambiarTab('pedidos');
+        expect(admin.pedidos()[0]._id).toBe('nuevo');
+    });
+
     it('envía el precio, el stock y la visibilidad al guardar', async () => {
         api.updateAdminProduct.and.resolveTo({ ok: true, msg: '', data: { product: { ...producto, precio: 25000, stock: 9 } } });
 
