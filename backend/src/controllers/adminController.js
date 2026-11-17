@@ -449,11 +449,11 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
             { $sort: { count: -1 } },
           ],
           totalRevenue: [
-            { $match: { estadoPago: 'pagado' } },
+            { $match: { estadoPago: 'pagado', estado: { $nin: ['cancelado', 'reembolsado'] } } },
             { $group: { _id: null, total: { $sum: '$total' } } },
           ],
           revenueToday: [
-            { $match: { estadoPago: 'pagado' } },
+            { $match: { estadoPago: 'pagado', estado: { $nin: ['cancelado', 'reembolsado'] } } },
             { $match: { createdAt: rangoDiaNegocio() } },
             { $group: { _id: null, total: { $sum: '$total' } } },
           ],

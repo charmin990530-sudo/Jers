@@ -419,6 +419,21 @@ describe('stock', () => {
 });
 
 describe('balance del panel de administracion', () => {
+  it('excluye un reembolso de los ingresos aunque el registro de pago siga en pagado', async () => {
+    const producto = await crearProducto({ precio: 40000, stock: 5 });
+    await agregar(producto, 1);
+    const creado = await pedir();
+    const id = creado.body.order.id;
+    await conCsrf(admin, 'patch')(`/api/admin/pedidos/${id}`, { estadoPago: 'pagado' });
+    for (const estado of ['confirmado', 'procesando', 'enviado', 'entregado', 'reembolsado']) {
+      const response = await conCsrf(admin, 'patch')(`/api/admin/pedidos/${id}`, { estado });
+      expect(response.status).toBe(200);
+    }
+    const dashboard = await admin.get('/api/admin/dashboard').expect(200);
+    expect(dashboard.body.stats.totalRevenue).toBe(0);
+    expect(dashboard.body.stats.revenueToday).toBe(0);
+  });
+
   it('solo suma a los ingresos los pedidos PAGADOS', async () => {
     const producto = await crearProducto({ precio: 100000, stock: 50 });
     await agregar(producto, 1);
