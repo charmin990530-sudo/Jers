@@ -24,6 +24,21 @@ beforeEach(async () => {
 afterEach(() => jest.restoreAllMocks());
 
 describe('Importes y concurrencia del checkout', () => {
+  it('rechaza un precio modificado entre la cotización y el inicio de la transacción', async () => {
+    const quote = await request(app).get('/api/cart').set('Cookie', cookie).expect(200);
+    const claim = Cart.findOneAndUpdate.bind(Cart);
+    jest.spyOn(Cart, 'findOneAndUpdate').mockImplementationOnce(async (...args) => {
+      await Product.updateOne({ _id: product._id }, { $set: { precio: 65000 } });
+      return claim(...args);
+    });
+    const response = await request(app).post('/api/orders').set('Cookie', cookie)
+      .send({ direccionEnvio, expectedTotal: quote.body.cart.total }).expect(409);
+    expect(response.body.error.code).toBe('PRICE_CHANGED');
+    expect(await Order.countDocuments()).toBe(0);
+    expect((await Product.findById(product._id)).stock).toBe(10);
+    expect(await Cart.countDocuments({ usuario: user._id })).toBe(1);
+  });
+
   it('las ediciones concurrentes no llevan la cantidad fuera de 1 a 99', async () => {
     await Product.updateOne({ _id: product._id }, { $set: { stock: 1000 } });
     const cart = await Cart.findOne({ usuario: user._id });

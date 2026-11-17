@@ -137,11 +137,19 @@ const buscarPedidoPorClaveConEspera = async (usuario, idempotencyKey, intentos =
  * @returns {Promise<{completos: number, aplicados: Array<object>}>}
  */
 const reservarStock = async (items, session) => {
+  // La cotización se leyó antes de abrir la transacción. Comprobarla de nuevo
+  // en su snapshot evita confirmar un precio que cambió antes de reservar.
+  const actuales = await Product.find({ _id: { $in: items.map(item => item.producto) } })
+    .select('_id precio').session(session).lean();
+  const precios = new Map(actuales.map(producto => [String(producto._id), producto.precio]));
+  if (items.some(item => precios.has(String(item.producto)) && precios.get(String(item.producto)) !== item.precioUnitario)) {
+    throw new AppError('El total cambió. Revisa el resumen actualizado y confirma de nuevo.', 409, ErrorCodes.PRICE_CHANGED);
+  }
   if (session) {
     const reservation = await Product.bulkWrite(
       items.map(item => ({
         updateOne: {
-          filter: { _id: item.producto, activo: true, stock: { $gte: item.cantidad } },
+          filter: { _id: item.producto, precio: item.precioUnitario, activo: true, stock: { $gte: item.cantidad } },
           update: { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
         },
       })),
@@ -153,7 +161,7 @@ const reservarStock = async (items, session) => {
   const aplicados = [];
   for (const item of items) {
     const resultado = await Product.updateOne(
-      { _id: item.producto, activo: true, stock: { $gte: item.cantidad } },
+      { _id: item.producto, precio: item.precioUnitario, activo: true, stock: { $gte: item.cantidad } },
       { $inc: { stock: -item.cantidad, vendidos: item.cantidad } },
     );
     if ((resultado.modifiedCount ?? 0) === 1) aplicados.push(item);
