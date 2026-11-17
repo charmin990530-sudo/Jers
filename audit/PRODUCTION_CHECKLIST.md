@@ -9,7 +9,7 @@ No marcar como completado por inferencia: este repositorio no da acceso al panel
 - [x] Checkout valida precio y stock desde servidor; suite con Mongo replica set efímero.
 - [x] Bundle producción: 329.87 kB inicial bruto / 91.26 kB estimado comprimido; 80 assets.
 - [x] Auditoría runtime npm: 0 vulnerabilidades reportadas en root y frontend, al 17-11-2026.
-- [ ] Resolver toolchain: 34 vulnerabilidades altas backend + 19 Angular en dependencias dev/test.
+- [ ] Resolver toolchain: 34 vulnerabilidades altas backend + 18 Angular en dependencias dev/test tras el parche compatible de Angular.
 - [ ] Integrar E2E Chromium en CI con navegador/versión reproducible; WebKit no se pudo verificar: binario ausente.
 
 ## Cuentas, secretos y seguridad
