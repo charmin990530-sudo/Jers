@@ -118,6 +118,19 @@ describe('Regresiones de configuración de la auditoría integral', () => {
     expect(()=>validate({ADMIN_SESSION_EXPIRES_IN:'2h'})).toThrow(/ADMIN_SESSION_EXPIRES_IN/);
     expect(validate({ADMIN_SESSION_EXPIRES_IN:'1h'})).toBe('OK');
   });
+  test('las rutas públicas no revelan la configuración interna cuando no está completa', () => {
+    const appUrl = new URL('../src/app.js', import.meta.url).href;
+    const script = `const {default:request}=await import('supertest');const {app}=await import(${JSON.stringify(appUrl)});
+      const response=await request(app).get('/api/products');console.log(JSON.stringify({status:response.status,body:response.body}));`;
+    const output = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+      cwd: join(__dirname, '../..'), env: { ...env, RATE_LIMIT_STORE: 'memory' }, stdio: 'pipe', timeout: 15000,
+    });
+    const result = JSON.parse(output.toString());
+    expect(result.status).toBe(503);
+    expect(result.body.error.code).toBe('CONFIG_INCOMPLETA');
+    expect(result.body.error.details).toBeUndefined();
+    expect(JSON.stringify(result.body)).not.toMatch(/RATE_LIMIT_STORE|MONGODB_URI|JWT_SECRET|\/home\//);
+  });
   test('la cookie CSRF usa Secure, host-only, ocho horas y es legible por el cliente',()=>{
     const security=new URL('../src/middleware/security.js',import.meta.url).href;
     const script=`const {csrfProtection}=await import(${JSON.stringify(security)});let settings;csrfProtection({method:'GET',cookies:{}},{cookie:(name,value,options)=>{settings=options}},()=>{});console.log(JSON.stringify(settings));`;

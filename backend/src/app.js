@@ -403,9 +403,7 @@ if (CSP_REPORT_ONLY && CSP_REPORT_URI) {
 // muestre su estado de error.
 app.use('/api', async (req, res, next) => {
   if (configError) {
-    return sendError(res, 503, ErrorCodes.CONFIG_INCOMPLETA, 'La API no está configurada para producción todavía.', {
-      details: [{ field: 'config', message: redactConfig(configError.message) }],
-    });
+    return sendError(res, 503, ErrorCodes.CONFIG_INCOMPLETA, 'La API no está disponible temporalmente.');
   }
   try {
     const connected = await connectDB({ allowRetry: true });
