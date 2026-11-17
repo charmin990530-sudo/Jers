@@ -33,6 +33,7 @@ const CODIGOS_SESION = new Set([
 ]);
 
 const CLAVE_CSRF = 'jers_csrf';
+const REQUEST_TIMEOUT_MS = 15000;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -151,14 +152,39 @@ export class ApiService {
         }
 
         let respuesta: Response;
+        let datos: any;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
         try {
             respuesta = await fetch(`${this.apiBaseUrl}${endpoint}`, {
                 method: metodo,
                 credentials: 'include',
                 headers: cabeceras,
                 body: cuerpoFinal,
+                signal: controller.signal,
             });
+            if (respuesta.status !== 204) {
+                try {
+                    datos = await respuesta.json();
+                } catch (error) {
+                    if (controller.signal.aborted) throw error;
+                    return {
+                        ok: false,
+                        msg: `La API no devolvió JSON (HTTP ${respuesta.status}) al pedir ${this.apiBaseUrl}. `,
+                        data: { code: 'INVALID_RESPONSE', status: respuesta.status },
+                    };
+                }
+            }
         } catch (error) {
+            if (controller.signal.aborted) {
+                return {
+                    ok: false,
+                    msg: endpoint === '/orders' && metodo === 'POST'
+                        ? 'La tienda está tardando demasiado. Revisa tus pedidos antes de volver a confirmar la compra.'
+                        : 'La tienda está tardando demasiado. Revisa tu conexión e inténtalo de nuevo.',
+                    data: { code: 'REQUEST_TIMEOUT', status: 0 },
+                };
+            }
             if (error instanceof TypeError) {
                 return {
                     ok: false,
@@ -171,21 +197,12 @@ export class ApiService {
                 msg: 'Error inesperado al contactar con la tienda.',
                 data: { code: 'UNKNOWN_ERROR', status: 0, message: (error as Error)?.message },
             };
+        } finally {
+            clearTimeout(timeout);
         }
 
         if (respuesta.status === 204) {
             return { ok: true, msg: 'Operación exitosa', data: null };
-        }
-
-        let datos: any;
-        try {
-            datos = await respuesta.json();
-        } catch {
-            return {
-                ok: false,
-                msg: `La API no devolvió JSON (HTTP ${respuesta.status}) al pedir ${this.apiBaseUrl}. `,
-                data: { code: 'INVALID_RESPONSE', status: respuesta.status },
-            };
         }
 
         if (respuesta.ok) {

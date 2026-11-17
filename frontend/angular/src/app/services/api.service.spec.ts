@@ -1,6 +1,6 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick, flushMicrotasks } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
-import { ApiService } from './api.service';
+import { ApiService, ApiResponse } from './api.service';
 import { FeedbackService } from './feedback.service';
 
 describe('Contrato HTTP de Angular', () => {
@@ -22,6 +22,32 @@ describe('Contrato HTTP de Angular', () => {
     fetchMock.and.resolveTo(Response.json({success:true,user:{nombre:'Ficticio'}}));
     await api.updateProfile({nombre:'Ficticio'});expect(feedback.success).toHaveBeenCalledWith('Los cambios se guardaron');
   });
+
+  it('interrumpe una conexión que no responde y permite volver a intentarlo', fakeAsync(() => {
+    fetchMock.and.callFake((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
+      options.signal?.addEventListener('abort', () => reject(new DOMException('Abortado', 'AbortError')));
+    }));
+    let result: ApiResponse | undefined;
+    void api.getProducts().then(value => result = value);
+    tick(15000);
+    flushMicrotasks();
+    expect(result?.ok).toBeFalse();
+    expect(result?.data.code).toBe('REQUEST_TIMEOUT');
+  }));
+
+  it('el plazo también cubre un cuerpo JSON que no termina de llegar', fakeAsync(() => {
+    fetchMock.and.callFake(async (_url: string, options: RequestInit) => ({
+      status: 200, ok: true, json: () => new Promise((_resolve, reject) => {
+        options.signal?.addEventListener('abort', () => reject(new DOMException('Abortado', 'AbortError')));
+      }),
+    } as Response));
+    let result: ApiResponse | undefined;
+    void api.getProducts().then(value => result = value);
+    flushMicrotasks();
+    tick(15000);
+    flushMicrotasks();
+    expect(result?.data.code).toBe('REQUEST_TIMEOUT');
+  }));
 
   it('rechaza HTML con estado 200 en vez de fingir un catálogo vacío exitoso', async () => {
     fetchMock.and.resolveTo(new Response('<html>Angular</html>', { status: 200 }));
