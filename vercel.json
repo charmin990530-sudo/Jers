@@ -10,6 +10,10 @@
   },
   "rewrites": [
     {
+      "source": "/estudio",
+      "destination": "/index.html"
+    },
+    {
       "source": "/mis-datos",
       "destination": "/index.html"
     },
@@ -151,7 +155,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     },
