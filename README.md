@@ -126,6 +126,7 @@ No enviar contraseñas como argumentos del shell. Para la evaluación, ejecutar 
 |---|---|
 | `/` | Boutique 3D con tres capítulos, scroll reversible y acceso directo a la tienda |
 | `/tienda` | Inicio comercial y avatar interactivo aprobado |
+| `/estudio` | Juego de maquillaje sobre el avatar, con modo libre y tres retos |
 | `/catalogo/maquillaje`, `/catalogo/cabello` | Búsqueda, categorías, marcas, orden y paginación |
 | `/producto/:id` | Detalle, disponibilidad y añadir al carrito |
 | `/looks` | Lookbook y enlaces al catálogo |
@@ -138,6 +139,20 @@ No enviar contraseñas como argumentos del shell. Para la evaluación, ejecutar 
 Se conservan redirecciones internas de enlaces antiguos `.html`, incluidos correos de recuperación. Las rutas desconocidas muestran la pantalla de no encontrado. Las autorizaciones se comprueban en el backend; ocultar un control del panel no concede ni sustituye permisos.
 
 El avatar utiliza once imágenes locales completas: mirada, parpadeo y deformación responden al puntero o al tacto. En móvil, el gesto vertical desplaza la página y el horizontal interactúa con el retrato. Los botones se mantienen fuera del rostro. No captura cámara ni micrófono. Si WebGL no está disponible, permanece el recurso estático.
+
+### Estudio de maquillaje
+
+Desde la tienda, abre **Crea tu look y gana descuentos**. En modo libre puedes probar tonos e intensidades. En **Natural de día**, **Noche** y **Editorial**, cada reto indica qué herramientas, tonos e intensidades usar. Toca la zona del rostro, usa el botón Aplicar o pulsa Enter con el retrato enfocado. Puedes quitar una capa, deshacer el último cambio, comparar el antes y el después y descargar el resultado como PNG.
+
+Puedes jugar como invitado. **Guardar look** conserva las elecciones de maquillaje en ese navegador. **Borrar look guardado** elimina esa copia. El estudio usa el retrato incluido en la aplicación. La imagen se compone y se descarga en el dispositivo.
+
+Con sesión iniciada, aplicar maquillaje concede un premio del 10 % en labiales. Completar un reto concede otro del 10 % en toda la tienda para compras con subtotal **superior a $150.000 COP**. Un carrito de exactamente $150.000 no cumple ese requisito. El cliente elige un premio en el checkout y el servidor valida el descuento al crear el pedido.
+
+La API publica el catálogo relacionado en `GET /api/studio/products`. Con sesión iniciada, `POST /api/studio/attempts` abre una partida, `PATCH /api/studio/attempts/:id/step` registra el cambio de capa, `POST /api/studio/attempts/:id/complete` valida el resultado y `GET /api/studio/rewards` devuelve los premios del usuario.
+
+La gestión y composición de capas adapta código MIT de DollMaker. [Procedencia y licencia](THIRD_PARTY_NOTICES.md)
+
+El 17 de noviembre de 2026, el recorrido de Chromium pasó 112 comprobaciones con datos temporales, incluidos los tres retos y un pedido con cada premio. También pasaron las 17 pruebas de la API de premios y las seis pruebas del componente del estudio. WebKit, dispositivo físico y validaciones operativas de producción siguen pendientes.
 
 ### Compras y dinero
 

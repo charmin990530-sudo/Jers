@@ -203,7 +203,11 @@ export class Estudio {
         if (!this.attempt || this.serverError()) return;
         const response = await this.api.completeStudioAttempt(this.attempt.id);
         if (this.destroyed) return;
-        if (!response.ok) { this.serverError.set(mensajeError(response, 'No se pudo finalizar. Vuelve a intentarlo.')); return; }
+        if (!response.ok) {
+          if (response.data?.status === 404 || response.data?.code === 'GAME_STATE_CHANGED') this.attempt = undefined;
+          this.serverError.set(mensajeError(response, 'No se pudo finalizar. Vuelve a intentarlo.'));
+          return;
+        }
         this.rewards.set(response.data.rewards ?? []);
       }
       this.finished.set(true); this.compare.set(false); this.draw();

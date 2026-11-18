@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { playGuestStudio, playStudio } from './audit-studio.mjs';
 import { startAuditFixture } from './audit-fixture.mjs';
 
 const { chromium, webkit } = await import(process.env.AUDIT_PLAYWRIGHT_MODULE || 'playwright');
@@ -73,24 +74,17 @@ try {
   await page.goto(fixture.origin + '/carrito');
   await page.locator('.carrito .item').first().waitFor();
   check('carrito persistente', (await page.locator('main').innerText()).includes('Labial'));
-  // Se gana el premio con las mismas rutas HTTP que usa el estudio; no se crea en la BD.
-  const reward = await page.evaluate(async () => {
-    const csrf = (await (await fetch('/api/auth/csrf')).json()).csrfToken;
-    const headers = { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
-    const started = await fetch('/api/studio/attempts', { method: 'POST', headers, body: JSON.stringify({ challenge: 'libre' }) });
-    const { attempt } = await started.json();
-    const stepped = await fetch(`/api/studio/attempts/${attempt.id}/step`, { method: 'PATCH', headers,
-      body: JSON.stringify({ revision: 0, category: 'labios', option: { category: 'labios', shade: 'nude', intensity: 40 } }) });
-    if (!stepped.ok) throw new Error('STUDIO_STEP_FAILED');
-    return (await (await fetch('/api/studio/rewards')).json()).rewards[0];
-  });
-  check('premio validado por el servidor', Boolean(reward.id));
+  await playGuestStudio(browser, fixture.origin, check, artifactDir, engine);
+  await playStudio(page, fixture.origin, check, artifactDir, engine);
   await page.goto(fixture.origin + '/checkout');
-  await page.locator('#checkout-reward').selectOption(reward.id);
+  await page.locator('#checkout-reward').selectOption({ label: '10% en labiales por jugar' });
   await page.locator('.descuento-premio').waitFor();
-  for (const [name, value] of Object.entries({ nombreCompleto: 'Cliente Ficticio', telefono: '3000000000', direccion: 'Calle Ficticia 10', ciudad: 'Bogotá', departamento: 'Cundinamarca' })) {
-    await page.locator(`[name="${name}"]`).fill(value);
-  }
+  const fillShipping = async () => {
+    for (const [name, value] of Object.entries({ nombreCompleto: 'Cliente Ficticio', telefono: '3000000000', direccion: 'Calle Ficticia 10', ciudad: 'Bogotá', departamento: 'Cundinamarca' })) {
+      await page.locator(`[name="${name}"]`).fill(value);
+    }
+  };
+  await fillShipping();
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => document.fonts.ready);
@@ -108,6 +102,34 @@ try {
   await page.goto(fixture.origin + '/pedidos');
   await page.locator('.pedido-numero').waitFor();
   check('pedido en historial', (await page.locator('.pedido-numero').innerText()) === created.numeroOrden);
+  await page.goto(fixture.origin + '/estudio');
+  await page.locator('.studio-product button').first().click();
+  await page.getByText(/añadido\. Puedes abrir tu carrito/).waitFor();
+  await page.getByRole('link', { name: /Ver mi carrito/ }).click();
+  const increase = page.getByRole('button', { name: 'Añadir una unidad' });
+  for (const quantity of [2, 3]) {
+    await increase.click();
+    await page.locator('.cantidad span').filter({ hasText: String(quantity) }).waitFor();
+  }
+  await page.goto(fixture.origin + '/checkout');
+  const storeReward = page.locator('#checkout-reward option').filter({ hasText: 'subtotal >' });
+  const rewardId = await storeReward.getAttribute('value');
+  await page.locator('#checkout-reward').selectOption(rewardId);
+  await page.getByRole('alert').filter({ hasText: 'superior a $150.000' }).waitFor();
+  check('checkout rechaza premio de tienda en $150.000', (await page.locator('#checkout-reward').inputValue()) === '');
+  await page.goto(fixture.origin + '/carrito');
+  await increase.click();
+  await page.locator('.cantidad span').filter({ hasText: '4' }).waitFor();
+  await page.goto(fixture.origin + '/checkout');
+  await page.locator('#checkout-reward').selectOption(rewardId);
+  await page.locator('.descuento-premio').waitFor();
+  await fillShipping();
+  const secondOrder = page.waitForResponse(response => response.url().endsWith('/orders') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Confirmar pedido', exact: true }).click();
+  const secondResponse = await secondOrder;
+  const second = (await secondResponse.json()).order;
+  check('pedido con premio de tienda descuenta $20.000 en $200.000', secondResponse.status() === 201 && second.descuento === 20000);
+  check('cada premio quedó consumido en su pedido', await fixture.models.GameReward.countDocuments({ redeemedAt: { $ne: null } }) === 2);
   const other = await browser.newContext();
   const forbidden = await other.request.get(fixture.origin + '/api/orders/' + created.id);
   check('pedido no accesible anónimamente', forbidden.status() === 401);
@@ -123,8 +145,8 @@ try {
   await login(fixture.adminEmail, fixture.adminPassword);
   await page.goto(fixture.origin + '/admin');
   await page.getByRole('button', { name: 'Pedidos', exact: true }).click();
-  await page.locator('.pedido-admin h3').waitFor();
-  check('pedido recibido en panel administrador', (await page.locator('.pedido-admin h3').innerText()) === created.numeroOrden);
+  await page.locator('.pedido-admin h3').filter({ hasText: created.numeroOrden }).waitFor();
+  check('pedido recibido en panel administrador', await page.locator('.pedido-admin h3').filter({ hasText: created.numeroOrden }).isVisible());
   // Conciliación MANUAL de prueba: no existe pasarela ni control de pago en el panel.
   const paid = await page.evaluate(async id => {
     const csrf = (await (await fetch('/api/auth/csrf')).json()).csrfToken;
@@ -136,7 +158,7 @@ try {
   await page.locator('.stats').waitFor();
   await page.waitForFunction(() => document.querySelector('.stat')?.textContent.includes('71.400'));
   check('ingresos tras conciliación', (await page.locator('.stat').first().innerText()).includes('71.400'));
-  check('inventario descontado una vez', (await fixture.models.Product.findById(fixture.productId)).stock === 19);
+  check('inventario descontado por las cinco unidades pedidas', (await fixture.models.Product.findById(fixture.productId)).stock === 15);
   const responsive = [];
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });

@@ -42,6 +42,18 @@ describe('Experiencia del estudio y conexión con carrito', () => {
     expect(api.completeStudioAttempt).not.toHaveBeenCalled();
     expect(studio.options().length).toBe(1);
   });
+  it('reenvía las capas en un intento nuevo si la sesión caducó al terminar', async () => {
+    const { api, studio } = setup(true);
+    api.completeStudioAttempt.and.resolveTo({ ok: false, data: { status: 404 } });
+    studio.apply();
+    await studio.finish();
+    expect(studio.finished()).toBeFalse();
+    api.completeStudioAttempt.and.resolveTo({ ok: true, data: { rewards: [] } });
+    await studio.finish();
+    expect(api.startStudioAttempt).toHaveBeenCalledTimes(2);
+    expect(api.updateStudioStep).toHaveBeenCalledTimes(2);
+    expect(studio.finished()).toBeTrue();
+  });
   it('añade un producto con la API existente, sin enviar precio ni descuento', async () => {
     const { api, studio } = setup(true);
     api.addToCart.and.resolveTo({ ok: true, data: { cart: { totalItems: 1 } } });
