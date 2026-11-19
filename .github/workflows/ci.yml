@@ -1,4 +1,4 @@
-ci-test-secretci-test-secretci-test-secretci-test-secretname: CI
+name: CI
 
 on:
   push:
